@@ -77,7 +77,7 @@ class Params:
 
 if __name__ == '__main__':
     import pkg_resources
-    v = pkg_resources.get_distribution("simplegist").version
+    v = pkg_resources.get_distribution("ml_logger").version
     print(f'running ml_logger.server version {v}')
     server = LoggingServer(data_dir=Params.data_dir)
     server.serve(port=Params.port)
