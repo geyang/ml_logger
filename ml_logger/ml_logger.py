@@ -101,7 +101,7 @@ def brown(value, *args, **kwargs):
 
 
 class ML_Logger:
-    log_directory = None
+    logger = None
 
     # noinspection PyInitNewSignature
     def __init__(self, log_directory: str = None, prefix=""):
@@ -117,6 +117,10 @@ class ML_Logger:
             self.logger = LogClient(url=log_directory)
 
     configure = __init__
+
+    @property
+    def log_directory(self):
+        return self.logger.local_server.data_dir if self.logger else None
 
     def __enter__(self):
         return self
