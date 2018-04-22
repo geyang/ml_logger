@@ -152,6 +152,17 @@ class ML_Logger:
         # todo: add yml support
         self.logger.log(key=os.path.join(self.prefix, "parameters.pkl"), data=kwargs)
 
+    def log_keyvalue(self, step: Union[int, Color], key: str, value: Any, silent=False) -> None:
+        if self.step != step and self.step is not None:
+            self.flush()
+        self.step = step
+
+        if silent:
+            self.do_not_print_list.update([key])
+
+        # todo: add logging hook
+        self.data[key] = value.value if type(value) is Color else value
+
     def log(self, step: Union[int, Color], *dicts, silent=False, **kwargs) -> None:
         """
         :param step: the global step, be it the global timesteps or the epoch step
@@ -163,7 +174,6 @@ class ML_Logger:
         if self.step != step and self.step is not None:
             self.flush()
         self.step = step
-        self.data['step'] = step  # this way step is also saved in data.
 
         data_dict = {}
         for d in dicts:
@@ -200,7 +210,10 @@ class ML_Logger:
             output += "╘" + "═" * max_key_len + "╧" + "═" * max_value_len + "╛\n"
             print(output, end="")
 
-        self.logger.log(key=os.path.join(self.prefix, "data.pkl"), data=dict(**self.data))
+        import datetime
+        current = np.datetime64(datetime.datetime.now())
+        self.logger.log(key=os.path.join(self.prefix, "data.pkl"),
+                        data=dict(_step=self.step, _timestamp=current, **self.data))
         self.data.clear()
         self.do_not_print_list.clear()
 
@@ -221,6 +234,7 @@ class ML_Logger:
         raise NotImplementedError
 
     def log_text(self, text, filename="print.txt"):
+        print(text)
         self.logger.log_text(key=os.path.join(self.prefix, filename), text=text)
 
 
