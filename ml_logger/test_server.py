@@ -16,7 +16,9 @@ if __name__ == '__main__':
         import scipy.misc
 
         logger.log('experiment1/some-test/data.pkl', dict(some=100, this=[3, 21]))
+        sleep(0.001)
         logger.send_image(f'experiment1/some-test/figures/{i:04d}', scipy.misc.face())
+        sleep(0.001)
         logger.log_text(f'experiment1/some-test/some.md', "# some header\n")
         # note('experiment1/some-test', dict(some=100, this=[3, 21]))
         sleep(0.001)

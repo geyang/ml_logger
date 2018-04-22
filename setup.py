@@ -21,5 +21,5 @@ setup(name="ml_logger",
           "Programming Language :: Python :: 3"
       ],
       packages=["ml_logger"],
-      install_requires=["typing", "numpy", "cloudpickle"]
+      install_requires=["typing", "numpy", "cloudpickle", "uvloop==0.8.1"]
       )
