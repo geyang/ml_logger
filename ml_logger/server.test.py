@@ -1,9 +1,13 @@
 from time import sleep
 
-from ml_logger.log_client import LogClient
+from ml_logger import LogClient
 from tqdm import trange
 
-TEST_URL = "http://localhost:8081"
+# TEST_URL = "http://localhost:8081"
+with open('../../../_cluster-infra/torch-gym-prebuilt/ip_address.txt', 'r') as f:
+    ip = f.read()
+    TEST_URL = f"http://{ip.strip()}:8081"
+    print(TEST_URL)
 
 if __name__ == '__main__':
 

@@ -1,10 +1,10 @@
 import os
-from ml_logger.serdes import serialize
-from ml_logger.server import LogEntry, LoggingServer, ALLOWED_TYPES
+from serdes import serialize
+from server import LogEntry, LoggingServer, ALLOWED_TYPES
 
 
 class LogClient:
-    local_mode = False
+    local_server = None
     prefix = None
 
     def __init__(self, url: str = None, prefix=None):
