@@ -2,7 +2,7 @@ import os
 import pickle
 from collections import namedtuple
 from params_proto import cli_parse, Proto
-from serdes import deserialize
+from ml_logger.serdes import deserialize
 import numpy as np
 
 LogEntry = namedtuple("LogEntry", ['key', 'data', 'type'])

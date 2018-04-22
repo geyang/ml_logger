@@ -2,7 +2,7 @@ import os
 from typing import Union, Callable, Any
 from collections import OrderedDict, deque
 
-from log_client import LogClient
+from ml_logger.log_client import LogClient
 from termcolor import colored as c
 import numpy as np
 
