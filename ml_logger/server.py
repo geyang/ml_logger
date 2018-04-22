@@ -2,9 +2,11 @@ import os
 import pickle
 from collections import namedtuple
 from params_proto import cli_parse, Proto
-from ml_vis.serdes import deserialize
+from ml_logger.serdes import deserialize
+import numpy as np
 
 LogEntry = namedtuple("LogEntry", ['key', 'data', 'type'])
+ALLOWED_TYPES = (np.uint8,)  # ONLY uint8 is supported.
 
 
 class LoggingServer:
@@ -47,6 +49,9 @@ class LoggingServer:
                 abs_path = abs_path + ".png"
             from PIL import Image
             data = deserialize(log_entry.data)
+            assert data.dtype in ALLOWED_TYPES, f"image datatype must be one of {ALLOWED_TYPES}"
+            if len(data.shape) == 3 and data.shape[-1] == 1:
+                data.resize(data.shape[:-1])
             im = Image.fromarray(data)
             try:
                 im.save(abs_path)
@@ -56,7 +61,6 @@ class LoggingServer:
         elif log_entry.type.startswith("video"):
             # todo: mpeg can be appended directly, making it a nice format.
             raise NotImplementedError
-
 
 
 @cli_parse

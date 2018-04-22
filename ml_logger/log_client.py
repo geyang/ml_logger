@@ -1,6 +1,6 @@
 import os
-from ml_vis.serdes import serialize
-from ml_vis.server import LogEntry, LoggingServer
+from ml_logger.serdes import serialize
+from ml_logger.server import LogEntry, LoggingServer, ALLOWED_TYPES
 
 
 class LogClient:
@@ -41,5 +41,6 @@ class LogClient:
 
     # sends out images
     def send_image(self, key, data):
+        assert data.dtype in ALLOWED_TYPES, f"image data must be one of {ALLOWED_TYPES}"
         data = serialize(data)
         self._send(key, data, dtype="image")

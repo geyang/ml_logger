@@ -2,7 +2,7 @@ import os
 from typing import Union, Callable, Any
 from collections import OrderedDict, deque
 
-from ml_vis.log_client import LogClient
+from ml_logger.log_client import LogClient
 from termcolor import colored as c
 import numpy as np
 
@@ -146,7 +146,7 @@ class ML_Logger:
 
         # todo: add logging hook
         # todo: add yml support
-        self.logger.log(key=os.path.join(self.prefix, "parameters.pkl"), data=dict(**kwargs))
+        self.logger.log(key=os.path.join(self.prefix, "parameters.pkl"), data=kwargs)
 
     def log(self, step: Union[int, Color], *dicts, silent=False, **kwargs) -> None:
         """
@@ -171,7 +171,7 @@ class ML_Logger:
 
         # todo: add logging hook
         for key, v in data_dict.items():
-            self.data[key] = v
+            self.data[key] = v.value if type(v) is Color else v
 
     def flush(self, min_key_width=20, min_value_width=20):
         if not self.data:
@@ -211,7 +211,7 @@ class ML_Logger:
 
         # todo: save image hook here
         for key, image in kwargs.items():
-            self.logger.send_image(key=os.path.join(self.prefix, namespace, key, step + ".png"), data=self.data)
+            self.logger.send_image(key=os.path.join(self.prefix, namespace, key, f"{step:04d}.png"), data=image)
 
     def log_json(self):
         pass

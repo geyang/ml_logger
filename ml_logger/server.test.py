@@ -1,6 +1,6 @@
 from time import sleep
 
-from ml_vis.log_client import LogClient
+from ml_logger.log_client import LogClient
 from tqdm import trange
 
 TEST_URL = "http://localhost:8081"
