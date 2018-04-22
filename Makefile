@@ -29,6 +29,4 @@ publish: convert-rst
 	make wheel
 	twine upload dist/*
 test:
-	cd ml_logger && \
-	pwd && \
-	python -m pytest --capture=no
+	python -m pytest ml_logger --capture=no
