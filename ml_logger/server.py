@@ -1,7 +1,8 @@
 import os
 import pickle
 from collections import namedtuple
-from params_proto import cli_parse, Proto
+from params_proto import cli_parse, Proto, BoolFlag
+
 from ml_logger.serdes import deserialize
 import numpy as np
 
@@ -14,12 +15,15 @@ class LoggingServer:
         assert os.path.isabs(data_dir)
         self.data_dir = data_dir
         os.makedirs(data_dir, exist_ok=True)
+        print(f'logging data to {data_dir}')
+
+    configure = __init__
 
     def serve(self, port):
         from japronto import Application
         self.app = Application()
         self.app.router.add_route('/', self.log_handler, method='POST')
-        self.app.run(port=port, debug=True)
+        self.app.run(port=port, debug=Params.debug)
 
     def log_handler(self, req):
         self.log(req.json)
@@ -27,6 +31,7 @@ class LoggingServer:
 
     def log(self, entry):
         log_entry = LogEntry(**entry)
+        print(f"writing: {log_entry.key} type: {log_entry.type}")
 
         if log_entry.type == "log":
             abs_path = os.path.join(self.data_dir, log_entry.key)
@@ -67,6 +72,7 @@ class LoggingServer:
 class Params:
     data_dir = Proto("/tmp/logging-server", help="The directory for saving the logs")
     port = Proto(8081, help="port for the logging server")
+    debug = BoolFlag(False, help='boolean flag for printing out debug traces')
 
 
 if __name__ == '__main__':
