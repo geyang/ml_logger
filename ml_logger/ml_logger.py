@@ -218,7 +218,10 @@ class ML_Logger:
             self.logger.send_image(key=os.path.join(self.prefix, namespace, key, f"{step:04d}.png"), data=image)
 
     def log_json(self):
-        pass
+        raise NotImplementedError
+
+    def log_text(self, text, filename="print.txt"):
+        self.logger.log_text(key=os.path.join(self.prefix, filename), text=text)
 
 
 logger = ML_Logger()
