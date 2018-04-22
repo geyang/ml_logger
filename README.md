@@ -1,11 +1,27 @@
-# ML_Logger, A Beautiful Logging Utility for Any Python ML Project
+# ML_Logger, A Beautiful Remote Logging Utility for Any Python ML Project
 
-```bash
-pip install ml_logger
-```
+When running AWS experiments in batch, sometimes it is much easier if
+all of the logging are done towards a dedicated logging server. ML_Logger
+does exactly that.
+
+ML_Logger can log to both local directory and a remote logging server
+with zero configuration. ML_Logger supports simple scalar, numpy
+tensors, images, and many other mem types.
+
 
 ## Usage
 
+To **install** `ml_logger`, do:
+```bash
+pip install ml-logger
+```
+
+To kickstart a logging server, run
+```bash
+python -m ml_logger.server
+```
+
+In your project files, do:
 ```python
 from ml_logger import ML_Logger
 
@@ -142,4 +158,14 @@ colored output: (where the values are yellow)
 ```
 ![logger-colored-output](./figures/logger_color_output.png)
 
+## TODO:
+
+- [ ] Integrate with visdom, directly plot locally.
+    - (better to keep it separate, because visdom is shitty.)
+    - ml_logger does NOT know the full data set. Therefore we should not
+    expect it to do the data processing such as taking mean, reservoir
+    sampling etc. **Where should this happen though?**
+    - just log to visdom for now. Use the primitive `plot.ly` plotting
+    inteface.
+    - data: keys/values
 

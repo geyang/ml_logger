@@ -1,16 +1,13 @@
 import os
-from io import StringIO, BytesIO
 from typing import Union, Callable, Any
 from collections import OrderedDict, deque
 
-from matplotlib import pyplot
+from ml_vis.log_client import LogClient
 from termcolor import colored as c
 import numpy as np
 
-from moleskin import moleskin as M
 
-
-class MovingAverage:
+class Stream:
     def __init__(self, len=100):
         self.d = deque(maxlen=len)
 
@@ -107,15 +104,17 @@ class ML_Logger:
     log_directory = None
 
     # noinspection PyInitNewSignature
-    def __init__(self, log_directory=None):
+    def __init__(self, log_directory: str = None, prefix=""):
         # self.summary_writer = tf.summary.FileWriter(log_directory)
         self.step = None
         self.data = OrderedDict()
         self.do_not_print_list = set()
+        assert not os.path.isabs(prefix), "prefix can not start with `/`"
+        self.prefix = prefix
 
+        # todo: add https support
         if log_directory:
-            os.makedirs(log_directory, exist_ok=True)
-            self.log_directory = log_directory
+            self.logger = LogClient(url=log_directory)
 
     configure = __init__
 
@@ -124,7 +123,8 @@ class ML_Logger:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # self.summary_writer.close()
-        pass
+        # todo: wait for logger to finish upload in async mode.
+        self.flush()
 
     def log_params(self, **kwargs):
         key_width = 30
@@ -141,14 +141,15 @@ class ML_Logger:
                 table.append((key, value_string))
                 print(c(f'{key:^{key_width}}', 'white'), "│", f'{value_string:<{value_width}}')
 
-        if n > 0:
+        if "n" in locals():
             print('═' * (key_width + 1) + f"{'═' if n == 0 else '╧'}" + '═' * (value_width + 1))
 
         # todo: add logging hook
+        # todo: add yml support
+        self.logger.log(key=os.path.join(self.prefix, "parameters.pkl"), data=dict(**kwargs))
 
     def log(self, step: Union[int, Color], *dicts, silent=False, **kwargs) -> None:
         """
-
         :param step: the global step, be it the global timesteps or the epoch step
         :param dicts: a dictionary of key/value pairs, allowing more flexible key name with '/' etc.
         :param silent: Bool, log but do not print. To keep the standard out silent.
@@ -158,6 +159,7 @@ class ML_Logger:
         if self.step != step and self.step is not None:
             self.flush()
         self.step = step
+        self.data['step'] = step  # this way step is also saved in data.
 
         data_dict = {}
         for d in dicts:
@@ -167,9 +169,9 @@ class ML_Logger:
         if silent:
             self.do_not_print_list.update(data_dict.keys())
 
+        # todo: add logging hook
         for key, v in data_dict.items():
-            pass
-            # todo: add logging hook
+            self.data[key] = v
 
     def flush(self, min_key_width=20, min_value_width=20):
         if not self.data:
@@ -182,7 +184,7 @@ class ML_Logger:
             max_value_len = max([min_value_width] + [len(str(self.data[k])) for k in keys])
             output = None
             for k in keys:
-                v = self.data[k]
+                v = str(self.data[k])
                 if output is None:
                     output = "╒" + "═" * max_key_len + "╤" + "═" * max_value_len + "╕\n"
                 else:
@@ -190,14 +192,15 @@ class ML_Logger:
                 if k not in self.do_not_print_list:
                     k = k.replace('_', " ")
                     v = "None" if v is None else v  # for NoneTypes which doesn't have __format__ method
-                    output += "│{k:^{max_key_len}}│{v:^{max_value_len}}│\n".format(**locals())
+                    output += f"│{k:^{max_key_len}}│{v:^{max_value_len}}│\n"
             output += "╘" + "═" * max_key_len + "╧" + "═" * max_value_len + "╛\n"
             print(output, end="")
 
+        self.logger.log(key=os.path.join(self.prefix, "data.pkl"), data=dict(**self.data))
         self.data.clear()
         self.do_not_print_list.clear()
 
-    def log_image(self, step, **kwargs):
+    def log_image(self, step, namespace="plots", **kwargs):
         """Logs an image via the summary writer.
         TODO: add support for PIL images etc.
         reference: https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
@@ -207,6 +210,11 @@ class ML_Logger:
         self.step = step
 
         # todo: save image hook here
+        for key, image in kwargs.items():
+            self.logger.send_image(key=os.path.join(self.prefix, namespace, key, step + ".png"), data=self.data)
 
     def log_json(self):
         pass
+
+
+logger = ML_Logger()
