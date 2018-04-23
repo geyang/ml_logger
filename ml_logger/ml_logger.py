@@ -215,7 +215,7 @@ class ML_Logger:
             print(output, end="")
 
         self.logger.log(key=os.path.join(self.prefix, "data.pkl"),
-                        data=dict(_step=self.step, _timestamp=self.timestamp, **self.data))
+                        data=dict(_step=self.step, _timestamp=str(self.timestamp), **self.data))
         self.data.clear()
         self.do_not_print_list.clear()
 
@@ -227,6 +227,7 @@ class ML_Logger:
         if self.step != step and self.step is not None:
             self.flush()
         self.step = step
+        self.timestamp = np.datetime64(datetime.now())
 
         # todo: save image hook here
         for key, image in kwargs.items():

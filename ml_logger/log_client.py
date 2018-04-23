@@ -27,6 +27,7 @@ class LogClient:
             self.local_server.log(entry)
         else:
             import requests
+            # todo: make the json serialization more robust. Not priority b/c this' client-side.
             data = LogEntry(key, data, dtype)._asdict()
             requests.post(self.url, json=data)
 
