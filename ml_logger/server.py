@@ -32,28 +32,28 @@ class LoggingServer:
     def log(self, entry):
         log_entry = LogEntry(**entry)
         print(f"writing: {log_entry.key} type: {log_entry.type}")
+        data = deserialize(log_entry.data)
 
         if log_entry.type == "log":
             abs_path = os.path.join(self.data_dir, log_entry.key)
             try:
                 with open(abs_path, 'ab') as f:
-                    pickle.dump(log_entry.data, f)
+                    pickle.dump(data, f)
             except FileNotFoundError:
                 os.makedirs(os.path.dirname(abs_path))
                 with open(abs_path, 'ab') as f:
-                    pickle.dump(log_entry.data, f)
+                    pickle.dump(data, f)
         elif log_entry.type.startswith("text"):
             abs_path = os.path.join(self.data_dir, log_entry.key)
             if "." not in log_entry.key:
                 abs_path = abs_path + ".md"
             with open(abs_path, "a") as f:
-                f.write(log_entry.data)
+                f.write(data)
         elif log_entry.type.startswith("image"):
             abs_path = os.path.join(self.data_dir, log_entry.key)
             if "." not in log_entry.key:
                 abs_path = abs_path + ".png"
             from PIL import Image
-            data = deserialize(log_entry.data)
             assert data.dtype in ALLOWED_TYPES, f"image datatype must be one of {ALLOWED_TYPES}"
             if len(data.shape) == 3 and data.shape[-1] == 1:
                 data.resize(data.shape[:-1])

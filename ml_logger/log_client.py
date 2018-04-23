@@ -28,8 +28,8 @@ class LogClient:
         else:
             import requests
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
-            data = LogEntry(key, data, dtype)._asdict()
-            requests.post(self.url, json=data)
+            json = LogEntry(key, serialize(data), dtype)._asdict()
+            requests.post(self.url, json=json)
 
     # appends data
     def log(self, key, data):
@@ -42,5 +42,4 @@ class LogClient:
     # sends out images
     def send_image(self, key, data):
         assert data.dtype in ALLOWED_TYPES, f"image data must be one of {ALLOWED_TYPES}"
-        data = serialize(data)
         self._send(key, data, dtype="image")
