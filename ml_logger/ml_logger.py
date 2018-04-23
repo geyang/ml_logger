@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+
 from typing import Union, Callable, Any
 from collections import OrderedDict, deque
 
@@ -156,6 +158,7 @@ class ML_Logger:
         if self.step != step and self.step is not None:
             self.flush()
         self.step = step
+        self.timestamp = np.datetime64(datetime.now())
 
         if silent:
             self.do_not_print_list.update([key])
@@ -174,6 +177,7 @@ class ML_Logger:
         if self.step != step and self.step is not None:
             self.flush()
         self.step = step
+        self.timestamp = np.datetime64(datetime.now())
 
         data_dict = {}
         for d in dicts:
@@ -210,10 +214,8 @@ class ML_Logger:
             output += "╘" + "═" * max_key_len + "╧" + "═" * max_value_len + "╛\n"
             print(output, end="")
 
-        import datetime
-        current = np.datetime64(datetime.datetime.now())
         self.logger.log(key=os.path.join(self.prefix, "data.pkl"),
-                        data=dict(_step=self.step, _timestamp=current, **self.data))
+                        data=dict(_step=self.step, _timestamp=self.timestamp, **self.data))
         self.data.clear()
         self.do_not_print_list.clear()
 
