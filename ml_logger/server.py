@@ -26,16 +26,15 @@ class LoggingServer:
         self.app.run(port=port, debug=Params.debug)
 
     def log_handler(self, req):
-        self.log(req.json)
-        return req.Response(text='ok')
-
-    def log(self, entry):
         log_entry = LogEntry(**entry)
         print(f"writing: {log_entry.key} type: {log_entry.type}")
         data = deserialize(log_entry.data)
+        self.log(log_entry.key, data, log_entry.type)
+        return req.Response(text='ok')
 
-        if log_entry.type == "log":
-            abs_path = os.path.join(self.data_dir, log_entry.key)
+    def log(self, key, data, dtype):
+        if dtype == "log":
+            abs_path = os.path.join(self.data_dir, key)
             try:
                 with open(abs_path, 'ab') as f:
                     pickle.dump(data, f)
@@ -43,15 +42,15 @@ class LoggingServer:
                 os.makedirs(os.path.dirname(abs_path))
                 with open(abs_path, 'ab') as f:
                     pickle.dump(data, f)
-        elif log_entry.type.startswith("text"):
-            abs_path = os.path.join(self.data_dir, log_entry.key)
-            if "." not in log_entry.key:
+        elif dtype.startswith("text"):
+            abs_path = os.path.join(self.data_dir, key)
+            if "." not in key:
                 abs_path = abs_path + ".md"
             with open(abs_path, "a") as f:
                 f.write(data)
-        elif log_entry.type.startswith("image"):
-            abs_path = os.path.join(self.data_dir, log_entry.key)
-            if "." not in log_entry.key:
+        elif dtype.startswith("image"):
+            abs_path = os.path.join(self.data_dir, key)
+            if "." not in key:
                 abs_path = abs_path + ".png"
             from PIL import Image
             assert data.dtype in ALLOWED_TYPES, f"image datatype must be one of {ALLOWED_TYPES}"
@@ -63,7 +62,7 @@ class LoggingServer:
             except FileNotFoundError:
                 os.makedirs(os.path.dirname(abs_path))
                 im.save(abs_path)
-        elif log_entry.type.startswith("video"):
+        elif dtype.startswith("video"):
             # todo: mpeg can be appended directly, making it a nice format.
             raise NotImplementedError
 

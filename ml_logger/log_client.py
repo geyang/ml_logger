@@ -23,8 +23,7 @@ class LogClient:
     def _send(self, key, data, dtype):
         # todo: make this asynchronous
         if self.local_server:
-            entry = LogEntry(key, data, dtype)._asdict()
-            self.local_server.log(entry)
+            self.local_server.log(key, data, dtype)
         else:
             import requests
             # todo: make the json serialization more robust. Not priority b/c this' client-side.

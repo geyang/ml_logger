@@ -1,13 +1,20 @@
 # ML_Logger, A Beautiful Remote Logging Utility for Any Python ML Project
 
 When running AWS experiments in batch, sometimes it is much easier if
-all of the logging are done towards a dedicated logging server. ML_Logger
-does exactly that.
+all of the logging are done towards a dedicated logging server. This way
+it is easy to mount the drive via fstp or smba, and manage the data
+(deletion, move and copying) more efficiently.
 
-ML_Logger can log to both local directory and a remote logging server
-with zero configuration. ML_Logger supports simple scalar, numpy
-tensors, images, and many other mem types.
+ML_Logger does exactly this.
 
+ML_Logger has a local client and a http logging server. It runs both
+locally (without explicitly setting up a server) as well as to a remote
+log server using its http end-point. ML_Logger supports simple scalar,
+numpy tensors, images, and many other mem types.
+
+### Compared with sftp and smba
+
+Use this so that you don't have to setup sftp and smba :)
 
 ## Usage
 
@@ -24,7 +31,6 @@ python -m ml_logger.server
 In your project files, do:
 ```python
 from ml_logger import ML_Logger
-
 logger = ML_Logger(log_directory="/tmp/logs/ml_logger_test/")
 
 logger.log(index=3, note='this is a log entry!')
@@ -42,11 +48,7 @@ for i in range(10):
     logger.log_image(i, animation=[face] * 5)
 ```
 
-![logging images using ml_logger](./figures/logging_images.png)
-
-> I'm planning on writing a better ML dashboard in the future.
-
-This version of logger is integrated with `tensorboard` and at the same time prints the data in a tabular format to your `stdout`.
+This version of logger also prints out a tabular printout of the data you are logging to your `stdout`.
 - can silence `stdout` per key (per `logger.log` call)
 - can print with color: `logger.log(timestep, some_key=green(some_data))`
 - can print with custom formatting: `logger.log(timestep, some_key=green(some_data, percent))` where `percent`
@@ -65,9 +67,6 @@ outputs the following
 
 ![example_real_log_output](./figures/example_log_output.png)
 
-And the data from multiple experiments can be views with tensorboard. 
-
-![tensorboard_example](./figures/tensorboard_example.png)
 
 ```log
 ═════════════════════════════════════════════════════
@@ -156,7 +155,6 @@ colored output: (where the values are yellow)
 │        some        │       85.0%        │
 ╘════════════════════╧════════════════════╛
 ```
-![logger-colored-output](./figures/logger_color_output.png)
 
 ## TODO:
 
