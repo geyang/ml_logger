@@ -14,8 +14,8 @@ class LogClient:
         elif url.startswith('http://'):
             self.url = url
         else:
-            # todo: add https, and s3://
-            raise TypeError('log url need to begin with file:// or http://.')
+            # todo: add https://, and s3://
+            raise TypeError('log url need to begin with `/`, `file://` or `http://`.')
         if prefix:
             assert not os.path.isabs(prefix), "prefix can not have leading slash`/`"
             self.prefix = prefix

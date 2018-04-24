@@ -110,6 +110,7 @@ class ML_Logger:
     def __init__(self, log_directory: str = None, prefix=""):
         # self.summary_writer = tf.summary.FileWriter(log_directory)
         self.step = None
+        self.timestamp = None
         self.data = OrderedDict()
         self.do_not_print_list = set()
         assert not os.path.isabs(prefix), "prefix can not start with `/`"
@@ -150,7 +151,7 @@ class ML_Logger:
 
         # todo: add logging hook
         # todo: add yml support
-        self.logger.log(key=os.path.join(self.prefix, "parameters.pkl"), data=kwargs)
+        self.logger.log(key=os.path.join(self.prefix or "", "parameters.pkl"), data=kwargs)
 
     def log_keyvalue(self, step: Union[int, Color], key: str, value: Any, silent=False) -> None:
         if self.step != step and self.step is not None:
@@ -212,7 +213,7 @@ class ML_Logger:
             output += "╘" + "═" * max_key_len + "╧" + "═" * max_value_len + "╛\n"
             print(output, end="")
 
-        self.logger.log(key=os.path.join(self.prefix, "data.pkl"),
+        self.logger.log(key=os.path.join(self.prefix or "", "data.pkl"),
                         data=dict(_step=self.step, _timestamp=str(self.timestamp), **self.data))
         self.data.clear()
         self.do_not_print_list.clear()
@@ -229,14 +230,40 @@ class ML_Logger:
 
         # todo: save image hook here
         for key, image in kwargs.items():
-            self.logger.send_image(key=os.path.join(self.prefix, namespace, key, f"{step:04d}.png"), data=image)
+            self.logger.send_image(key=os.path.join(self.prefix or "", namespace, key, f"{step:04d}.png"), data=image)
+
+    def log_pyplot(self, step, fig, namespace="figures", key=None):
+        if self.step != step and self.step is not None:
+            self.flush()
+        self.step = step
+        self.timestamp = np.datetime64(datetime.now())
+        image = self.plt2data(fig)
+        self.logger.send_image(key=os.path.join(self.prefix or "", namespace, key or f"{step:04d}.png"), data=image)
+
+    @staticmethod
+    def plt2data(fig):
+        """
+        @brief Convert a Matplotlib figure to a 4D numpy array with RGBA channels and return it
+        @param fig a matplotlib figure
+        @return a numpy 3D array of RGBA values
+        """
+        # draw the renderer
+        fig.canvas.draw()
+        # Get the RGBA buffer from the figure
+        w, h = fig.canvas.get_width_height()
+        buf = np.fromstring(fig.canvas.tostring_argb(), dtype=np.uint8)
+        buf.shape = (w, h, 4)
+
+        # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
+        buf = np.roll(buf, 3, axis=2)
+        return buf
 
     def log_json(self):
         raise NotImplementedError
 
     def log_text(self, text, filename="print.txt"):
         print(text)
-        self.logger.log_text(key=os.path.join(self.prefix, filename), text=text)
+        self.logger.log_text(key=os.path.join(self.prefix or "", filename), text=text)
 
 
 logger = ML_Logger()
