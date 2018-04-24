@@ -1,5 +1,7 @@
-import os, scipy.misc
+import os
+import scipy.misc
 import matplotlib
+
 matplotlib.use('TKAgg')
 import matplotlib.pyplot as plt
 import numpy as np
