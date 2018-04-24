@@ -29,6 +29,7 @@ class LogClient:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
             json = LogEntry(key, serialize(data), dtype)._asdict()
             requests.post(self.url, json=json)
+            # todo: verify request success. Otherwise looses data.
 
     # appends data
     def log(self, key, data):

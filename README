@@ -2,12 +2,21 @@ ML\_Logger, A Beautiful Remote Logging Utility for Any Python ML Project
 ========================================================================
 
 When running AWS experiments in batch, sometimes it is much easier if
-all of the logging are done towards a dedicated logging server.
-ML\_Logger does exactly that.
+all of the logging are done towards a dedicated logging server. This way
+it is easy to mount the drive via fstp or smba, and manage the data
+(deletion, move and copying) more efficiently.
 
-ML\_Logger can log to both local directory and a remote logging server
-with zero configuration. ML\_Logger supports simple scalar, numpy
-tensors, images, and many other mem types.
+ML\_Logger does exactly this.
+
+ML\_Logger has a local client and a http logging server. It runs both
+locally (without explicitly setting up a server) as well as to a remote
+log server using its http end-point. ML\_Logger supports simple scalar,
+numpy tensors, images, and many other mem types.
+
+Compared with sftp and smba
+---------------------------
+
+Use this so that you don't have to setup sftp and smba :)
 
 Usage
 -----
@@ -29,7 +38,6 @@ In your project files, do:
 .. code-block:: python
 
     from ml_logger import ML_Logger
-
     logger = ML_Logger(log_directory="/tmp/logs/ml_logger_test/")
 
     logger.log(index=3, note='this is a log entry!')
@@ -46,18 +54,11 @@ In your project files, do:
     for i in range(10):
         logger.log_image(i, animation=[face] * 5)
 
-.. figure:: https://github.com/episodeyang/ml_logger/blob/master/figures/logging_images.png?raw=true
-   :alt: logging images using ml\_logger
-
-   logging images using ml\_logger
-
-    I'm planning on writing a better ML dashboard in the future.
-
-This version of logger is integrated with ``tensorboard`` and at the
-same time prints the data in a tabular format to your ``stdout``. - can
-silence ``stdout`` per key (per ``logger.log`` call) - can print with
-color: ``logger.log(timestep, some_key=green(some_data))`` - can print
-with custom formatting:
+This version of logger also prints out a tabular printout of the data
+you are logging to your ``stdout``. - can silence ``stdout`` per key
+(per ``logger.log`` call) - can print with color:
+``logger.log(timestep, some_key=green(some_data))`` - can print with
+custom formatting:
 ``logger.log(timestep, some_key=green(some_data, percent))`` where
 ``percent`` - uses the correct ``unix`` table characters (please stop
 using ``|`` and ``+``. **Use ``│``, ``┼`` instead**)
@@ -78,13 +79,6 @@ outputs the following
    :alt: example\_real\_log\_output
 
    example\_real\_log\_output
-
-And the data from multiple experiments can be views with tensorboard.
-
-.. figure:: https://github.com/episodeyang/ml_logger/blob/master/figures/tensorboard_example.png?raw=true
-   :alt: tensorboard\_example
-
-   tensorboard\_example
 
 .. code-block:: text
 
@@ -174,11 +168,6 @@ colored output: (where the values are yellow)
     ├────────────────────┼────────────────────┤
     │        some        │       85.0%        │
     ╘════════════════════╧════════════════════╛
-
-.. figure:: https://github.com/episodeyang/ml_logger/blob/master/figures/logger_color_output.png?raw=true
-   :alt: logger-colored-output
-
-   logger-colored-output
 
 TODO:
 -----

@@ -6,7 +6,6 @@ try:
     rmtree(TEST_LOG_DIR)
 except FileNotFoundError as e:
     print(e)
-    
 
 logger = ML_Logger(TEST_LOG_DIR)
 
@@ -47,6 +46,24 @@ def test_image():
     #     logger.log_image(i, animation=[image_rgba] * 5)
 
 
+def test_pyplot():
+    import os, scipy.misc
+    import matplotlib
+    matplotlib.use('TKAgg')
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    face = scipy.misc.face()
+    logger.log_image(0, test_image=face)
+
+    fig = plt.figure(figsize=(4, 2))
+    xs = np.linspace(0, 5, 1000)
+    plt.plot(xs, np.cos(xs))
+    logger.log_pyplot(0, fig)
+    plt.close()
+
+
 if __name__ == "__main__":
     test()
     test_image()
+    test_pyplot()
