@@ -41,5 +41,5 @@ class LogClient:
 
     # sends out images
     def send_image(self, key, data):
-        assert data.dtype in ALLOWED_TYPES, f"image data must be one of {ALLOWED_TYPES}"
+        assert data.dtype in ALLOWED_TYPES, "image data must be one of {}".format(ALLOWED_TYPES)
         self._send(key, data, dtype="image")

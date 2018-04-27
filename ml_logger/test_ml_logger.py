@@ -9,7 +9,7 @@ except FileNotFoundError as e:
 
 logger = ML_Logger(TEST_LOG_DIR)
 
-print(f"logging to {TEST_LOG_DIR}")
+print("logging to {}".format(TEST_LOG_DIR))
 
 
 def test():
@@ -19,7 +19,7 @@ def test():
 
     logger.log_params(G=dict(some_config="hey"))
     logger.log(0, some=Color(0.1, 'yellow'))
-    logger.log(1, some=Color(0.28571, 'yellow', lambda v: f"{v * 100:.5f}%"))
+    logger.log(1, some=Color(0.28571, 'yellow', lambda v: "{:.5f}%".format(v * 100)))
     logger.log(2, some=Color(0.85, 'yellow', percent))
     logger.log(3, {"some_var/smooth": 10}, some=Color(0.85, 'yellow', percent))
     logger.log(4, some=Color(10, 'yellow'))

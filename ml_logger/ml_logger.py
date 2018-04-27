@@ -63,15 +63,15 @@ class Color:
 
 
 def percent(v):
-    return f'{round(v * 100):.1f}%'
+    return '{:.1f}%'.format(round(v * 100))
 
 
 def ms(v):
-    return f'{v*1000:.1f}ms'
+    return '{:.1f}ms'.format(v * 1000)
 
 
 def sec(v):
-    return f'{v:.3f}s'
+    return '{:.3f}s'.format(v)
 
 
 def default(value, *args, **kwargs):
@@ -138,16 +138,16 @@ class ML_Logger:
         table = []
         for n, (title, section_data) in enumerate(kwargs.items()):
             table.append((title, ""))
-            print('═' * (key_width + 1) + f"{'═' if n == 0 else '╧'}" + '═' * (value_width + 1))
-            print(c(f'{title:^{key_width}}', 'yellow'))
+            print('═' * (key_width + 1) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
+            print(c('{:^{}}'.format(title, key_width), 'yellow'))
             print('─' * (key_width + 1) + "┬" + '─' * (value_width + 1))
             for key, value in section_data.items():
                 value_string = str(value)
                 table.append((key, value_string))
-                print(c(f'{key:^{key_width}}', 'white'), "│", f'{value_string:<{value_width}}')
+                print(c('{:^{}}'.format(key, key_width), 'white'), "│", '{:<{}}'.format(value_string, value_width))
 
         if "n" in locals():
-            print('═' * (key_width + 1) + f"{'═' if n == 0 else '╧'}" + '═' * (value_width + 1))
+            print('═' * (key_width + 1) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
 
         # todo: add logging hook
         # todo: add yml support
@@ -209,7 +209,7 @@ class ML_Logger:
                 if k not in self.do_not_print_list:
                     k = k.replace('_', " ")
                     v = "None" if v is None else v  # for NoneTypes which doesn't have __format__ method
-                    output += f"│{k:^{max_key_len}}│{v:^{max_value_len}}│\n"
+                    output += "│{:^{}}│{:^{}}│\n".format(k, max_key_len, v, max_value_len)
             output += "╘" + "═" * max_key_len + "╧" + "═" * max_value_len + "╛\n"
             print(output, end="")
 
@@ -230,7 +230,8 @@ class ML_Logger:
 
         # todo: save image hook here
         for key, image in kwargs.items():
-            self.logger.send_image(key=os.path.join(self.prefix or "", namespace, key, f"{step:04d}.png"), data=image)
+            self.logger.send_image(key=os.path.join(self.prefix or "", namespace, key, "{:04d}.png".format(step)),
+                                   data=image)
 
     def log_pyplot(self, step, fig, namespace="figures", key=None):
         if self.step != step and self.step is not None:
@@ -238,7 +239,8 @@ class ML_Logger:
         self.step = step
         self.timestamp = np.datetime64(datetime.now())
         image = self.plt2data(fig)
-        self.logger.send_image(key=os.path.join(self.prefix or "", namespace, key or f"{step:04d}.png"), data=image)
+        self.logger.send_image(key=os.path.join(self.prefix or "", namespace, key or "{:04d}.png".format(step)),
+                               data=image)
 
     @staticmethod
     def plt2data(fig):

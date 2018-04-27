@@ -15,7 +15,7 @@ class LoggingServer:
         assert os.path.isabs(data_dir)
         self.data_dir = data_dir
         os.makedirs(data_dir, exist_ok=True)
-        print(f'logging data to {data_dir}')
+        print('logging data to {}'.format(data_dir))
 
     configure = __init__
 
@@ -26,8 +26,8 @@ class LoggingServer:
         self.app.run(port=port, debug=Params.debug)
 
     def log_handler(self, req):
-        log_entry = LogEntry(**entry)
-        print(f"writing: {log_entry.key} type: {log_entry.type}")
+        log_entry = LogEntry(**req.json)
+        print("writing: {} type: {}".format(log_entry.key, log_entry.type))
         data = deserialize(log_entry.data)
         self.log(log_entry.key, data, log_entry.type)
         return req.Response(text='ok')
@@ -53,7 +53,7 @@ class LoggingServer:
             if "." not in key:
                 abs_path = abs_path + ".png"
             from PIL import Image
-            assert data.dtype in ALLOWED_TYPES, f"image datatype must be one of {ALLOWED_TYPES}"
+            assert data.dtype in ALLOWED_TYPES, "image datatype must be one of {}".format(ALLOWED_TYPES)
             if len(data.shape) == 3 and data.shape[-1] == 1:
                 data.resize(data.shape[:-1])
             im = Image.fromarray(data)
@@ -76,7 +76,8 @@ class Params:
 
 if __name__ == '__main__':
     import pkg_resources
+
     v = pkg_resources.get_distribution("ml_logger").version
-    print(f'running ml_logger.server version {v}')
+    print('running ml_logger.server version {}'.format(v))
     server = LoggingServer(data_dir=Params.data_dir)
     server.serve(port=Params.port)
