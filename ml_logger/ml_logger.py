@@ -63,7 +63,7 @@ class Color:
 
 
 def percent(v):
-    return '{:.1f}%'.format(round(v * 100))
+    return '{:.02%}'.format(round(v * 100))
 
 
 def ms(v):
