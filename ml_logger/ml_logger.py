@@ -108,6 +108,15 @@ class ML_Logger:
 
     # noinspection PyInitNewSignature
     def __init__(self, log_directory: str = None, prefix=""):
+        """
+        :param log_directory: Overloaded to use either
+            - file://some_abs_dir
+            - http://19.2.34.3:8081
+            - /tmp/some_dir
+        :param prefix: The directory relative to those above
+            - prefix: causal_infogan => /tmp/some_dir/causal_infogan
+            - prefix: "" => /tmp/some_dir
+        """
         # self.summary_writer = tf.summary.FileWriter(log_directory)
         self.step = None
         self.timestamp = None
@@ -138,16 +147,17 @@ class ML_Logger:
         table = []
         for n, (title, section_data) in enumerate(kwargs.items()):
             table.append((title, ""))
-            print('═' * (key_width + 1) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
-            print(c('{:^{}}'.format(title, key_width), 'yellow'))
-            print('─' * (key_width + 1) + "┬" + '─' * (value_width + 1))
+            self.print('═' * (key_width + 1) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
+            self.print(c('{:^{}}'.format(title, key_width), 'yellow'))
+            self.print('─' * (key_width + 1) + "┬" + '─' * (value_width + 1))
             for key, value in section_data.items():
                 value_string = str(value)
                 table.append((key, value_string))
-                print(c('{:^{}}'.format(key, key_width), 'white'), "│", '{:<{}}'.format(value_string, value_width))
+                self.print(c('{:^{}}'.format(key, key_width), 'white'), "│",
+                           '{:<{}}'.format(value_string, value_width))
 
         if "n" in locals():
-            print('═' * (key_width + 1) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
+            self.print('═' * (key_width + 1) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
 
         # todo: add logging hook
         # todo: add yml support
@@ -211,7 +221,7 @@ class ML_Logger:
                     v = "None" if v is None else v  # for NoneTypes which doesn't have __format__ method
                     output += "│{:^{}}│{:^{}}│\n".format(k, max_key_len, v, max_value_len)
             output += "╘" + "═" * max_key_len + "╧" + "═" * max_value_len + "╛\n"
-            print(output, end="")
+            self.print(output, end="")
 
         self.logger.log(key=os.path.join(self.prefix or "", "data.pkl"),
                         data=dict(_step=self.step, _timestamp=str(self.timestamp), **self.data))
@@ -264,8 +274,16 @@ class ML_Logger:
     def log_json(self):
         raise NotImplementedError
 
-    def log_text(self, text, filename="print.txt"):
-        print(text)
+    def print(self, *args, sep=' ', end='\n', silent=False, **kwargs):
+        text = sep.join(args) + end
+        if not silent:
+            print(*args, sep=sep, end=end)
+        self.log_text(text, silent=True)
+
+    def log_text(self, text, filename="print.txt", silent=False):
+        # todo: consider adding step to this
+        if not silent:
+            print(text)
         self.logger.log_text(key=os.path.join(self.prefix or "", filename), text=text)
 
 
