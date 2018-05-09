@@ -153,7 +153,7 @@ class ML_Logger:
             for key, value in section_data.items():
                 value_string = str(value)
                 table.append((key, value_string))
-                self.print(c('{:^{}}'.format(key, key_width), 'white'), "│",
+                self.print('{:^{}}'.format(key, key_width), "│",
                            '{:<{}}'.format(value_string, value_width))
 
         if "n" in locals():
@@ -280,7 +280,7 @@ class ML_Logger:
             print(*args, sep=sep, end=end)
         self.log_text(text, silent=True)
 
-    def log_text(self, text, filename="print.txt", silent=False):
+    def log_text(self, text, filename="text.log", silent=False):
         # todo: consider adding step to this
         if not silent:
             print(text)
