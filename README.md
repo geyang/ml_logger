@@ -16,6 +16,9 @@ numpy tensors, images, and many other mem types.
 
 Use this so that you don't have to setup sftp and smba :)
 
+## Todos
+- [ ] improve the API design, allow both logging of raw files without step index and logging for each iteration.
+
 ## Usage
 
 To **install** `ml_logger`, do:
