@@ -47,11 +47,11 @@ class LoggingServer:
             if "." not in key:
                 abs_path = abs_path + ".md"
             try:
-                with open(abs_path, "a") as f:
+                with open(abs_path, "a+") as f:
                     f.write(data)
             except FileNotFoundError:
                 os.makedirs(os.path.dirname(abs_path))
-                with open(abs_path, "a") as f:
+                with open(abs_path, "a+") as f:
                     f.write(data)
         elif dtype.startswith("image"):
             abs_path = os.path.join(self.data_dir, key)
