@@ -161,7 +161,7 @@ class ML_Logger:
 
         # todo: add logging hook
         # todo: add yml support
-        self.log_data(key="parameters.pkl", data=kwargs)
+        self.log_data(path="parameters.pkl", data=kwargs)
 
     def log_data(self, path="data.pkl", data=None):
         self.logger.log(key=os.path.join(self.prefix or "", path), data=data)
