@@ -161,7 +161,10 @@ class ML_Logger:
 
         # todo: add logging hook
         # todo: add yml support
-        self.logger.log(key=os.path.join(self.prefix or "", "parameters.pkl"), data=kwargs)
+        self.log_data(key="parameters.pkl", data=kwargs)
+
+    def log_data(self, path="data.pkl", data=None):
+        self.logger.log(key=os.path.join(self.prefix or "", path), data=data)
 
     def log_keyvalue(self, step: Union[int, Color], key: str, value: Any, silent=False) -> None:
         if self.step != step and self.step is not None:

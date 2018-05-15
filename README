@@ -18,6 +18,12 @@ Compared with sftp and smba
 
 Use this so that you don't have to setup sftp and smba :)
 
+Todos
+-----
+
+-  [ ] improve the API design, allow both logging of raw files without
+   step index and logging for each iteration.
+
 Usage
 -----
 
