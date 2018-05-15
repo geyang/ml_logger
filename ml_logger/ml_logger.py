@@ -277,8 +277,8 @@ class ML_Logger:
     def log_json(self):
         raise NotImplementedError
 
-    def print(self, *args, sep=' ', end='\n', silent=False, **kwargs):
-        text = sep.join(args) + end
+    def print(self, *args, sep=' ', end='\n', silent=False):
+        text = sep.join([str(a) for a in args]) + end
         if not silent:
             print(*args, sep=sep, end=end)
         self.log_text(text, silent=True)
