@@ -255,6 +255,24 @@ class ML_Logger:
         self.logger.send_image(key=os.path.join(self.prefix or "", namespace, key or "{:04d}.png".format(step)),
                                data=image)
 
+    def log_module(self, step, namespace="modules", fstr=None, **kwargs):
+        """
+        log torch module
+
+        :param step:
+        :param namespace:
+        :param fstr: "{step}_{k}.pkl", or "{}_{}.pkl" etc.
+        :param kwargs:
+        :return:
+        """
+        for k, m in kwargs:
+            ps = {k: v.cpu().numpy() for k, v in m.state_dict().items()},
+            if fstr:
+                path = os.path.join(namespace, fstr).format(step, k, step=step, k=k)
+            else:
+                path = os.path.join(namespace, f'{step:04d}_{k}.pkl')
+            self.log_data(path=path, data=ps)
+
     @staticmethod
     def plt2data(fig):
         """
