@@ -265,7 +265,7 @@ class ML_Logger:
         :param kwargs:
         :return:
         """
-        for k, m in kwargs:
+        for k, m in kwargs.items():
             ps = {k: v.cpu().numpy() for k, v in m.state_dict().items()},
             if fstr:
                 path = os.path.join(namespace, fstr).format(step, k, step=step, k=k)
