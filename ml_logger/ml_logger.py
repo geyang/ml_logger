@@ -107,7 +107,7 @@ class ML_Logger:
     log_directory = None
 
     # noinspection PyInitNewSignature
-    def __init__(self, log_directory: str = None, prefix=""):
+    def __init__(self, log_directory: str = None, prefix="", buffer_size=2048, max_workers=5):
         """
         :param log_directory: Overloaded to use either
             - file://some_abs_dir
@@ -121,13 +121,15 @@ class ML_Logger:
         self.step = None
         self.timestamp = None
         self.data = OrderedDict()
+        self.flush()
+        self.print_buffer_size = buffer_size
         self.do_not_print_list = set()
         assert not os.path.isabs(prefix), "prefix can not start with `/`"
         self.prefix = prefix
 
         # todo: add https support
         if log_directory:
-            self.logger = LogClient(url=log_directory)
+            self.logger = LogClient(url=log_directory, max_workers=max_workers)
             self.log_directory = log_directory
 
     configure = __init__
@@ -178,7 +180,7 @@ class ML_Logger:
         # todo: add logging hook
         self.data[key] = value.value if type(value) is Color else value
 
-    def log(self, step: Union[int, Color], *dicts, silent=False, **kwargs) -> None:
+    def log(self, step: Union[int, Color], *dicts, silent=False, flush=False, **kwargs) -> None:
         """
         :param step: the global step, be it the global timesteps or the epoch step
         :param dicts: a dictionary of key/value pairs, allowing more flexible key name with '/' etc.
@@ -202,6 +204,9 @@ class ML_Logger:
         # todo: add logging hook
         for key, v in data_dict.items():
             self.data[key] = v.value if type(v) is Color else v
+
+        if flush:  # force flush, to reuse key for each epoch.
+            self.flush()
 
     def flush(self, min_key_width=20, min_value_width=20):
         if not self.data:
@@ -230,6 +235,7 @@ class ML_Logger:
                         data=dict(_step=self.step, _timestamp=str(self.timestamp), **self.data))
         self.data.clear()
         self.do_not_print_list.clear()
+        self.print_flush()
 
     def log_image(self, step, namespace="images", **kwargs):
         """Logs an image via the summary writer.
@@ -297,9 +303,22 @@ class ML_Logger:
 
     def print(self, *args, sep=' ', end='\n', silent=False):
         text = sep.join([str(a) for a in args]) + end
+        try:
+            self.print_buffer += text
+        except:
+            self.print_buffer = text
         if not silent:
             print(*args, sep=sep, end=end)
-        self.log_text(text, silent=True)
+        if len(self.print_buffer) > self.print_buffer_size:
+            self.print_flush()
+
+    def print_flush(self):
+        try:
+            buffer = self.print_buffer
+        except:
+            buffer = self.print_buffer = ""
+        if buffer:
+            self.log_text(self.print_buffer, silent=True)
 
     def log_text(self, text, filename="text.log", silent=False):
         # todo: consider adding step to this
