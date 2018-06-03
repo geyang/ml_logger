@@ -314,11 +314,12 @@ class ML_Logger:
 
     def print_flush(self):
         try:
-            buffer = self.print_buffer
+            text = self.print_buffer
         except:
-            buffer = self.print_buffer = ""
-        if buffer:
-            self.log_text(self.print_buffer, silent=True)
+            text = ""
+        self.print_buffer = ""
+        if text:
+            self.log_text(text, silent=True)
 
     def log_text(self, text, filename="text.log", silent=False):
         # todo: consider adding step to this
