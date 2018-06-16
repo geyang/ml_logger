@@ -237,10 +237,14 @@ class ML_Logger:
         self.do_not_print_list.clear()
         self.print_flush()
 
-    def log_image(self, step, namespace="images", **kwargs):
-        """Logs an image via the summary writer.
+    def log_image(self, step, namespace="images", fstring="{:04d}.png", **kwargs):
+        """
+        Logs an image via the summary writer.
         TODO: add support for PIL images etc.
         reference: https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
+
+        value: numpy object Size(w, h, 3)
+
         """
         if self.step != step and self.step is not None:
             self.flush()
@@ -249,7 +253,7 @@ class ML_Logger:
 
         # todo: save image hook here
         for key, image in kwargs.items():
-            self.logger.send_image(key=os.path.join(self.prefix or "", namespace, key, "{:04d}.png".format(step)),
+            self.logger.send_image(key=os.path.join(self.prefix or "", namespace, key, fstring.format(step)),
                                    data=image)
 
     def log_pyplot(self, step, fig, namespace="figures", key=None):
