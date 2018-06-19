@@ -29,11 +29,23 @@ class LoggingServer:
         log_entry = LogEntry(**req.json)
         print("writing: {} type: {}".format(log_entry.key, log_entry.type))
         data = deserialize(log_entry.data)
-        self.log(log_entry.key, data, log_entry.type)
-        return req.Response(text='ok')
+        res = self.log(log_entry.key, data, log_entry.type)
+        if res is None:
+            return req.Response(text='ok')
+        elif res is False:
+            return req.Response(text='error')
+        else:
+            return req.Response(data=res)
 
     def log(self, key, data, dtype):
-        if dtype == "log":
+        if dtype == 'read':
+            abs_path = os.path.join(self.data_dir, key)
+            try:
+                with open(abs_path, 'rb') as f:
+                    return f.decode('utf-8')
+            except FileNotFoundError:
+                return None
+        elif dtype == "log":
             abs_path = os.path.join(self.data_dir, key)
             try:
                 with open(abs_path, 'ab') as f:

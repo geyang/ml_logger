@@ -237,6 +237,17 @@ class ML_Logger:
         self.do_not_print_list.clear()
         self.print_flush()
 
+    def log_file(self, python_filename, namespace='files', silent=True):
+        from pathlib import Path
+        content = Path(python_filename).read_text()
+        self.log_text(content, filename=os.path.join(namespace, python_filename), silent=silent)
+
+    def log_images(self, key, stack, ncol=5, nrows=2, namespace="image", fstring="{:04d}.png"):
+        """note: might makesense to push the operation to the server instead.
+        logs a stack of images from a tensor object. Could also be part of the server code.
+        """
+        pass
+
     def log_image(self, step, namespace="images", fstring="{:04d}.png", **kwargs):
         """
         Logs an image via the summary writer.
@@ -276,12 +287,20 @@ class ML_Logger:
         :return:
         """
         for k, m in kwargs.items():
+            # todo: this is torch-specific code. figure out a better way.
             ps = {k: v.cpu().detach().numpy() for k, v in m.state_dict().items()},
             if fstr:
                 path = os.path.join(namespace, fstr).format(step, k, step=step, k=k)
             else:
                 path = os.path.join(namespace, f'{step:04d}_{k}.pkl')
             self.log_data(path=path, data=ps)
+
+    def load_file(self, key):
+        """ return the binary stream, most versatile.
+        :param key:
+        :return:
+        """
+        return self.logger.get_file(os.path.join(self.prefix, key))
 
     @staticmethod
     def plt2data(fig):
