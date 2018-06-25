@@ -142,6 +142,9 @@ class ML_Logger:
         # todo: wait for logger to finish upload in async mode.
         self.flush()
 
+    # def load_params(self, keys='*'):
+    #     self.
+
     def log_params(self, **kwargs):
         key_width = 30
         value_width = 20
@@ -237,10 +240,11 @@ class ML_Logger:
         self.do_not_print_list.clear()
         self.print_flush()
 
-    def log_file(self, python_filename, namespace='files', silent=True):
+    def log_file(self, file_path, namespace='files', silent=True):
         from pathlib import Path
-        content = Path(python_filename).read_text()
-        self.log_text(content, filename=os.path.join(namespace, python_filename), silent=silent)
+        content = Path(file_path).read_text()
+        basename = os.path.basename(file_path)
+        self.log_text(content, filename=os.path.join(namespace, basename), silent=silent)
 
     def log_images(self, key, stack, ncol=5, nrows=2, namespace="image", fstring="{:04d}.png"):
         """note: might makesense to push the operation to the server instead.
@@ -300,7 +304,21 @@ class ML_Logger:
         :param key:
         :return:
         """
-        return self.logger.get_file(os.path.join(self.prefix, key))
+        return self.logger.read(os.path.join(self.prefix, key))
+
+    def load_pkl(self, key):
+        """ load a pkl file (as a tuple)
+        :param key:
+        :return:
+        """
+        return self.logger.read_pkl(os.path.join(self.prefix, key))
+
+    def load_np(self, key):
+        """ load a np file
+        :param key:
+        :return:
+        """
+        return self.logger.read_np(os.path.join(self.prefix, key))
 
     @staticmethod
     def plt2data(fig):

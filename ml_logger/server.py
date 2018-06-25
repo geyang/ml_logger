@@ -3,10 +3,11 @@ import pickle
 from collections import namedtuple
 from params_proto import cli_parse, Proto, BoolFlag
 
-from ml_logger.serdes import deserialize
+from ml_logger.serdes import deserialize, serialize
 import numpy as np
 
 LogEntry = namedtuple("LogEntry", ['key', 'data', 'type'])
+LoadEntry = namedtuple("LogEntry", ['key', 'type'])
 ALLOWED_TYPES = (np.uint8,)  # ONLY uint8 is supported.
 
 
@@ -23,29 +24,58 @@ class LoggingServer:
         from japronto import Application
         self.app = Application()
         self.app.router.add_route('/', self.log_handler, method='POST')
+        self.app.router.add_route('/', self.log_handler, method='GET')
+        # todo: need a file serving url
         self.app.run(port=port, debug=Params.debug)
+
+    def read_handler(self, req):
+        load_entry = LoadEntry(**req.json)
+        print("loading: {} type: {}".format(load_entry.key, load_entry.type))
+        res = self.load(load_entry.key, load_entry.type)
+        data = serialize(res)
+        return req.Response(data=data)
 
     def log_handler(self, req):
         log_entry = LogEntry(**req.json)
         print("writing: {} type: {}".format(log_entry.key, log_entry.type))
         data = deserialize(log_entry.data)
-        res = self.log(log_entry.key, data, log_entry.type)
-        if res is None:
-            return req.Response(text='ok')
-        elif res is False:
-            return req.Response(text='error')
-        else:
-            return req.Response(data=res)
+        self.log(log_entry.key, data, log_entry.type)
+        return req.Response(text='ok')
 
-    def log(self, key, data, dtype):
+    def load(self, key, dtype):
         if dtype == 'read':
             abs_path = os.path.join(self.data_dir, key)
             try:
                 with open(abs_path, 'rb') as f:
                     return f.decode('utf-8')
-            except FileNotFoundError:
-                return None
-        elif dtype == "log":
+            except FileNotFoundError as e:
+                return e
+        elif dtype == 'read_text':
+            abs_path = os.path.join(self.data_dir, key)
+            try:
+                with open(abs_path, 'r') as f:
+                    return f.decode('utf-8')
+            except FileNotFoundError as e:
+                return e
+        elif dtype == 'read_pkl':
+            abs_path = os.path.join(self.data_dir, key)
+            try:
+                with open(abs_path, 'rb') as f:
+                    return pickle.load(f)
+            except FileNotFoundError as e:
+                return e
+        elif dtype == 'read_np':
+            abs_path = os.path.join(self.data_dir, key)
+            try:
+                with open(abs_path, 'rb') as f:
+                    return np.load(f)
+            except FileNotFoundError as e:
+                return e
+        elif dtype == 'read_image':
+            raise NotImplemented('reading images is not implemented.')
+
+    def log(self, key, data, dtype):
+        if dtype == "log":
             abs_path = os.path.join(self.data_dir, key)
             try:
                 with open(abs_path, 'ab') as f:

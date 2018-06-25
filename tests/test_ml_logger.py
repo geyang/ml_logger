@@ -1,13 +1,14 @@
-from ml_logger import ML_Logger, Color, percent
+from ml_logger import logger, Color, percent
 from shutil import rmtree
 
+# clean up previous tasks
 TEST_LOG_DIR = '/tmp/ml_logger/test'
 try:
     rmtree(TEST_LOG_DIR)
 except FileNotFoundError as e:
     print(e)
 
-logger = ML_Logger(TEST_LOG_DIR)
+logger.configure(TEST_LOG_DIR, prefix='main')
 
 print("logging to {}".format(TEST_LOG_DIR))
 
@@ -63,7 +64,46 @@ def test_pyplot():
     plt.close()
 
 
+class FakeTensor:
+    def cpu(self):
+        return self
+
+    def detach(self):
+        return self
+
+    def numpy(self):
+        import numpy as np
+        return np.ones([100, 2])
+
+
+class FakeModule:
+    @staticmethod
+    def state_dict():
+        return dict(var_1=FakeTensor())
+
+
+def test_module():
+    logger.log_module(0, Test=FakeModule)
+
+
+def test_load_module():
+    result, = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
+    import numpy as np
+    assert (result['var_1'] == np.ones([100, 2])).all(), "should be the same as test data"
+
+
+def test_load_params():
+    pass
+
+
 if __name__ == "__main__":
     test()
     test_image()
     test_pyplot()
+    test_module()
+    test_load_module()
+    test_load_params()
+    # todo: logger.log_module(6, rgba_face=image_rgba)
+    # todo: logger.log_pyplot(6, rgba_face=image_rgba)
+    # todo: logger.log_params(6, rgba_face=image_rgba)
+    # todo: logger.log_file(6, rgba_face=image_rgba)
