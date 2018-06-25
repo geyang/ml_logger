@@ -1,4 +1,5 @@
 import os
+# todo: switch to dill instead
 import pickle
 from collections import namedtuple
 from params_proto import cli_parse, Proto, BoolFlag
@@ -24,7 +25,7 @@ class LoggingServer:
         from japronto import Application
         self.app = Application()
         self.app.router.add_route('/', self.log_handler, method='POST')
-        self.app.router.add_route('/', self.log_handler, method='GET')
+        self.app.router.add_route('/', self.read_handler, method='GET')
         # todo: need a file serving url
         self.app.run(port=port, debug=Params.debug)
 
@@ -33,7 +34,7 @@ class LoggingServer:
         print("loading: {} type: {}".format(load_entry.key, load_entry.type))
         res = self.load(load_entry.key, load_entry.type)
         data = serialize(res)
-        return req.Response(data=data)
+        return req.Response(text=data)
 
     def log_handler(self, req):
         log_entry = LogEntry(**req.json)

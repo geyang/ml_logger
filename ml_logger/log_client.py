@@ -33,9 +33,10 @@ class LogClient:
         else:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
             json = LoadEntry(key, dtype)._asdict()
-            req = self.session.get(self.url, json=json)
-            # note: reading stuff from the server is always synchronous.
-            result = deserialize(req.result())
+
+            # note: reading stuff from the server is always synchronous via the result call.
+            res = self.session.get(self.url, json=json).result()
+            result = deserialize(res.text)
             return result
 
     def _post(self, key, data, dtype):
