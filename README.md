@@ -29,8 +29,8 @@ http requests in a separate thread. We optimized the client so that it won't
 slow down your training code.
 
 API wise, ML-logger makes it easy for you to log textual printouts, simple 
-scalars, numpy tensors, image tensors, and pyplot figures. Because you might
-also read data from the instrumentation server, we also made it possible to 
+scalars, numpy tensors, image tensors, and `pyplot` figures. Because you might
+also want to read data from the instrumentation server, we also made it possible to 
 load numpy, pickle, text and binary files remotely.
 
 In the future, we will start building an integrated dashboard with fast search, 
