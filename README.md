@@ -7,7 +7,7 @@ one quickly realizes downloading data from s3 can be slow. s3 does not offer
 diffsync like gcloud-cli's `g rsync`. This makes it hard to sync a large
 collection data that is constantly appended to.
 
-<img alt="example_real_log_output src="./figures/example_log_output.png" align="right"></img>
+<img alt="example_real_log_output" src="figures/example_log_output.png" align="right"></img>
 
 So far the best way we have found for organizing experimental data is to 
 have a centralized instrumentation server. Compared with managing your data 
