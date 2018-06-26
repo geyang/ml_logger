@@ -24,8 +24,8 @@ ML-Logger is the logging utility that allows you to do this. To make ML_logger
 easy to use, we made it so that you can use ml-logger with zero configuration,
 logging to your local hard-drive by default. When the logging directory field 
 `logger.configure(log_directory= <your directory>)` is an http end point, 
-the logger will instantiate a fast, future based logging server that launches 
-http requests in a different thread. We optimized the client so that it won't 
+the logger will instantiate a fast, future based logging client that launches 
+http requests in a separate thread. We optimized the client so that it won't 
 slow down your training code.
 
 API wise, ML-logger makes it easy for you to log textual printouts, simple 
