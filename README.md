@@ -1,4 +1,4 @@
-# ML_Logger, A Beautiful Remote Logging Utility for Any Python ML Project
+# ML-Logger, A Beautiful Remote Logging Utility for Any Python ML Project
 
 A common pain that comes after getting to launch ML training jobs on AWS
 is a lack of a good way to manage and visualize your data. So far, a common
@@ -7,6 +7,7 @@ one quickly realizes downloading data from s3 can be slow. s3 does not offer
 diffsync like gcloud-cli's `g rsync`. This makes it hard to sync a large
 collection data that is constantly appended to.
 
+#### An Example Log from ML-Logger
 <img alt="example_real_log_output" src="figures/example_log_output.png" align="right"></img>
 
 So far the best way we have found for organizing experimental data is to 
@@ -17,7 +18,7 @@ hosting visualization dashboards on the same machine. To download data
 locally, you can use `sshfs`, `smba`, `rsync` or a variety of remote disks. All
 faster than s3.
 
-ML_Logger is the logging utility that allows you to do this. To make ML_logger
+ML-Logger is the logging utility that allows you to do this. To make ML_logger
 easy to use, we made it so that you can use ml-logger with zero configuration,
 logging to your local hard-drive by default. When the logging directory field 
 `logger.configure(log_directory= <your directory>)` is an http end point, 
