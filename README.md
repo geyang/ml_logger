@@ -2,13 +2,14 @@
 
 A common pain that comes after getting to launch ML training jobs on AWS
 is a lack of a good way to manage and visualize your data. So far, a common
-practice is to upload your experiment data to s3 or gcloud buckets. However, 
-one quickly realizes downloading data from s3 can be slow. s3 does not offer 
-diffsync like gcloud-cli's `g rsync`. This makes it hard to sync a large
-collection data that is constantly appended to.
+practice is to upload your experiment data to aws s3 or google cloud buckets. 
+Then one quickly realizes that downloading data from s3 can be slow. s3 does 
+not offer diffsync like gcloud-cli's `g rsync`. This makes it hard to sync a 
+large collection of data that is constantly appended to.
 
 #### An Example Log from ML-Logger
 <img alt="example_real_log_output" src="figures/example_log_output.png" align="right"></img>
+<br>
 
 So far the best way we have found for organizing experimental data is to 
 have a centralized instrumentation server. Compared with managing your data 
