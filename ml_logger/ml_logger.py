@@ -145,7 +145,7 @@ class ML_Logger:
     # def load_params(self, keys='*'):
     #     self.
 
-    def log_params(self, **kwargs):
+    def log_params(self, path="parameters.pkl", **kwargs):
         key_width = 30
         value_width = 20
 
@@ -166,7 +166,7 @@ class ML_Logger:
 
         # todo: add logging hook
         # todo: add yml support
-        self.log_data(path="parameters.pkl", data=kwargs)
+        self.log_data(path=path, data=kwargs)
 
     def log_data(self, path="data.pkl", data=None):
         self.logger.log(key=os.path.join(self.prefix or "", path), data=data)

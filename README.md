@@ -1,23 +1,39 @@
 # ML_Logger, A Beautiful Remote Logging Utility for Any Python ML Project
 
-When running AWS experiments in batch, sometimes it is much easier if
-all of the logging are done towards a dedicated logging server. This way
-it is easy to mount the drive via fstp or smba, and manage the data
-(deletion, move and copying) more efficiently.
+A common pain that comes after getting to launch ML training jobs on AWS
+is a lack of a good way to manage and visualize your data. So far, a common
+practice is to upload your experiment data to s3 or gcloud buckets. However, 
+one quickly realizes downloading data from s3 can be slow. s3 does not offer 
+diffsync like gcloud-cli's `g rsync`. This makes it hard to sync a large
+collection data that is constantly appended to.
 
-ML_Logger does exactly this.
+<img alt="example_real_log_output src="./figures/example_log_output.png" align="right"></img>
 
-ML_Logger has a local client and a http logging server. It runs both
-locally (without explicitly setting up a server) as well as to a remote
-log server using its http end-point. ML_Logger supports simple scalar,
-numpy tensors, images, and many other mem types.
+So far the best way we have found for organizing experimental data is to 
+have a centralized instrumentation server. Compared with managing your data 
+on S3, a centralized instrumentation server makes it much easier to move 
+experiments around, run analysis that is co-located with your data, and 
+hosting visualization dashboards on the same machine. To download data 
+locally, you can use `sshfs`, `smba`, `rsync` or a variety of remote disks. All
+faster than s3.
 
-### Compared with sftp and smba
+ML_Logger is the logging utility that allows you to do this. To make ML_logger
+easy to use, we made it so that you can use ml-logger with zero configuration,
+logging to your local hard-drive by default. When the logging directory field 
+`logger.configure(log_directory= <your directory>)` is an http end point, 
+the logger will instantiate a fast, future based logging server that launches 
+http requests in a different thread. We optimized the client so that it won't 
+slow down your training code.
 
-Use this so that you don't have to setup sftp and smba :)
+API wise, ML-logger makes it easy for you to log textual printouts, simple 
+scalars, numpy tensors, image tensors, and pyplot figures. Because you might
+also read data from the instrumentation server, we also made it possible to 
+load numpy, pickle, text and binary files remotely.
 
-## Todos
-- [ ] improve the API design, allow both logging of raw files without step index and logging for each iteration.
+In the future, we will start building an integrated dashboard with fast search, 
+live figure update and markdown-based reporting/dashboarding to go with ml-logger.
+
+Now give this a try, and profit!
 
 ## Usage
 
@@ -33,22 +49,41 @@ python -m ml_logger.server
 
 In your project files, do:
 ```python
-from ml_logger import ML_Logger
-logger = ML_Logger(log_directory="/tmp/logs/ml_logger_test/")
+from params_proto import cli_parse
+from ml_logger import logger
 
-logger.log(index=3, note='this is a log entry!')
+
+@cli_parse
+class Args:
+    seed = 1
+    D_lr = 5e-4
+    G_lr = 1e-4
+    Q_lr = 1e-4
+    T_lr = 1e-4
+    plot_interval = 10
+    log_dir = "http://54.71.92.65:8081"
+    log_prefix = "./runs"
+
+logger.configure(log_directory="http://some.ip.address.com:2000", prefix="your-experiment-prefix!")
+logger.log_params(Args=vars(Args))
+logger.log_file(__file__)
+
+
+for epoch in range(10):
+    logger.log(step=epoch, D_loss=0.2, G_loss=0.1, mutual_information=0.01)
+    logger.log_keyvalue(epoch, 'some string key', 0.0012)
+    # when the step index updates, logger flushes all of the key-value pairs to file system/logging server
+    
 logger.flush()
 
 # Images
 face = scipy.misc.face()
 face_bw = scipy.misc.face(gray=True)
 logger.log_image(index=4, color_image=face, black_white=face_bw)
-    image_bw = np.zeros((64, 64, 1))
-    image_bw_2 = scipy.misc.face(gray=True)[::4, ::4]
+image_bw = np.zeros((64, 64, 1))
+image_bw_2 = scipy.misc.face(gray=True)[::4, ::4]
     
-# now print a stack
-for i in range(10):
-    logger.log_image(i, animation=[face] * 5)
+logger.log_image(i, animation=[face] * 5)
 ```
 
 This version of logger also prints out a tabular printout of the data you are logging to your `stdout`.
@@ -67,9 +102,6 @@ logger = ML_Logger(log_directory=f"/mnt/bucket/deep_Q_learning/{datetime.now(%Y%
 logger.log_params(G=vars(G), RUN=vars(RUN), Reporting=vars(Reporting))
 ```
 outputs the following
-
-![example_real_log_output](./figures/example_log_output.png)
-
 
 ```log
 ═════════════════════════════════════════════════════
