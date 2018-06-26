@@ -10,6 +10,7 @@ large collection of data that is constantly appended to.
 ---
 #### An Example Log from ML-Logger
 <img alt="example_real_log_output" src="figures/example_log_output.png" align="right"></img>
+
 ---
 
 So far the best way we have found for organizing experimental data is to 
