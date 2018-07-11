@@ -1,0 +1,21 @@
+{
+  "name": "ml-vis-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "layout-components": "^2.7.1",
+    "math.gl": "^2.0.0",
+    "react": "^16.4.1",
+    "react-dom": "^16.4.1",
+    "react-helmet": "^5.2.0",
+    "react-scripts": "1.1.4",
+    "react-vis": "^1.10.1",
+    "yarn": "^1.7.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}

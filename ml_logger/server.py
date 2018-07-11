@@ -1,7 +1,9 @@
 import os
 # todo: switch to dill instead
-import pickle
+import dill
 from collections import namedtuple
+from japronto.router import Router
+
 from params_proto import cli_parse, Proto, BoolFlag
 
 from ml_logger.serdes import deserialize, serialize
@@ -62,7 +64,7 @@ class LoggingServer:
             abs_path = os.path.join(self.data_dir, key)
             try:
                 with open(abs_path, 'rb') as f:
-                    return pickle.load(f)
+                    return dill.load(f)
             except FileNotFoundError as e:
                 return e
         elif dtype == 'read_np':
@@ -80,11 +82,11 @@ class LoggingServer:
             abs_path = os.path.join(self.data_dir, key)
             try:
                 with open(abs_path, 'ab') as f:
-                    pickle.dump(data, f)
+                    dill.dump(data, f)
             except FileNotFoundError:
                 os.makedirs(os.path.dirname(abs_path))
                 with open(abs_path, 'ab') as f:
-                    pickle.dump(data, f)
+                    dill.dump(data, f)
         elif dtype.startswith("text"):
             abs_path = os.path.join(self.data_dir, key)
             if "." not in key:
