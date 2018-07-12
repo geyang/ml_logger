@@ -12,8 +12,6 @@ appended to.
 An Example Log from ML-Logger
 -----------------------------
 
---------------
-
 So far the best way we have found for organizing experimental data is to
 have a centralized instrumentation server. Compared with managing your
 data on S3, a centralized instrumentation server makes it much easier to
