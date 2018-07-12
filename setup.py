@@ -14,7 +14,7 @@ setup(name="ml_logger",
       author="Ge Yang",
       author_email="yangge1987@gmail.com",
       license=None,
-      keywords=["ml_logger", "logging", "debug", "debugging"],
+      keywords=["ml_logger", "vis_server" "logging", "debug", "debugging"],
       classifiers=[
           "Development Status :: 4 - Beta",
           "Intended Audience :: Science/Research",
