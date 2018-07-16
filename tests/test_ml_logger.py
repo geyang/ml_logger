@@ -110,6 +110,5 @@ if __name__ == "__main__":
     test_load_module()
     test_load_params()
     # todo: logger.log_module(6, rgba_face=image_rgba)
-    # todo: logger.log_pyplot(6, rgba_face=image_rgba)
     # todo: logger.log_params(6, rgba_face=image_rgba)
     # todo: logger.log_file(6, rgba_face=image_rgba)
