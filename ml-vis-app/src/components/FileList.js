@@ -13,7 +13,7 @@ export default class FileList extends React.Component {
     render() {
         // const {} = this.state;
         const {files = [], ...props} = this.props;
-        console.log(files);
+        // console.log(files);
         return (
             <Flex fill column {...props}>
                 {files.map(f => <FlexItem fixed key={f.name}>{f.name}</FlexItem>)}

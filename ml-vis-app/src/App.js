@@ -3,21 +3,12 @@ import './App.css';
 import LineChartConfidence from "./components/LineChartConfidence";
 import {Helmet} from 'react-helmet';
 import {Flex, FlexItem} from 'layout-components';
-import SearchBox from "./components/SearchBox"
-import FileList from "./components/FileList"
-import PlotContainer from "./components/PlotContainer"
+import {store$} from "./model";
 
-const eventOutputContainer = document.getElementById("event");
-const evtSrc = new EventSource("http://localhost:8082/file-events");
-
-evtSrc.onmessage = function (e) {
-    console.log(e.data);
-    eventOutputContainer.innerHTML = e.data;
-};
 
 class App extends Component {
     state = {
-        currentDirectory: "http://localhost:8082/files/",
+        currentDirectory: "http://54.71.92.65:8082/files/",
         files: [],
         logFiles: []
     };

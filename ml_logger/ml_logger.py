@@ -1,8 +1,11 @@
+from io import BytesIO
+
 import os
 from datetime import datetime
 
 from typing import Union, Callable, Any
 from collections import OrderedDict, deque
+from itertools import zip_longest
 
 from ml_logger.log_client import LogClient
 from termcolor import colored as c
@@ -142,9 +145,6 @@ class ML_Logger:
         # todo: wait for logger to finish upload in async mode.
         self.flush()
 
-    # def load_params(self, keys='*'):
-    #     self.
-
     def log_params(self, path="parameters.pkl", **kwargs):
         key_width = 30
         value_width = 20
@@ -171,29 +171,41 @@ class ML_Logger:
     def log_data(self, path="data.pkl", data=None):
         self.logger.log(key=os.path.join(self.prefix or "", path), data=data)
 
-    def log_keyvalue(self, step: Union[int, Color], key: str, value: Any, silent=False) -> None:
+    def log_keyvalue(self, key: str, value: Any, step: Union[int, Color] = None, silent=False) -> None:
         if self.step != step and self.step is not None:
             self.flush()
-        self.step = step
+            self.step = step
+
         self.timestamp = np.datetime64(datetime.now())
 
         if silent:
             self.do_not_print_list.update([key])
 
-        # todo: add logging hook
-        self.data[key] = value.value if type(value) is Color else value
+        if step is None and self.step is None and key in self.data:
+            self.flush()
 
-    def log(self, step: Union[int, Color], *dicts, silent=False, flush=False, **kwargs) -> None:
+        if key in self.data:
+            if type(self.data) is list:
+                self.data[key].append(v.value if type(v) is Color else v)
+            else:
+                self.data[key] = [self.data[key], v.value if type(v) is Color else v]
+        else:
+            self.data[key] = v.value if type(v) is Color else v
+
+    def log(self, *dicts, step: Union[int, Color] = None, silent=False, flush=False, **kwargs) -> None:
         """
+        log dictionaries of data, key=value pairs at step == step.
+
         :param step: the global step, be it the global timesteps or the epoch step
-        :param dicts: a dictionary of key/value pairs, allowing more flexible key name with '/' etc.
+        :param dicts: a dictionary or a list of dictionaries of key/value pairs, allowing more flexible key name with '/' etc.
         :param silent: Bool, log but do not print. To keep the standard out silent.
         :param kwargs: key/value arguments.
         :return:
         """
         if self.step != step and self.step is not None:
             self.flush()
-        self.step = step
+            self.step = step
+
         self.timestamp = np.datetime64(datetime.now())
 
         data_dict = {}
@@ -206,35 +218,60 @@ class ML_Logger:
 
         # todo: add logging hook
         for key, v in data_dict.items():
-            self.data[key] = v.value if type(v) is Color else v
+            if key in self.data:
+                if type(self.data) is list:
+                    self.data[key].append(v.value if type(v) is Color else v)
+                else:
+                    self.data[key] = [self.data[key], v.value if type(v) is Color else v]
+            else:
+                self.data[key] = v.value if type(v) is Color else v
 
-        if flush:  # force flush, to reuse key for each epoch.
-            self.flush()
-
-    def flush(self, min_key_width=20, min_value_width=20):
-        if not self.data:
-            return
-
-        keys = [k for k in self.data.keys() if k not in self.do_not_print_list]
-
+    @staticmethod
+    def _tabular(data, fmt=".3f", do_not_print_list=[], min_key_width=20, min_value_width=20):
+        keys = [k for k in data.keys() if k not in do_not_print_list]
         if len(keys) > 0:
             max_key_len = max([min_key_width] + [len(k) for k in keys])
-            max_value_len = max([min_value_width] + [len(str(self.data[k])) for k in keys])
+            max_value_len = max([min_value_width] + [len(str(data[k])) for k in keys])
             output = None
             for k in keys:
-                v = str(self.data[k])
+                v = str(data[k])
                 if output is None:
                     output = "╒" + "═" * max_key_len + "╤" + "═" * max_value_len + "╕\n"
                 else:
                     output += "├" + "─" * max_key_len + "┼" + "─" * max_value_len + "┤\n"
-                if k not in self.do_not_print_list:
+                if k not in do_not_print_list:
                     k = k.replace('_', " ")
                     v = "None" if v is None else v  # for NoneTypes which doesn't have __format__ method
-                    output += "│{:^{}}│{:^{}}│\n".format(k, max_key_len, v, max_value_len)
+                    output += "│{:^{}{}│{:^{}{}}│\n".format(k, max_key_len, fmt, v, max_value_len, fmt)
             output += "╘" + "═" * max_key_len + "╧" + "═" * max_value_len + "╛\n"
-            self.print(output, end="")
+            return output
 
-        self.logger.log(key=os.path.join(self.prefix or "", "data.pkl"),
+    @staticmethod
+    def _row_table(data, fmt=".3f", do_not_print_list=[], min_column_width=5):
+        """applies to metrics keys with multiple values"""
+        keys = [k for k in data.keys() if k not in do_not_print_list]
+        output = ""
+        if len(keys) > 0:
+            values = [values if type(values) is list else [values] for values in data.values()]
+            max_key_width = max([min_column_width] + [len(k) for k in keys])
+            max_value_len = max([min_column_width] + [len(f"{v:{fmt}}") for d in values for v in d])
+            max_width = max(max_key_width, max_value_len)
+            output += '|'.join([f"{key.replace('-', ' '):^{max_width}}" for key in keys]) + "\n"
+            output += "┼".join(["─" * max_width] * len(keys)) + "\n"
+            for row in zip_longest(*values):
+                output += '|'.join([f"{value:^{max_width}{fmt}}" for value in row]) + "\n"
+            return output
+
+    def flush(self, file_name="metrics.pkl"):
+        if not self.data:
+            return
+        try:
+            output = self._tabular(self.data, self.do_not_print_list)
+        except Exception as e:
+            print(e)
+            output = self._row_table(self.data, self.do_not_print_list)
+        self.print(output)
+        self.logger.log(key=os.path.join(self.prefix or "", file_name or "metrics.pkl"),
                         data=dict(_step=self.step, _timestamp=str(self.timestamp), **self.data))
         self.data.clear()
         self.do_not_print_list.clear()
@@ -249,54 +286,104 @@ class ML_Logger:
     def log_images(self, key, stack, ncol=5, nrows=2, namespace="image", fstring="{:04d}.png"):
         """note: might makesense to push the operation to the server instead.
         logs a stack of images from a tensor object. Could also be part of the server code.
+
+        update: client-side makes more sense, less data to send.
         """
         pass
 
-    def log_image(self, step, namespace="images", fstring="{:04d}.png", **kwargs):
+    def log_image(self, namespace="images", fmt="04d", ext="png", step=None, **kwargs):
         """
         Logs an image via the summary writer.
         TODO: add support for PIL images etc.
         reference: https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
 
-        value: numpy object Size(w, h, 3)
+        Because the image keys are passed in as variable keys, it is not as easy to use a string literal
+        for the file name (key). as a result, we generate the numerated filename for the user.
 
+        value: numpy object Size(w, h, 3)
         """
         if self.step != step and self.step is not None:
             self.flush()
-        self.step = step
-        self.timestamp = np.datetime64(datetime.now())
+            self.step = step
 
-        # todo: save image hook here
-        for key, image in kwargs.items():
-            self.logger.send_image(key=os.path.join(self.prefix or "", namespace, key, fstring.format(step)),
-                                   data=image)
+        if self.step is None:
+            for key, image in kwargs.items():
+                filename = os.path.join(self.prefix or "", namespace, key + f".{ext}")
+                self.logger.send_image(key=filename, data=image)
+        else:
+            for key, image in kwargs.items():
+                filename = os.path.join(self.prefix or "", namespace, key, f"{step:{fmt}}.{ext}")
+                self.logger.send_image(key=filename, data=image)
 
-    def log_pyplot(self, step, fig, namespace="figures", key=None):
+    def log_pyplot(self, key="plot", fig=None, format=None, step=None, namespace="plots", **kwargs):
+        """
+        does not handle pdf and svg file formats. A big annoying.
+
+        ref: see this link https://stackoverflow.com/a/8598881/1560241
+        :param key:
+        :param fig:
+        :param namespace:
+        :param fmt:
+        :param step:
+        :return:
+        """
         if self.step != step and self.step is not None:
             self.flush()
-        self.step = step
-        self.timestamp = np.datetime64(datetime.now())
-        image = self.plt2data(fig)
-        self.logger.send_image(key=os.path.join(self.prefix or "", namespace, key or "{:04d}.png".format(step)),
-                               data=image)
+            self.step = step
 
-    def log_module(self, step, namespace="modules", fstr=None, **kwargs):
+        # can not simplify the logic, because we can't pass the filename to pyplot. A buffer is passed in instead.
+        if format:  # so allow key with dots in it: metric_plot.text.plot + ".png". Because user intention is clear
+            key += "." + format
+        else:
+            _, format = os.path.splitext(key)
+            if format:
+                format = format[1:] # to get rid of the "." at the begining of '.svg'.
+            else:
+                format = "png"
+                key += "." + format
+
+        if fig is None:
+            from matplotlib import pyplot as plt
+            fig = plt.gcf()
+
+        buf = BytesIO()
+        fig.savefig(buf, format=format, **kwargs)
+        buf.seek(0)
+
+        path = os.path.join(self.prefix or "", namespace, key)
+        self.logger.log_buffer(path, buf)
+        return key
+
+    def savefig(self, key="plot", fig=None, format=None, step=None, **kwargs):
+        """
+        This one overrides the namespace default of log_pyplot.
+        This way, the key behave exactly the same way pyplot.savefig behaves.
+
+        default plotting file name is plot.png under the current directory
+        """
+        self.log_pyplot(key=key, fig=fig, format=format, step=step, namespace="", **kwargs)
+
+    def log_module(self, namespace="modules", fmt="04d", step=None, **kwargs):
         """
         log torch module
 
+        todo: log tensorflow modules.
+
+        :param fmt: 03d, 0.2f etc. The formatting string for the step key.
         :param step:
         :param namespace:
-        :param fstr: "{step}_{k}.pkl", or "{}_{}.pkl" etc.
         :param kwargs:
         :return:
         """
+        if self.step != step and self.step is not None:
+            self.flush()
+            self.step = step
+
         for k, m in kwargs.items():
             # todo: this is torch-specific code. figure out a better way.
             ps = {k: v.cpu().detach().numpy() for k, v in m.state_dict().items()},
-            if fstr:
-                path = os.path.join(namespace, fstr).format(step, k, step=step, k=k)
-            else:
-                path = os.path.join(namespace, f'{step:04d}_{k}.pkl')
+            # we use the number first file names to help organize modules by epoch.
+            path = os.path.join(namespace, f'{k}.pkl' if step is None else f'{step:{fmt}}_{k}.pkl')
             self.log_data(path=path, data=ps)
 
     def load_file(self, key):
@@ -328,6 +415,7 @@ class ML_Logger:
         @return a numpy 3D array of RGBA values
         """
         # draw the renderer
+        fig.canvas.draw_idle()  # need this if 'transparent=True' to reset colors
         fig.canvas.draw()
         # Get the RGBA buffer from the figure
         w, h = fig.canvas.get_width_height()

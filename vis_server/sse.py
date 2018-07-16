@@ -11,7 +11,7 @@ class ServerSentEvent(object):
             self.id: "id"
         }
 
-    def encode(self):
+    def __str__(self):
         if not self.data:
             return ""
         lines = [f"{v}: {k}" for k, v in self.desc_map.items() if k]

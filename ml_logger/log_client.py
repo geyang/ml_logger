@@ -72,3 +72,7 @@ class LogClient:
     def send_image(self, key, data):
         assert data.dtype in ALLOWED_TYPES, "image data must be one of {}".format(ALLOWED_TYPES)
         self._post(key, data, dtype="image")
+
+    # appends text
+    def log_buffer(self, key, buf):
+        self._post(key, buf, dtype="byte")

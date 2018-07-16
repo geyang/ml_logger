@@ -87,6 +87,15 @@ class LoggingServer:
                 os.makedirs(os.path.dirname(abs_path))
                 with open(abs_path, 'ab') as f:
                     dill.dump(data, f)
+        if dtype == "byte":
+            abs_path = os.path.join(self.data_dir, key)
+            try:
+                with open(abs_path, 'ab') as f:
+                    f.write(data.read())
+            except FileNotFoundError:
+                os.makedirs(os.path.dirname(abs_path))
+                with open(abs_path, 'ab') as f:
+                    f.write(data.read())
         elif dtype.startswith("text"):
             abs_path = os.path.join(self.data_dir, key)
             if "." not in key:

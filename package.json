@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "luna": "^1.6.3",
-    "luna-saga": "^6.0.0",
-    "rxjs": "^6.2.1"
-  }
-}
