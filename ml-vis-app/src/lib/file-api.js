@@ -1,10 +1,11 @@
-import {take, dispatch, ERROR_CALLBACK, THEN_CALLBACK} from 'luna-saga';
+import {take, dispatch, ERROR_CALLBACK, THEN_CALLBACK, spawn} from 'luna-saga';
 import {recordsToSeries} from "../data-helpers";
 import {stringify} from "query-string";
 import {status200} from "./fetch-helper";
 import {PUSH_LOCATION} from "./routeStoreConnect";
 import {combineReducers} from "luna";
 
+//helper functions
 export function uriJoin(...chunks) {
     let root = "";
     for (let chunk of chunks) {
@@ -26,6 +27,7 @@ export function parentDir(path) {
     return path.slice(0, slashInd > -1 ? slashInd : 0);
 }
 
+//file api
 export class FileApi {
     constructor(server = "") {
         this.configure(server);
@@ -57,12 +59,11 @@ export class FileApi {
     }
 
     getMetricData(path) {
-        const src = uriJoin(this.fileEndpoint, path);
-        console.log(src);
+        const src = uriJoin(this.fileEndpoint, path) + "?json=1";
         return fetch(src, {headers: {'Content-Type': 'application/json; charset=utf-8'}})
             .then(status200)
             .then((r) => r.json())
-            .then((d) => recordsToSeries(d));
+        // .then((d) => recordsToSeries(d));
     }
 
     deletePath(path) {
@@ -70,11 +71,23 @@ export class FileApi {
         console.log(src);
         return fetch(src, {method: "DELETE",}).then(status200)
     }
+
+    static recordToSeries(metricRecords, experimentKeys, yKeys, xKey) {
+        const series = [];
+        experimentKeys.forEach(eKey => {
+            metricRecords.forEach((records, _experimentKey) => {
+                if (_experimentKey.match(eKey)) series.push();
+            })
+        });
+
+    }
 }
 
 export const defaultFileState = {
     currentDirectory: "/",
-    searchQuery: ""
+    searchQuery: "",
+    // chartKeys: ["Ep_Rew_Mean", ".*", "Time_Elapsed"]
+    chartKeys: ["Ep_Rew_Mean", "loss.*"]
 };
 
 export function goTo(path) {
@@ -99,15 +112,17 @@ export function Files(reducerKey) {
             return action.data;
         } else if (action.type === `${reducerKey}_SORT`) {
             let files = [...state];
-            if (action.sortBy === "time") {
-                files = files.sort((a, b) => a.mime > b.mime)
+            if (action.sortBy === "modification") {
+                files = files.sort((a, b) => a.mtime > b.mtime)
+            } else if (action.sortBy === "creation") {
+                files = files.sort((a, b) => a.ctime > b.ctime)
             } else if (action.sortBy === "prefix") {
                 files = files.sort((a, b) => a.name > b.name)
             } else if (action.sortBy === "postfix") {
                 files = files.sort((a, b) =>
                     a.name.split('').reverse().join('') > b.name.split('').reverse().join(''))
             }
-            if (action.order = -1) {
+            if (action.order === -1) {
                 files = files.reverse()
             }
             return files;
@@ -119,6 +134,7 @@ export function Files(reducerKey) {
 const _fileReducer = combineReducers({
     files: Files('FILES'),
     metrics: Files('METRICS'),
+    metricRecords: MetricRecordsReducer()
 });
 
 function fileReducer(state = defaultFileState, action) {
@@ -141,9 +157,7 @@ function fileReducer(state = defaultFileState, action) {
             }
         }
         if (!!path) currentDirectory = uriJoin(currentDirectory, path);
-        console.log(state);
         state = _fileReducer({...state, currentDirectory}, action);
-        console.log(state);
         return state
     }
     return _fileReducer(state, action);
@@ -167,12 +181,8 @@ export function* locationProc() {
 export function* removeProc() {
     let state, action, res;
     while (true) {
-        console.log('111111111111111111111111111111111');
         ({state, action} = yield take("REMOVE_PATH"));
-        console.log('222222222222222222222222222222222');
-        console.log(action.path);
         res = yield fileApi.deletePath(action.path);
-        console.log(res);
         // dispatch({
         //     type: "G"
         // })
@@ -199,20 +209,59 @@ export function* directoryProc() {
         }));
         ({state, action} = yield dispatch({
             type: "SORT_FILES",
-            sortBy: "prefix",
+            sortBy: "creation",
             order: -1
         }));
     }
 }
 
+//this is only needed for the metrics data b/c we want to plot them over.
+//might also need for text files.
+function MetricRecordsReducer() {
+    return function metricReducer(state = {}, action) {
+        if (action.type === "SET_METRIC") {
+            state = {...state, [action.key]: action.records};
+            return state
+        } else if (action.type === "REMOVE_METRIC") {
+            state = {...state};
+            delete state[action.key];
+            return state;
+        } else if (action.type === 'DIRTY') {
+            let record = state[action.key];
+            return {...state, [action.key]: {...record, dirty: true}}
+        }
+        return state
+    }
+}
+
+export function markDirty(experimentKey) {
+    return {
+        type: "DIRTY",
+        key: experimentKey
+    }
+}
+
+function* downloadMetrics(src) {
+    const records = yield fileApi.getMetricData(src);
+    yield dispatch({
+        type: "SET_METRIC",
+        key: src,
+        records: records
+    })
+}
+
+function undefinedOrDirty(record) {
+    return (typeof record === 'undefined') || !!record.dirty;
+}
+
 export function* metricsProc() {
-    let state, action;
+    let state, action, metrics, metricRecords, currentDirectory;
     while (true) {
         ({state, action} = yield take('GO_TO'));
         let files;
         try {
             files = yield fileApi
-                .getFiles(state.currentDirectory, "**/*[dt][ai][tc][as].pkl", 1, 20) //metrics and data.pkl.
+                .getFiles(state.currentDirectory, "**/*[dr][ai][tc][as].pkl", 1, 20) //metrics and data.pkl.
             // .catch(yield ERROR_CALLBACK);
         } catch (e) {
             console.error(e);
@@ -221,10 +270,15 @@ export function* metricsProc() {
             type: "METRICS_ASSIGN",
             data: files
         }));
-        ({state, action} = yield dispatch({
+        ({state: {currentDirectory, metrics, metricRecords}, action} = yield dispatch({
             type: "METRICS_SORT",
-            sortBy: "prefix",
+            sortBy: "creation",
             order: -1
         }));
+        for (let stat of metrics) {
+            let fullKey = uriJoin(currentDirectory, stat.path);
+            if (undefinedOrDirty(metricRecords[fullKey]))
+                yield spawn(downloadMetrics, fullKey);
+        }
     }
 }

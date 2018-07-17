@@ -17,7 +17,6 @@ function locationReducer(state, action) {
 
 export function connectLocationToStore(store) {
     const history = createHistory();
-    console.log(store);
     const original = store.rootReducer;
     store.rootReducer = (state, action) => locationReducer(original(state, action), action);
 

@@ -5,38 +5,40 @@ import {
     YAxis,
     VerticalGridLines,
     HorizontalGridLines,
-    FlexibleWidthXYPlot, DiscreteColorLegend, Crosshair,
+    FlexibleWidthXYPlot,
+    DiscreteColorLegend,
+    Crosshair,
     LineSeries,
     LineSeriesCanvas  // use this for better performance.
 } from 'react-vis';
-import {recordsToSeries} from "../data-helpers";
-import Highlight from "./highlight";
-import {fileApi} from "../lib/file-api";
+import Highlight from './highlight';
 
-export default class AreaChartConfidence extends React.Component {
+class LineChartConfidence extends React.Component {
     state = {
-        src: null,
         lastDrawLocation: null,
-        series: recordsToSeries([]),
-        crosshairValues: []
+        crosshairValues: [],
+        serieses: [],
     };
 
-    constructor(props, context) {
-        super(props, context);
-    }
+    static defaultProps = {
+        serieses: []
+    };
 
     componentWillMount() {
-        const {src} = this.props;
-        console.log(src);
-        if (src) {
-            fileApi.getMetricData(src).then((series) => this.setState({series}))
-        }
+        const {serieses = []} = this.props;
+        this.setState({serieses: serieses.map(l => ({...l}))})
+    }
+
+    componentWillReceiveProps(nextProps) {
+        const {serieses = []} = nextProps;
+        if (serieses !== this.props.serieses)
+            this.setState({serieses: serieses.map(l => ({...l}))});
     }
 
     itemClick = (item, index) => {
-        const {series} = this.state;
+        const {serieses} = this.state;
         item.disabled = !item.disabled;
-        this.setState({series});
+        this.setState({serieses});
     };
     onMouseLeave = () => this.setState({crosshairValues: []});
     onNearestX = (lineKey) => (value, n) => {
@@ -52,31 +54,37 @@ export default class AreaChartConfidence extends React.Component {
     onBrushEnd = (area) => this.setState({lastDrawLocation: area});
 
     render() {
-        const {series, lastDrawLocation, seriesKeys} = this.state;
+        const {serieses, lastDrawLocation} = this.state;
+        const {...props} = this.props;
+        delete props.serieses;
         return (
-            <Flex row>
+            <Flex row {...props}>
                 <FlexItem>
                     <FlexibleWidthXYPlot
+                        className="chart no-select"
                         animation
                         xDomain={lastDrawLocation && [lastDrawLocation.left, lastDrawLocation.right]}
-                        width={400}
-                        height={200}
+                        width={200}
+                        height={150}
                         onMouseLeave={this.onMouseLeave}
                     >
-                        <VerticalGridLines/>
                         <HorizontalGridLines/>
-                        <XAxis/>
                         <YAxis/>
-                        {series.filter(line => !line.disabled).map((line) =>
-                            <LineSeries key={line.title} data={line.data} onNearestX={this.onNearestX(line.title)}/>)}
-                        <Highlight onBrushEnd={this.onBrushEnd}/>
+                        <XAxis/>
+                        {serieses.map((line) =>
+                            <LineSeries key={line.title} data={line.disabled ? [] : line.data}
+                                        onNearestX={this.onNearestX(line.title)}
+                            />)}
                         <Crosshair values={this.state.crosshairValues}/>
+                        <Highlight onBrushEnd={this.onBrushEnd}/>
                     </FlexibleWidthXYPlot>
                 </FlexItem>
-                <FlexItem style={{overflowY: 'auto'}} height={200}>
-                    <DiscreteColorLegend width={180} items={series} onItemClick={this.itemClick}/>
+                <FlexItem style={{overflowY: 'auto'}} height={150}>
+                    <DiscreteColorLegend width={180} items={serieses} onItemClick={this.itemClick}/>
                 </FlexItem>
             </Flex>
         )
     }
 }
+
+export default LineChartConfidence;

@@ -18,17 +18,30 @@ export function objectMapArray(o, fn) {
     return Object.keys(o).filter(k => o.hasOwnProperty(k)).map(k => o[k])
 }
 
-export function recordsToSeries(records) {
-    const lines = {};
-    for (let r of records) {
-        getKeys(r).forEach(function (k) {
+export function recordsToSeries(records, yKey = null, xKey = "_step") {
+    let line = [];
+    records.forEach(function (r, i) {
+        if (typeof r[yKey] !== "undefined")
             try {
-                lines[k].push({x: r._step, y: r[k]})
+                line.push({x: r[xKey] || i, y: r[yKey]});
             } catch (e) {
-                lines[k] = [{x: r._step, y: r[k]}]
+                line = [{x: r[xKey] || i, y: r[yKey]}];
             }
-        });
-    }
-    return Object.entries(lines).map(([t, l]) => ({title: t, data: l}));
+    });
+    return {title: yKey, data: line}
 }
 
+export function recordsToSerieses(records, xKey = "_step") {
+    const lines = {};
+    records.forEach(function (r, i) {
+        getKeys(r).forEach(function (k) {
+            if (typeof r[xKey] !== 'undefined' && typeof r[k] !== "undefined")
+                try {
+                    lines[k].push({x: r[xKey] || i, y: r[k]})
+                } catch (e) {
+                    lines[k] = [{x: r[xKey] || i, y: r[k]}]
+                }
+        });
+    });
+    return Object.entries(lines).map(([t, l]) => ({title: t, data: l}));
+}

@@ -1,5 +1,5 @@
 import {Store} from "luna"
-import {Saga, sagaConnect} from 'luna-saga';
+import {sagaConnect} from 'luna-saga';
 import {registerStore} from "./lib/react-luna";
 import {directoryProc, locationProc, metricsProc, removeProc, rootReducer} from "./lib/file-api";
 import {connectLocationToStore} from "./lib/routeStoreConnect";
@@ -13,7 +13,7 @@ const location = history.location;
 export const store$ = new Store(rootReducer);
 registerStore(store$);
 export const {ConnectedRouter, initiate: initiateLocationStore} = connectLocationToStore(store$);
-store$.subscribe((state) => console.log(state));
+store$.update$.subscribe((state, action) => console.log(state, action));
 sagaConnect(store$, metricsProc());
 sagaConnect(store$, directoryProc());
 sagaConnect(store$, locationProc());

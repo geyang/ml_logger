@@ -16,7 +16,6 @@ export function connectLocalStorage(store) {
 
 
     function fromLS() {
-        "use strict";
         const store = window.localStorage.getItem(STORE_KEY);
         return JSON.parse(store);
     }

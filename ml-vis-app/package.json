@@ -17,8 +17,9 @@
     "react-router-dom": "^4.3.1",
     "react-scripts": "1.1.4",
     "react-split-pane": "^0.1.82",
-    "react-vis": "^1.10.1",
+    "react-vis": "1.10.1",
     "rxjs": "^6.2.2",
+    "styled-components": "^3.3.3",
     "yarn": "^1.7.0"
   },
   "devDependencies": {},
