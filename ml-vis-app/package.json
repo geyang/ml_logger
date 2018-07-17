@@ -17,6 +17,8 @@
     "react-router-dom": "^4.3.1",
     "react-scripts": "1.1.4",
     "react-split-pane": "^0.1.82",
+    "react-tag-input": "^5.1.0",
+    "react-tagsinput": "^3.19.0",
     "react-vis": "1.10.1",
     "rxjs": "^6.2.2",
     "styled-components": "^3.3.3",

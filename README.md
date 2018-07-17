@@ -7,6 +7,12 @@ Then one quickly realizes that downloading data from s3 can be slow. s3 does
 not offer diffsync like gcloud-cli's `g rsync`. This makes it hard to sync a 
 large collection of data that is constantly appended to.
 
+
+### Visualization Dashboard (Preview) :boom:
+
+Incoming: A real-time visualization dashboard (and sever!)
+![ml visualization dashboard](./figures/ml_visualization_dashboard_preview.png)
+
 #### An Example Log from ML-Logger
 <img alt="example_real_log_output" src="figures/example_log_output.png" align="right"></img>
 

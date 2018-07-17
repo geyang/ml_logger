@@ -86,9 +86,25 @@ export class FileApi {
 export const defaultFileState = {
     currentDirectory: "/",
     searchQuery: "",
-    // chartKeys: ["Ep_Rew_Mean", ".*", "Time_Elapsed"]
-    chartKeys: ["Ep_Rew_Mean", "loss.*"]
+    showComparison: false
 };
+
+export function ArrayReducer(namespace = "", defaultState = null) {
+    return function arrayReducer(state = defaultState, action) {
+        if (action.type === `${namespace}_PUSH`) {
+            return [...state, action.item]
+        } else if (action.type === `${namespace}_DELETE`) {
+            return [...state.slice(0, action.ind), ...state.slice(action.ind + 1)]
+        } else if (action.type === `${namespace}_MOVE`) {
+            let _ = [...state.slice(0, action.ind), ...state.slice(action.ind + 1)];
+            _.splice(action.newInd, 0, state[action.ind]);
+            return _;
+        } else if (action.type === `${namespace}_SET`) {
+            return action.items
+        }
+        return state;
+    }
+}
 
 export function goTo(path) {
     return {type: 'GO_TO', path};
@@ -134,12 +150,27 @@ export function Files(reducerKey) {
 const _fileReducer = combineReducers({
     files: Files('FILES'),
     metrics: Files('METRICS'),
-    metricRecords: MetricRecordsReducer()
+    metricRecords: MetricRecordsReducer(),
+    chartKeys: ArrayReducer("CHARTKEYS", ["Ep_Rew_Mean", "loss.*", "Time_Elapsed", ".*"])
 });
+
+export function insertChartKey(chartKey) {
+    return {type: "CHARTKEYS_PUSH", item: chartKey}
+}
+
+export function deleteChartKey(index) {
+    return {type: "CHARTKEYS_DELETE", ind: index}
+}
+
+export function moveChartKey(index, newIndex) {
+    return {type: "CHARTKEYS_MOVE", ind: index, newInd: newIndex}
+}
 
 function fileReducer(state = defaultFileState, action) {
     if (action.type === "SET_QUERY") {
         return {...state, searchQuery: action.query};
+    } else if (action.type === "TOGGLE_COMPARISON") {
+        return {...state, showComparison: !state.showComparison}
     } else if (action.type === "GO_TO") {
         let {path} = action;
         let {currentDirectory} = state;
@@ -162,6 +193,13 @@ function fileReducer(state = defaultFileState, action) {
     }
     return _fileReducer(state, action);
 }
+
+export function toggleComparison() {
+    return {
+        type: "TOGGLE_COMPARISON"
+    }
+}
+
 
 // export const rootReducer = (state, action) => fileReducer(_fileReducer(state, action), action);
 export const rootReducer = fileReducer;

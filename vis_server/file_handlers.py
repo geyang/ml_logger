@@ -99,6 +99,7 @@ def file_stat(file_path):
         name=os.path.basename(file_path),
         path=file_path,
         mtime=stat_res.st_mtime,
+        ctime=stat_res.st_ctime,
         type=ft,
         size=sz,
     )

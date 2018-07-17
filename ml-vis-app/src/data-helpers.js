@@ -18,7 +18,14 @@ export function objectMapArray(o, fn) {
     return Object.keys(o).filter(k => o.hasOwnProperty(k)).map(k => o[k])
 }
 
-export function recordsToSeries(records, yKey = null, xKey = "_step") {
+export function matchExp(exp) {
+    const regex = new RegExp(exp, 'i');
+    return function (k) {
+        return k.match(regex);
+    }
+}
+
+export function recordsToSeries(records, yKey = null, xKey = "_step", title = null) {
     let line = [];
     records.forEach(function (r, i) {
         if (typeof r[yKey] !== "undefined")
@@ -28,7 +35,7 @@ export function recordsToSeries(records, yKey = null, xKey = "_step") {
                 line = [{x: r[xKey] || i, y: r[yKey]}];
             }
     });
-    return {title: yKey, data: line}
+    return {title: title || yKey, data: line}
 }
 
 export function recordsToSerieses(records, xKey = "_step") {

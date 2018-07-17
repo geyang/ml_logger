@@ -21,7 +21,8 @@ class LineChartConfidence extends React.Component {
     };
 
     static defaultProps = {
-        serieses: []
+        serieses: [],
+        legendWidth: null
     };
 
     componentWillMount() {
@@ -55,7 +56,7 @@ class LineChartConfidence extends React.Component {
 
     render() {
         const {serieses, lastDrawLocation} = this.state;
-        const {...props} = this.props;
+        const {legendWidth, ...props} = this.props;
         delete props.serieses;
         return (
             <Flex row {...props}>
@@ -72,15 +73,15 @@ class LineChartConfidence extends React.Component {
                         <YAxis/>
                         <XAxis/>
                         {serieses.map((line) =>
-                            <LineSeries key={line.title} data={line.disabled ? [] : line.data}
-                                        onNearestX={this.onNearestX(line.title)}
+                            <LineSeriesCanvas key={line.title} data={line.disabled ? [] : line.data}
+                                              onNearestX={this.onNearestX(line.title)}
                             />)}
                         <Crosshair values={this.state.crosshairValues}/>
                         <Highlight onBrushEnd={this.onBrushEnd}/>
                     </FlexibleWidthXYPlot>
                 </FlexItem>
                 <FlexItem style={{overflowY: 'auto'}} height={150}>
-                    <DiscreteColorLegend width={180} items={serieses} onItemClick={this.itemClick}/>
+                    <DiscreteColorLegend width={legendWidth} items={serieses} onItemClick={this.itemClick}/>
                 </FlexItem>
             </Flex>
         )

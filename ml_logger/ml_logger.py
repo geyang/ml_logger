@@ -109,6 +109,29 @@ class ML_Logger:
     logger = None
     log_directory = None
 
+    @property
+    def now(self, fmt=None):
+        from datetime import datetime
+        now = datetime.now()
+        # now.strftime("%Y-%m-%d-%H-%M-%S-%f")
+        return now.strftime(fmt) if fmt else now
+
+    def diff(self, diff_directory=".", diff_filename="index.diff", silent=False):
+        """
+        example usage: M.diff('.')
+        :param diff_directory: The root directory to call `git diff`.
+        :param log_directory: The overriding log directory to save this diff index file
+        :param diff_filename: The filename for the diff file.
+        :return: None
+        """
+        import subprocess
+        try:
+            cmd = f'cd "{os.path.realpath(diff_directory)}" && git add . && git diff --no-pager'
+            r = subprocess.check_call(cmd, shell=True)  # Save git diff to experiment directory
+            self.log_text(r, diff_filename, silent=silent)
+        except subprocess.CalledProcessError as e:
+            print("configure_output_dir: not storing the git diff due to {}".format(e))
+
     # noinspection PyInitNewSignature
     def __init__(self, log_directory: str = None, prefix="", buffer_size=2048, max_workers=5):
         """
@@ -186,13 +209,13 @@ class ML_Logger:
 
         if key in self.data:
             if type(self.data) is list:
-                self.data[key].append(v.value if type(v) is Color else v)
+                self.data[key].append(value.value if type(v) is Color else value)
             else:
-                self.data[key] = [self.data[key], v.value if type(v) is Color else v]
+                self.data[key] = [self.data[key]] + [value.value if type(value) is Color else value]
         else:
-            self.data[key] = v.value if type(v) is Color else v
+            self.data[key] = value.value if type(value) is Color else value
 
-    def log(self, *dicts, step: Union[int, Color] = None, silent=False, flush=False, **kwargs) -> None:
+    def log(self, *dicts, step: Union[int, Color] = None, silent=False, **kwargs) -> None:
         """
         log dictionaries of data, key=value pairs at step == step.
 
@@ -227,27 +250,27 @@ class ML_Logger:
                 self.data[key] = v.value if type(v) is Color else v
 
     @staticmethod
-    def _tabular(data, fmt=".3f", do_not_print_list=[], min_key_width=20, min_value_width=20):
+    def _tabular(data, fmt=".3f", do_not_print_list=tuple(), min_key_width=20, min_value_width=20):
         keys = [k for k in data.keys() if k not in do_not_print_list]
         if len(keys) > 0:
             max_key_len = max([min_key_width] + [len(k) for k in keys])
             max_value_len = max([min_value_width] + [len(str(data[k])) for k in keys])
             output = None
             for k in keys:
-                v = str(data[k])
+                v = f"{data[k]:{fmt}}"
                 if output is None:
                     output = "╒" + "═" * max_key_len + "╤" + "═" * max_value_len + "╕\n"
                 else:
                     output += "├" + "─" * max_key_len + "┼" + "─" * max_value_len + "┤\n"
                 if k not in do_not_print_list:
                     k = k.replace('_', " ")
-                    v = "None" if v is None else v  # for NoneTypes which doesn't have __format__ method
-                    output += "│{:^{}{}│{:^{}{}}│\n".format(k, max_key_len, fmt, v, max_value_len, fmt)
+                    v = "NA" if v is None else v  # for NoneTypes which doesn't have __format__ method
+                    output += f"│{k:^{max_key_len}}│{v:^{max_value_len}}│\n"
             output += "╘" + "═" * max_key_len + "╧" + "═" * max_value_len + "╛\n"
             return output
 
     @staticmethod
-    def _row_table(data, fmt=".3f", do_not_print_list=[], min_column_width=5):
+    def _row_table(data, fmt=".3f", do_not_print_list=tuple(), min_column_width=5):
         """applies to metrics keys with multiple values"""
         keys = [k for k in data.keys() if k not in do_not_print_list]
         output = ""
@@ -262,14 +285,14 @@ class ML_Logger:
                 output += '|'.join([f"{value:^{max_width}{fmt}}" for value in row]) + "\n"
             return output
 
-    def flush(self, file_name="metrics.pkl"):
+    def flush(self, file_name="metrics.pkl", fmt=".3f"):
         if not self.data:
             return
         try:
-            output = self._tabular(self.data, self.do_not_print_list)
+            output = self._tabular(self.data, fmt, self.do_not_print_list)
         except Exception as e:
             print(e)
-            output = self._row_table(self.data, self.do_not_print_list)
+            output = self._row_table(self.data, fmt, self.do_not_print_list)
         self.print(output)
         self.logger.log(key=os.path.join(self.prefix or "", file_name or "metrics.pkl"),
                         data=dict(_step=self.step, _timestamp=str(self.timestamp), **self.data))
@@ -278,10 +301,15 @@ class ML_Logger:
         self.print_flush()
 
     def log_file(self, file_path, namespace='files', silent=True):
+        # todo: make it possible to log multiple files
+        # todo: log dir
         from pathlib import Path
         content = Path(file_path).read_text()
         basename = os.path.basename(file_path)
         self.log_text(content, filename=os.path.join(namespace, basename), silent=silent)
+
+    def log_dir(self, dir_path, namespace='', excludes=tuple(), silent=True):
+        """log a directory"""
 
     def log_images(self, key, stack, ncol=5, nrows=2, namespace="image", fstring="{:04d}.png"):
         """note: might makesense to push the operation to the server instead.
@@ -337,7 +365,7 @@ class ML_Logger:
         else:
             _, format = os.path.splitext(key)
             if format:
-                format = format[1:] # to get rid of the "." at the begining of '.svg'.
+                format = format[1:]  # to get rid of the "." at the begining of '.svg'.
             else:
                 format = "png"
                 key += "." + format
