@@ -73,7 +73,7 @@ class LineChartConfidence extends React.Component {
                         <YAxis/>
                         <XAxis/>
                         {serieses.map((line) =>
-                            <LineSeriesCanvas key={line.title} data={line.disabled ? [] : line.data}
+                            <LineSeries key={line.title} data={line.disabled ? [] : line.data}
                                               onNearestX={this.onNearestX(line.title)}
                             />)}
                         <Crosshair values={this.state.crosshairValues}/>

@@ -195,7 +195,7 @@ class ML_Logger:
         self.logger.log(key=os.path.join(self.prefix or "", path), data=data)
 
     def log_keyvalue(self, key: str, value: Any, step: Union[int, Color] = None, silent=False) -> None:
-        if self.step != step and self.step is not None:
+        if self.step != step and step is not None:
             self.flush()
             self.step = step
 
@@ -225,7 +225,7 @@ class ML_Logger:
         :param kwargs: key/value arguments.
         :return:
         """
-        if self.step != step and self.step is not None:
+        if self.step != step and step is not None:
             self.flush()
             self.step = step
 
@@ -330,7 +330,7 @@ class ML_Logger:
 
         value: numpy object Size(w, h, 3)
         """
-        if self.step != step and self.step is not None:
+        if self.step != step and step is not None:
             self.flush()
             self.step = step
 
@@ -355,7 +355,7 @@ class ML_Logger:
         :param step:
         :return:
         """
-        if self.step != step and self.step is not None:
+        if self.step != step and step is not None:
             self.flush()
             self.step = step
 
@@ -403,7 +403,7 @@ class ML_Logger:
         :param kwargs:
         :return:
         """
-        if self.step != step and self.step is not None:
+        if self.step != step and step is not None:
             self.flush()
             self.step = step
 

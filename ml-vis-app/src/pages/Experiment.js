@@ -178,7 +178,7 @@ function ExperimentRow({bucketKey, experimentKey, path, chartKeys, dispatch, chi
                       href={uriJoin("http://54.71.92.65:8082/files", dataPath + "?download=1")}
                       target="_blank">download pkl</FlexItem>
         </Flex>
-        <Flex row style={{overflowX: "auto"}}>
+        <Flex row style={{overflowX: "auto", overflowY: "hidden"}}>
             {children}
         </Flex>
     </div>
