@@ -9,8 +9,14 @@ can be slow. s3 does not offer diffsync like gcloud-cli's ``g rsync``.
 This makes it hard to sync a large collection of data that is constantly
 appended to.
 
+Visualization Dashboard (Preview) :boom:
+----------------------------------------
+
+Incoming: A real-time visualization dashboard (and sever!) |ml
+visualization dashboard|
+
 An Example Log from ML-Logger
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 So far the best way we have found for organizing experimental data is to
 have a centralized instrumentation server. Compared with managing your
@@ -218,3 +224,5 @@ TODO:
    -  just log to visdom for now. Use the primitive ``plot.ly`` plotting
       inteface.
    -  data: keys/values
+
+.. |ml visualization dashboard| image:: https://github.com/episodeyang/ml_logger/blob/master/figures/ml_visualization_dashboard_preview.png?raw=true
