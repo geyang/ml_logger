@@ -37,6 +37,26 @@ export const ChartDataContainer = selector(
     _ChartDataContainer
 );
 
+function sharedStart(array) {
+    if (!array || array.length === 0) return '';
+    //this prevents mutation of the array;
+    let A = array.concat().sort();
+    let a1 = A[0];
+    let a2 = A[A.length - 1];
+    console.log(A, a1, a2);
+    let L = Math.min(a1.length, a2.length);
+    let i = 0;
+    while (i < L && a1.charAt(i) === a2.charAt(i))
+        i++;
+    return a1.substring(0, i);
+}
+
+function removeSharedStart(array) {
+    let prefix = sharedStart(array);
+    return array.map(str => str.slice(prefix.length));
+}
+
+//trying to implement shorter legend.
 class _ComparisonDataContainer extends Component {
     state = {
         chartKey: null,
@@ -62,13 +82,16 @@ class _ComparisonDataContainer extends Component {
         });
         if (!dirty) return null;
         let serieses = [];
+        console.log(dataKeys);
+        let prefix = sharedStart(dataKeys);
         dataKeys.forEach(dataKey => {
             const records = metricRecords[dataKey];
+            let shortKey = dataKey.slice(prefix.length);
             if (records) {
                 const keys = getKeysFromRecords(records);
                 keys.filter(matchExp(chartKey)).forEach(key =>
                     // todo: insert logic to make dataKey shorter.
-                    serieses.push(recordsToSeries(records, key, xKey, uriJoin(dataKey, key))))
+                    serieses.push(recordsToSeries(records, key, xKey, uriJoin(shortKey, key))))
             }
         });
         return {dataKeys: newDataKeys, chartKey: newChartKey, records: newRecords, serieses}
