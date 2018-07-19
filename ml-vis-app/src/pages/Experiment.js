@@ -1,9 +1,18 @@
 import React, {Component} from "react";
 import {withRouter} from "react-router";
 import {Link} from "react-router-dom"
-import {Flex, FlexItem} from 'layout-components';
+import {Flex, FlexItem, FlexSpacer} from 'layout-components';
 import selector, {identity} from "../lib/react-luna";
-import {goTo, parentDir, queryInput, removePath, toggleComparison} from "../lib/file-api";
+import {
+    goTo,
+    parentDir,
+    queryInput,
+    removePath,
+    setYMax,
+    setYMin,
+    toggleComparison,
+    toggleConfig
+} from "../lib/file-api";
 import Header from "./layouts/Header";
 import LineChartConfidence from "../components/LineChartConfidence";
 import {Helmet} from 'react-helmet';
@@ -57,8 +66,8 @@ class Experiment extends Component {
 
     render() {
         const {
-            currentDirectory, searchQuery, files, metrics, showComparison, dispatch,
-            chartKeys,
+            currentDirectory, searchQuery, files, metrics, showComparison, showConfig, dispatch,
+            chartKeys, yMin, yMax,
             match: {params: {bucketKey, experimentKey = ""}}, location, history, ...props
         } = this.props;
         const {compare} = this.state;
@@ -116,7 +125,21 @@ class Experiment extends Component {
                         <FlexItem component="div">{experimentKey}</FlexItem>
                         <TagInputStyle><ChartKeyTagInput/></TagInputStyle>
                         <FlexItem component="button" onClick={() => dispatch(toggleComparison())}>compare</FlexItem>
+                        <FlexSpacer/>
+                        <FlexItem component="button" onClick={() => dispatch(toggleConfig())}>configure</FlexItem>
+                        <div>{showConfig ? "yes" : "no"}</div>
                     </DashboardHeader>
+                    {showConfig ?
+                        <div>
+                            <h3>Configure Charts</h3>
+                            <h4>y</h4>
+                            lower
+                            <input value={yMin} onInput={(e) => dispatch(setYMin(e.target.value || null))}/>
+                            higher
+                            <input value={yMax} onInput={(e) => dispatch(setYMax(e.target.value || null))}/>
+                        </div>
+                        : null
+                    }
                     {showComparison ?
                         <div>
                             <h3>Comparisons</h3>
@@ -125,11 +148,12 @@ class Experiment extends Component {
                                     <FlexItemComparisonContainer
                                         key={chartKey}
                                         component={LineChartConfidence}
+                                        yMin={yMin}
+                                        yMax={yMax}
                                         dataKeys={filteredMetricFiles.map(f => uriJoin(currentDirectory, f.path))}
                                         chartKey={chartKey}
                                         legendWidth={null}
                                     />)}
-
                             </Flex>
 
                         </div>

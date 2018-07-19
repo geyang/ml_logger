@@ -83,11 +83,21 @@ export class FileApi {
     }
 }
 
-export const defaultFileState = {
+export const defaultState = {
     currentDirectory: "/",
     searchQuery: "",
-    showComparison: false
+    showComparison: false,
+    showConfig: false,
 };
+
+export function ValueReducer(namespace = "", defaultState = null) {
+    return function arrayReducer(state = defaultState, action) {
+        if (action.type === `${namespace}_SET`) {
+            return action.value
+        }
+        return state;
+    }
+}
 
 export function ArrayReducer(namespace = "", defaultState = null) {
     return function arrayReducer(state = defaultState, action) {
@@ -151,8 +161,25 @@ const _fileReducer = combineReducers({
     files: Files('FILES'),
     metrics: Files('METRICS'),
     metricRecords: MetricRecordsReducer(),
-    chartKeys: ArrayReducer("CHARTKEYS", ["Ep_Rew_Mean", "loss.*", "Time_Elapsed", ".*"])
+    chartKeys: ArrayReducer("CHARTKEYS", ["Ep_Rew_Mean", "loss.*", "Time_Elapsed", ".*"]),
+    // todo: absorb this into the chart definition, as part of chartConfig object.
+    yMin: ValueReducer('Y_MIN', null),
+    yMax: ValueReducer('Y_MAX', null),
 });
+
+export function setYMax(value) {
+    return {
+        type: "Y_MAX_SET",
+        value
+    }
+}
+
+export function setYMin(value) {
+    return {
+        type: "Y_MIN_SET",
+        value
+    }
+}
 
 export function insertChartKey(chartKey) {
     return {type: "CHARTKEYS_PUSH", item: chartKey}
@@ -166,11 +193,13 @@ export function moveChartKey(index, newIndex) {
     return {type: "CHARTKEYS_MOVE", ind: index, newInd: newIndex}
 }
 
-function fileReducer(state = defaultFileState, action) {
+function fileReducer(state = defaultState, action) {
     if (action.type === "SET_QUERY") {
         return {...state, searchQuery: action.query};
     } else if (action.type === "TOGGLE_COMPARISON") {
         return {...state, showComparison: !state.showComparison}
+    } else if (action.type === "TOGGLE_CONFIG") {
+        return {...state, showConfig: !state.showConfig}
     } else if (action.type === "GO_TO") {
         let {path} = action;
         let {currentDirectory} = state;
@@ -200,6 +229,11 @@ export function toggleComparison() {
     }
 }
 
+export function toggleConfig() {
+    return {
+        type: "TOGGLE_CONFIG"
+    }
+}
 
 // export const rootReducer = (state, action) => fileReducer(_fileReducer(state, action), action);
 export const rootReducer = fileReducer;

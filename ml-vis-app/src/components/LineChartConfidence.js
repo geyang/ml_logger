@@ -13,6 +13,10 @@ import {
 } from 'react-vis';
 import Highlight from './highlight';
 
+function nullOrUndefined(b) {
+    return (typeof b === 'undefined' || b === null);
+}
+
 class LineChartConfidence extends React.Component {
     state = {
         lastDrawLocation: null,
@@ -56,8 +60,21 @@ class LineChartConfidence extends React.Component {
 
     render() {
         const {serieses, lastDrawLocation} = this.state;
-        const {legendWidth, ...props} = this.props;
+        let {legendWidth, xMin, xMax, yMin, yMax, ...props} = this.props;
         delete props.serieses;
+
+        if (nullOrUndefined(yMin) || nullOrUndefined(yMax)) {
+            let minMax = serieses.map(line => {
+                let ys = line.data.map(({y}) => y);
+                return {
+                    max: Math.max(...ys),
+                    min: Math.min(...ys)
+                }
+            });
+            if (nullOrUndefined(yMin)) yMin = Math.min(...minMax.map(({min}) => min));
+            if (nullOrUndefined(yMax)) yMax = Math.max(...minMax.map(({max}) => max));
+        }
+
         return (
             <Flex row {...props}>
                 <FlexItem>
@@ -65,6 +82,7 @@ class LineChartConfidence extends React.Component {
                         className="chart no-select"
                         animation
                         xDomain={lastDrawLocation && [lastDrawLocation.left, lastDrawLocation.right]}
+                        yDomain={[yMin, yMax]}
                         width={200}
                         height={150}
                         onMouseLeave={this.onMouseLeave}
@@ -74,7 +92,7 @@ class LineChartConfidence extends React.Component {
                         <XAxis/>
                         {serieses.map((line) =>
                             <LineSeries key={line.title} data={line.disabled ? [] : line.data}
-                                              onNearestX={this.onNearestX(line.title)}
+                                        onNearestX={this.onNearestX(line.title)}
                             />)}
                         <Crosshair values={this.state.crosshairValues}/>
                         <Highlight onBrushEnd={this.onBrushEnd}/>
