@@ -21,6 +21,7 @@ import SplitPane from "react-split-pane";
 import styled from "styled-components";
 import {ChartDataContainer, ComparisonDataContainer} from "../components/ChartDataContainer";
 import {ChartKeyTagInput} from "../components/chart-key-tag-input";
+import Resizable from 're-resizable';
 
 const FlexItemChartContainer = styled(ChartDataContainer)`flex: auto 0 0`;
 const FlexItemComparisonContainer = styled(ComparisonDataContainer)`flex: auto 0 0`;
@@ -49,6 +50,9 @@ const TagInputStyle = styled.div`
         }
      }
 `;
+
+
+const Chart = LineChartConfidence;
 
 class Experiment extends Component {
 
@@ -126,28 +130,31 @@ class Experiment extends Component {
                         <TagInputStyle><ChartKeyTagInput/></TagInputStyle>
                         <FlexItem component="button" onClick={() => dispatch(toggleComparison())}>compare</FlexItem>
                         <FlexSpacer/>
-                        <FlexItem component="button" onClick={() => dispatch(toggleConfig())}>configure</FlexItem>
-                        <div>{showConfig ? "yes" : "no"}</div>
                     </DashboardHeader>
-                    {showConfig ?
-                        <div>
-                            <h3>Configure Charts</h3>
-                            <h4>y</h4>
-                            lower
-                            <input value={yMin} onInput={(e) => dispatch(setYMin(e.target.value || null))}/>
-                            higher
-                            <input value={yMax} onInput={(e) => dispatch(setYMax(e.target.value || null))}/>
-                        </div>
-                        : null
-                    }
                     {showComparison ?
                         <div>
-                            <h3>Comparisons</h3>
+                            <Flex row align='center'>
+                                <FlexItem component={'h3'}>Comparisons</FlexItem>
+                                <FlexItem component={'button'} style={{margin: "0 10px"}}
+                                          height={20} onClick={() => dispatch(toggleConfig())}>configure
+                                </FlexItem>
+                                {showConfig ?
+                                    <FlexItem>
+                                        y min
+                                        <input value={yMin} onInput={(e) => dispatch(setYMin(e.target.value || null))}
+                                               style={{width: "5em"}} type={'number'}/>
+                                        max
+                                        <input value={yMax} onInput={(e) => dispatch(setYMax(e.target.value || null))}
+                                               style={{width: "5em"}} type={'number'}/>
+                                    </FlexItem>
+                                    : null
+                                }
+                            </Flex>
                             <Flex row style={{overflowX: "auto"}}>
                                 {chartKeys.map(chartKey =>
                                     <FlexItemComparisonContainer
                                         key={chartKey}
-                                        component={LineChartConfidence}
+                                        component={Chart}
                                         yMin={yMin}
                                         yMax={yMax}
                                         dataKeys={filteredMetricFiles.map(f => uriJoin(currentDirectory, f.path))}

@@ -161,7 +161,7 @@ const _fileReducer = combineReducers({
     files: Files('FILES'),
     metrics: Files('METRICS'),
     metricRecords: MetricRecordsReducer(),
-    chartKeys: ArrayReducer("CHARTKEYS", ["Ep_Rew_Mean", "loss.*", "Time_Elapsed", ".*"]),
+    chartKeys: ArrayReducer("CHARTKEYS", ["loss.*", ".*"]),
     // todo: absorb this into the chart definition, as part of chartConfig object.
     yMin: ValueReducer('Y_MIN', null),
     yMax: ValueReducer('Y_MAX', null),
@@ -175,6 +175,7 @@ export function setYMax(value) {
 }
 
 export function setYMin(value) {
+    console.log([value]);
     return {
         type: "Y_MIN_SET",
         value

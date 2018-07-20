@@ -12,6 +12,7 @@ import {
     LineSeriesCanvas  // use this for better performance.
 } from 'react-vis';
 import Highlight from './highlight';
+import Resizable from "re-resizable";
 
 function nullOrUndefined(b) {
     return (typeof b === 'undefined' || b === null);
@@ -22,6 +23,8 @@ class LineChartConfidence extends React.Component {
         lastDrawLocation: null,
         crosshairValues: [],
         serieses: [],
+        width: 400,
+        height: 200
     };
 
     static defaultProps = {
@@ -57,6 +60,12 @@ class LineChartConfidence extends React.Component {
         this.setState({crosshairValues})
     };
     onBrushEnd = (area) => this.setState({lastDrawLocation: area});
+    onResize = (e, direction, ref, d) => {
+        this.setState({
+            width: this.state.width + d.width,
+            height: this.state.height + d.height,
+        });
+    };
 
     render() {
         const {serieses, lastDrawLocation} = this.state;
@@ -76,17 +85,25 @@ class LineChartConfidence extends React.Component {
         }
 
         return (
-            <Flex row {...props}>
-                <FlexItem>
+            <Flex row {...props} justify={'stretch'} style={{minHeight: "150px"}}
+            >
+                <FlexItem component={Resizable}
+                          size={{width: this.state.width, height: this.state.height}}
+                          onResizeStop={this.onResize}
+                          style={{overflowY: "hidden", overflowX: "hidden"}}
+                          handleStyles={{
+                              right: {background: 'linear-gradient(to top, rgba(1, 0, 0, 0.2), transparent 15px, transparent 100%)'},
+                              bottom: {background: 'linear-gradient(to left, rgba(1, 0, 0, 0.2), transparent 15px, transparent 100%) '},
+                          }}
+                >
                     <FlexibleWidthXYPlot
                         className="chart no-select"
                         animation
                         xDomain={lastDrawLocation && [lastDrawLocation.left, lastDrawLocation.right]}
                         yDomain={[yMin, yMax]}
-                        width={200}
-                        height={150}
-                        onMouseLeave={this.onMouseLeave}
-                    >
+                        height={this.state.height}
+                        width={this.state.width}
+                        onMouseLeave={this.onMouseLeave}>
                         <HorizontalGridLines/>
                         <YAxis/>
                         <XAxis/>
@@ -98,12 +115,18 @@ class LineChartConfidence extends React.Component {
                         <Highlight onBrushEnd={this.onBrushEnd}/>
                     </FlexibleWidthXYPlot>
                 </FlexItem>
-                <FlexItem style={{overflowY: 'auto'}} height={150}>
+                <FlexItem style={{overflowY: 'auto', overflowX: "hidden"}} height={this.state.height}>
                     <DiscreteColorLegend width={legendWidth} items={serieses} onItemClick={this.itemClick}/>
                 </FlexItem>
             </Flex>
         )
     }
 }
+
+const ResizableXYPlot = ({style, size, onResizeStart, onResizeStop}) => {
+    return <Resizable style={style} size={size} onResizeStart={onResizeStart}
+                      onResizeStop={onResizeStop}><FlexibleWidthXYPlot/>
+    </Resizable>;
+};
 
 export default LineChartConfidence;

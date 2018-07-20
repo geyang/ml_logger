@@ -37,13 +37,12 @@ export const ChartDataContainer = selector(
     _ChartDataContainer
 );
 
-function sharedStart(array) {
+function sharedPrefix(array) {
     if (!array || array.length === 0) return '';
     //this prevents mutation of the array;
     let A = array.concat().sort();
     let a1 = A[0];
     let a2 = A[A.length - 1];
-    console.log(A, a1, a2);
     let L = Math.min(a1.length, a2.length);
     let i = 0;
     while (i < L && a1.charAt(i) === a2.charAt(i))
@@ -51,9 +50,29 @@ function sharedStart(array) {
     return a1.substring(0, i);
 }
 
+function sharedPostfix(array) {
+    if (!array || array.length === 0) return '';
+    //this prevents mutation of the array;
+    let A = array.map(s => [...s].reverse().join('')).sort();
+    let a1 = A[0];
+    let a2 = A[A.length - 1];
+    let L = Math.min(a1.length, a2.length);
+    let i = 0;
+    while (i < L && a1.charAt(i) === a2.charAt(i))
+        i++;
+    return [...a1.substring(0, i)].reverse().join('');
+}
+
 function removeSharedStart(array) {
-    let prefix = sharedStart(array);
+    let prefix = sharedPrefix(array);
     return array.map(str => str.slice(prefix.length));
+}
+
+function removeAlphabeticalPostfix(string) {
+    let match = string.match(/[A-z0-9]*$/);
+    let newLength = match ? match[0].length : undefined;
+    // has to be undefined. with `null` slice ends at 0.
+    return string.slice(0, newLength ? -newLength : undefined)
 }
 
 //trying to implement shorter legend.
@@ -82,11 +101,11 @@ class _ComparisonDataContainer extends Component {
         });
         if (!dirty) return null;
         let serieses = [];
-        console.log(dataKeys);
-        let prefix = sharedStart(dataKeys);
+        let prefix = removeAlphabeticalPostfix(sharedPrefix(dataKeys));
+        let postfix = sharedPostfix(dataKeys);
         dataKeys.forEach(dataKey => {
             const records = metricRecords[dataKey];
-            let shortKey = dataKey.slice(prefix.length);
+            let shortKey = dataKey.slice(prefix.length, (postfix.length) ? -postfix.length : undefined);
             if (records) {
                 const keys = getKeysFromRecords(records);
                 keys.filter(matchExp(chartKey)).forEach(key =>
