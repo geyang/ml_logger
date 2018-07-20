@@ -23,8 +23,8 @@ class LineChartConfidence extends React.Component {
         lastDrawLocation: null,
         crosshairValues: [],
         serieses: [],
-        width: 400,
-        height: 200
+        width: 200,
+        height: 150
     };
 
     static defaultProps = {
