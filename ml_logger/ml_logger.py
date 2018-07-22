@@ -128,7 +128,7 @@ class ML_Logger:
         try:
             cmd = f'cd "{os.path.realpath(diff_directory)}" && git add . && git --no-pager diff'
             r = subprocess.check_call(cmd, shell=True)  # Save git diff to experiment directory
-            self.log_text(r, diff_filename, silent=silent)
+            self.log_text(str(r), diff_filename, silent=silent)
         except subprocess.CalledProcessError as e:
             print("configure_output_dir: not storing the git diff due to {}".format(e))
 
@@ -209,7 +209,7 @@ class ML_Logger:
 
         if key in self.data:
             if type(self.data) is list:
-                self.data[key].append(value.value if type(v) is Color else value)
+                self.data[key].append(value.value if type(value) is Color else value)
             else:
                 self.data[key] = [self.data[key]] + [value.value if type(value) is Color else value]
         else:
@@ -319,8 +319,9 @@ class ML_Logger:
         """
         pass
 
-    def log_image(self, namespace="images", fmt="04d", ext="png", step=None, **kwargs):
+    def log_image(self, image, key, namespace="images", format="png"):
         """
+        DONE: IMPROVE API. I'm not a big fan of this particular api.
         Logs an image via the summary writer.
         TODO: add support for PIL images etc.
         reference: https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
@@ -330,20 +331,51 @@ class ML_Logger:
 
         value: numpy object Size(w, h, 3)
         """
-        if self.step != step and step is not None:
-            self.flush()
-            self.step = step
+        if format:
+            key += "." + format
 
-        if self.step is None:
-            for key, image in kwargs.items():
-                filename = os.path.join(self.prefix or "", namespace, key + f".{ext}")
-                self.logger.send_image(key=filename, data=image)
+        filename = os.path.join(self.prefix or "", namespace, key)
+        self.logger.send_image(key=filename, data=image)
+
+    def log_video(self, frame_stack, key, namespace='videos', format=None, fps=20, macro_block_size=None,
+                  **imageio_kwargs):
+        """
+        Let's do the compression here. Video frames are first written to a temporary file
+        and the file containing the compressed data is sent over as a file buffer.
+        
+        Save a stack of images to 
+        :param frame_stack:
+        :param key:
+        :param namespace:
+        :param fmt:
+        :param ext:
+        :param step:
+        :param imageio_kwargs:
+        :return:
+        """
+        if format:
+            key += "." + format
         else:
-            for key, image in kwargs.items():
-                filename = os.path.join(self.prefix or "", namespace, key, f"{step:{fmt}}.{ext}")
-                self.logger.send_image(key=filename, data=image)
+            # noinspection PyShadowingBuiltins
+            _, format = os.path.splitext(key)
+            if format:
+                # noinspection PyShadowingBuiltins
+                format = format[1:]  # to remove the dot
+            else:
+                # noinspection PyShadowingBuiltins
+                format = "mp4"
+                key += "." + format
 
-    def log_pyplot(self, key="plot", fig=None, format=None, step=None, namespace="plots", **kwargs):
+        filename = os.path.join(self.prefix or "", namespace, key)
+
+        import tempfile, imageio
+        with tempfile.NamedTemporaryFile(suffix=f'.{format}') as ntp:
+            imageio.mimwrite(ntp.name, frame_stack, format=format, fps=fps, macro_block_size=macro_block_size,
+                             **imageio_kwargs)
+            ntp.seek(0)
+            self.logger.log_buffer(key=filename, buf=ntp.read())
+
+    def log_pyplot(self, key="plot", fig=None, format=None, namespace="plots", **kwargs):
         """
         does not handle pdf and svg file formats. A big annoying.
 
@@ -355,10 +387,6 @@ class ML_Logger:
         :param step:
         :return:
         """
-        if self.step != step and step is not None:
-            self.flush()
-            self.step = step
-
         # can not simplify the logic, because we can't pass the filename to pyplot. A buffer is passed in instead.
         if format:  # so allow key with dots in it: metric_plot.text.plot + ".png". Because user intention is clear
             key += "." + format
@@ -379,7 +407,7 @@ class ML_Logger:
         buf.seek(0)
 
         path = os.path.join(self.prefix or "", namespace, key)
-        self.logger.log_buffer(path, buf)
+        self.logger.log_buffer(path, buf.read())
         return key
 
     def savefig(self, key="plot", fig=None, format=None, step=None, **kwargs):
@@ -411,7 +439,7 @@ class ML_Logger:
             # todo: this is torch-specific code. figure out a better way.
             ps = {k: v.cpu().detach().numpy() for k, v in m.state_dict().items()},
             # we use the number first file names to help organize modules by epoch.
-            path = os.path.join(namespace, f'{k}.pkl' if step is None else f'{step:{fmt}}_{k}.pkl')
+            path = os.path.join(namespace, f'{k}.pkl' if self.step is None else f'{step:{fmt}}_{k}.pkl')
             self.log_data(path=path, data=ps)
 
     def load_file(self, key):

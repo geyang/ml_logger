@@ -1,4 +1,4 @@
-import {take, dispatch, ERROR_CALLBACK, THEN_CALLBACK, spawn} from 'luna-saga';
+import {take, dispatch, ERROR_CALLBACK, THEN_CALLBACK, spawn, delay, call, select} from 'luna-saga';
 import {recordsToSeries} from "../data-helpers";
 import {stringify} from "query-string";
 import {status200} from "./fetch-helper";
@@ -68,7 +68,7 @@ export class FileApi {
 
     deletePath(path) {
         const src = uriJoin(this.fileEndpoint, path);
-        console.log(src);
+        // console.log(src);
         return fetch(src, {method: "DELETE",}).then(status200)
     }
 
@@ -165,6 +165,8 @@ const _fileReducer = combineReducers({
     // todo: absorb this into the chart definition, as part of chartConfig object.
     yMin: ValueReducer('Y_MIN', null),
     yMax: ValueReducer('Y_MAX', null),
+    filteredMetricsFiles: ValueReducer('FILTERED_METRIC_FILES', []),
+    filteredFiles: ValueReducer('FILTERED_FILES', []),
 });
 
 export function setYMax(value) {
@@ -175,7 +177,6 @@ export function setYMax(value) {
 }
 
 export function setYMin(value) {
-    console.log([value]);
     return {
         type: "Y_MIN_SET",
         value
@@ -222,6 +223,34 @@ function fileReducer(state = defaultState, action) {
         return state
     }
     return _fileReducer(state, action);
+}
+
+export function* searchProc() {
+    let state, action, searchQuery, currentDirectory, metrics, files, metricRecords;
+    while (true) {
+        yield take(/(UPDATE_SEARCH_RESULTS|SET_QUERY)/);
+        yield call(delay, 200);
+        ({searchQuery, currentDirectory, metrics, files} = yield select());
+        let filteredMetrics = metrics.filter(f => uriJoin(currentDirectory, f.path).match(searchQuery));
+        ({state: {metricRecords, currentDirectory}} = yield dispatch({
+            type: "FILTERED_METRIC_FILES_SET",
+            value: filteredMetrics
+        }));
+        let dataKey;
+        for (let file of filteredMetrics) {
+            dataKey = uriJoin(currentDirectory, file.path);
+            //only run once
+            if (typeof metricRecords[dataKey] === 'undefined') {
+                yield dispatch(markDirty(dataKey));
+                // console.log(`dirtying ${dataKey}`)
+            }
+        }
+        yield dispatch({
+            type: "FILTERED_FILES_SET",
+            value: files.filter(f => uriJoin(currentDirectory, f.path).match(searchQuery))
+        });
+    }
+
 }
 
 export function toggleComparison() {
@@ -285,6 +314,7 @@ export function* directoryProc() {
             sortBy: "creation",
             order: -1
         }));
+        yield dispatch({type: "UPDATE_SEARCH_RESULTS"})
     }
 }
 
@@ -293,7 +323,7 @@ export function* directoryProc() {
 function MetricRecordsReducer() {
     return function metricReducer(state = {}, action) {
         if (action.type === "SET_METRIC") {
-            state = {...state, [action.key]: action.records};
+            state = {...state, [action.key]: {records: action.records}};
             return state
         } else if (action.type === "REMOVE_METRIC") {
             state = {...state};
@@ -302,6 +332,9 @@ function MetricRecordsReducer() {
         } else if (action.type === 'DIRTY') {
             let record = state[action.key];
             return {...state, [action.key]: {...record, dirty: true}}
+        } else if (action.type === 'FETCHING_METRIC_DATA') {
+            let record = state[action.key];
+            return {...state, [action.key]: {...record, fetching: true}}
         }
         return state
     }
@@ -314,7 +347,19 @@ export function markDirty(experimentKey) {
     }
 }
 
+export function markDownloading(experimentKey) {
+    return {
+        type: "FETCHING_METRIC_DATA",
+        key: experimentKey
+    }
+}
+
 function* downloadMetrics(src) {
+    yield dispatch({
+        type: "FETCH_METRIC_DATA",
+        key: src,
+    });
+    // fixit: somehow this is called twice...
     const records = yield fileApi.getMetricData(src);
     yield dispatch({
         type: "SET_METRIC",
@@ -327,6 +372,17 @@ function undefinedOrDirty(record) {
     return (typeof record === 'undefined') || !!record.dirty;
 }
 
+
+export function* metricsDownloadProc() {
+    /** fullKey should be of the form uriJoin(currentDirectory, path); */
+    while (true) {
+        const {state: {metricRecords}, action: {key}} = yield take('DIRTY');
+        /* mark the metric as being downloaded */
+        // console.log('detected dirty!!');
+        if (undefinedOrDirty(metricRecords[key])) yield spawn(downloadMetrics, key);
+    }
+}
+
 export function* metricsProc() {
     let state, action, metrics, metricRecords, currentDirectory;
     while (true) {
@@ -334,7 +390,7 @@ export function* metricsProc() {
         let files;
         try {
             files = yield fileApi
-                .getFiles(state.currentDirectory, "**/*[dr][ai][tc][as].pkl", 1, 20) //metrics and data.pkl.
+                .getFiles(state.currentDirectory, "**/*[dr][ai][tc][as].pkl", 1, 100) //metrics and data.pkl.
             // .catch(yield ERROR_CALLBACK);
         } catch (e) {
             console.error(e);
@@ -348,10 +404,17 @@ export function* metricsProc() {
             sortBy: "creation",
             order: -1
         }));
-        for (let stat of metrics) {
-            let fullKey = uriJoin(currentDirectory, stat.path);
-            if (undefinedOrDirty(metricRecords[fullKey]))
-                yield spawn(downloadMetrics, fullKey);
-        }
+        yield dispatch({type: "UPDATE_SEARCH_RESULTS"})
+        // for (let stat of metrics) {
+        //     let fullKey = uriJoin(currentDirectory, stat.path);
+        //     console.log(fullKey);
+        //     // if (undefinedOrDirty(metricRecords[fullKey])) yield spawn(downloadMetrics, fullKey);
+        // }
+        // for (let stat of metrics) {
+        //     let fullKey = uriJoin(currentDirectory, stat.path);
+        //     if (undefinedOrDirty(metricRecords[fullKey]))
+        //         yield spawn(downloadMetrics, fullKey);
+        // }
     }
 }
+

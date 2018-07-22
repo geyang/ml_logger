@@ -34,12 +34,12 @@ def test_image():
     image_bw_2 = scipy.misc.face(gray=True)[::4, ::4]
     image_rgb = np.zeros((64, 64, 3), dtype=np.uint8)
     image_rgba = scipy.misc.face()[::4, ::4, :]
-    logger.log_image(step=4, black_white=image_bw)
-    logger.log_image(step=4, bw_face=image_bw_2)
-    logger.log_image(step=4, rgb=image_rgb)
-    logger.log_image(step=4, rgba_face=image_rgba)
-    logger.log_image(step=5, rgba_face=image_bw)
-    logger.log_image(step=6, rgba_face=image_rgba)
+    logger.log_image(image_bw, "black_white.png")
+    logger.log_image(image_bw_2, "bw_face.png")
+    logger.log_image(image_rgb, 'rgb.png')
+    logger.log_image(image_rgba, f'rgba_face_{100}.png')
+    logger.log_image(image_bw, f"bw_{100}.png")
+    logger.log_image(image_rgba, f"rbga_{100}.png")
 
     # todo: animation is NOT implemented.
     # now print a stack
@@ -55,7 +55,7 @@ def test_pyplot():
     import numpy as np
 
     face = scipy.misc.face()
-    logger.log_image(step=0, test_image=face)
+    logger.log_image(face, "face.png")
 
     fig = plt.figure(figsize=(4, 2))
     xs = np.linspace(0, 5, 1000)
@@ -67,7 +67,23 @@ def test_pyplot():
     xs = np.linspace(0, 5, 1000)
     plt.plot(xs, np.cos(xs))
     logger.savefig('sine.pdf')
-    plt.close()
+
+
+def test_video():
+    import numpy as np
+
+    def im(x, y):
+        canvas = np.zeros((200, 200))
+        for i in range(200):
+            for j in range(200):
+                if x - 5 < i < x + 5 and y - 5 < j < y + 5:
+                    canvas[i, j] = 1
+        return canvas
+
+    frames = [im(100 + i, 80) for i in range(20)]
+
+    logger.log_video(frames, "test_video.mp4")
+    
 
 
 class FakeTensor:
@@ -104,11 +120,12 @@ def test_load_params():
 
 if __name__ == "__main__":
     test()
-    test_image()
+    test_load_params()
     test_pyplot()
     test_module()
     test_load_module()
-    test_load_params()
+    test_image()
+    test_video()
     # todo: logger.log_module(6, rgba_face=image_rgba)
     # todo: logger.log_params(6, rgba_face=image_rgba)
     # todo: logger.log_file(6, rgba_face=image_rgba)

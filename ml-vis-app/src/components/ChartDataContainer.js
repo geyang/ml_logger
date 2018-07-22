@@ -1,7 +1,7 @@
 import React, {Component} from 'react'
 import {getKeysFromRecords, matchExp, recordsToSeries} from "../data-helpers";
 import selector from "../lib/react-luna";
-import {uriJoin} from "../lib/file-api";
+import {markDirty, uriJoin} from "../lib/file-api";
 
 // takes in dataKey, chartKey and a charting component. Outputs the chart.
 class _ChartDataContainer extends Component {
@@ -10,9 +10,10 @@ class _ChartDataContainer extends Component {
         serieses: []
     };
 
+
     static getDerivedStateFromProps(props, state) {
         const {metricRecords, dataKey, chartKey, xKey = "_step"} = props;
-        const records = metricRecords[dataKey];
+        const {records} = metricRecords[dataKey] || {};
         if (!state.records && !records) return null;
         if (state.records !== records) {
             if (!records) return {records: [], serieses: []};
@@ -95,7 +96,7 @@ class _ComparisonDataContainer extends Component {
         newChartKey = chartKey;
         newDataKeys = dataKeys;
         dataKeys.forEach(dataKey => {
-            const records = metricRecords[dataKey];
+            const {records} = metricRecords[dataKey] || {};
             newRecords[dataKey] = records;
             if (records !== state.records[dataKey]) dirty = true;
         });
@@ -104,7 +105,7 @@ class _ComparisonDataContainer extends Component {
         let prefix = removeAlphabeticalPostfix(sharedPrefix(dataKeys));
         let postfix = sharedPostfix(dataKeys);
         dataKeys.forEach(dataKey => {
-            const records = metricRecords[dataKey];
+            const {records} = metricRecords[dataKey] || {};
             let shortKey = dataKey.slice(prefix.length, (postfix.length) ? -postfix.length : undefined);
             if (records) {
                 const keys = getKeysFromRecords(records);

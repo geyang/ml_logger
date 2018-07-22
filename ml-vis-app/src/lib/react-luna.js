@@ -22,7 +22,7 @@ export default function selector(
         constructor(props) {
             super(props);
             this.store$ = stores[storeKey];
-            if (!!this.store$) console.warn('no store has been registered. Please call registerStore first!');
+            if (!this.store$) console.warn('no store has been registered. Please call registerStore first!');
             this.storeToState = this._storeToState.bind(this);
         }
 

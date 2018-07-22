@@ -18,6 +18,7 @@ function nullOrUndefined(b) {
     return (typeof b === 'undefined' || b === null);
 }
 
+
 class LineChartConfidence extends React.Component {
     state = {
         lastDrawLocation: null,
@@ -73,7 +74,7 @@ class LineChartConfidence extends React.Component {
         delete props.serieses;
 
         if (nullOrUndefined(yMin) || nullOrUndefined(yMax)) {
-            let minMax = serieses.map(line => {
+            let minMax = serieses.filter(l => !l.disabled).map(line => {
                 let ys = line.data.map(({y}) => y);
                 return {
                     max: Math.max(...ys),
@@ -85,12 +86,14 @@ class LineChartConfidence extends React.Component {
         }
 
         return (
-            <Flex row {...props} justify={'stretch'} style={{minHeight: "150px"}}
+            <Flex row {...props} justify={'stretch'}
             >
                 <FlexItem component={Resizable}
                           size={{width: this.state.width, height: this.state.height}}
                           onResizeStop={this.onResize}
                           style={{overflowY: "hidden", overflowX: "hidden"}}
+                          minWidth={200}
+                          minHeight={150}
                           handleStyles={{
                               right: {background: 'linear-gradient(to top, rgba(1, 0, 0, 0.2), transparent 15px, transparent 100%)'},
                               bottom: {background: 'linear-gradient(to left, rgba(1, 0, 0, 0.2), transparent 15px, transparent 100%) '},
@@ -129,4 +132,5 @@ const ResizableXYPlot = ({style, size, onResizeStart, onResizeStop}) => {
     </Resizable>;
 };
 
+// export default LineChartConfidence = ()=><div>placeholder</div>
 export default LineChartConfidence;

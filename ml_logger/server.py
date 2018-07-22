@@ -91,11 +91,11 @@ class LoggingServer:
             abs_path = os.path.join(self.data_dir, key)
             try:
                 with open(abs_path, 'ab') as f:
-                    f.write(data.read())
+                    f.write(data)
             except FileNotFoundError:
                 os.makedirs(os.path.dirname(abs_path))
                 with open(abs_path, 'ab') as f:
-                    f.write(data.read())
+                    f.write(data)
         elif dtype.startswith("text"):
             abs_path = os.path.join(self.data_dir, key)
             if "." not in key:
@@ -121,9 +121,6 @@ class LoggingServer:
             except FileNotFoundError:
                 os.makedirs(os.path.dirname(abs_path))
                 im.save(abs_path)
-        elif dtype.startswith("video"):
-            # todo: mpeg can be appended directly, making it a nice format.
-            raise NotImplementedError
 
 
 @cli_parse

@@ -4,7 +4,7 @@ import {Link} from "react-router-dom"
 import {Flex, FlexItem, FlexSpacer} from 'layout-components';
 import selector, {identity} from "../lib/react-luna";
 import {
-    goTo,
+    goTo, markDirty,
     parentDir,
     queryInput,
     removePath,
@@ -21,7 +21,6 @@ import SplitPane from "react-split-pane";
 import styled from "styled-components";
 import {ChartDataContainer, ComparisonDataContainer} from "../components/ChartDataContainer";
 import {ChartKeyTagInput} from "../components/chart-key-tag-input";
-import Resizable from 're-resizable';
 
 const FlexItemChartContainer = styled(ChartDataContainer)`flex: auto 0 0`;
 const FlexItemComparisonContainer = styled(ComparisonDataContainer)`flex: auto 0 0`;
@@ -70,31 +69,16 @@ class Experiment extends Component {
 
     render() {
         const {
-            currentDirectory, searchQuery, files, metrics, showComparison, showConfig, dispatch,
+            currentDirectory, searchQuery, filteredFiles, filteredMetricsFiles, showComparison, showConfig, dispatch,
             chartKeys, yMin, yMax,
             match: {params: {bucketKey, experimentKey = ""}}, location, history, ...props
         } = this.props;
-        const {compare} = this.state;
 
-        let filteredMetricFiles;
-        try {
-            filteredMetricFiles = metrics.filter(f => uriJoin(currentDirectory, f.path).indexOf(searchQuery) > -1);
-        } catch (e) {
-            console.error(e);
-            filteredMetricFiles = [];
-        }
-        let filteredFiles;
-        try {
-            filteredFiles = files.filter(f => uriJoin(currentDirectory, f.path).indexOf(searchQuery) > -1);
-        } catch (e) {
-            console.error(e);
-            filteredFiles = [];
-        }
         return <Flex>
             <Helmet>
                 <link sync href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet"/>
                 <link sync href="https://unpkg.com/react-vis/dist/style.css" rel="stylesheet"/>
-                <style>{"body {font-family: 'lato'; "}</style>
+                <style>{"body {font-family: 'lato'; margin: 0}"}</style>
                 <title>Escher.ml</title>
             </Helmet>
             <SplitPane minSize={50} defaultSize={300}
@@ -153,11 +137,12 @@ class Experiment extends Component {
                             <Flex row style={{overflowX: "auto"}}>
                                 {chartKeys.map(chartKey =>
                                     <FlexItemComparisonContainer
+                                        dispatch={dispatch}
                                         key={chartKey}
                                         component={Chart}
                                         yMin={yMin}
                                         yMax={yMax}
-                                        dataKeys={filteredMetricFiles.map(f => uriJoin(currentDirectory, f.path))}
+                                        dataKeys={filteredMetricsFiles.map(f => uriJoin(currentDirectory, f.path))}
                                         chartKey={chartKey}
                                         legendWidth={null}
                                     />)}
@@ -168,13 +153,14 @@ class Experiment extends Component {
                     }
                     <div>
                         <h3>Experiments</h3>
-                        {filteredMetricFiles.map((f) =>
+                        {filteredMetricsFiles.map((f) =>
                             <ExperimentRow key={f.path}
                                            bucketKey={bucketKey} experimentKey={experimentKey} path={f.path}
-                                           chartKeys={chartKeys} dispatch={dispatch}
+                                           chartKeys={chartKeys} dispatch={dispatch} currentDirectory={currentDirectory}
                             >{
                                 chartKeys.map(chartKey =>
                                     <FlexItemChartContainer
+                                        dispatch={dispatch}
                                         key={chartKey}
                                         component={LineChartConfidence}
                                         dataKey={uriJoin(currentDirectory, f.path)}
@@ -189,7 +175,7 @@ class Experiment extends Component {
 }
 
 
-function ExperimentRow({bucketKey, experimentKey, path, chartKeys, dispatch, children}) {
+function ExperimentRow({bucketKey, experimentKey, path, chartKeys, dispatch, children, currentDirectory}) {
     const parentDirectory = parentDir(path);
     const experimentDirectory = uriJoin(experimentKey, parentDirectory);
     const dataPath = uriJoin(experimentKey, path);
@@ -200,14 +186,15 @@ function ExperimentRow({bucketKey, experimentKey, path, chartKeys, dispatch, chi
                 {parentDirectory}
             </FlexItem>
             <FlexItem component="button"
-                      onClick={() => dispatch(removePath(experimentDirectory))}>delete
-                experiment</FlexItem>
+                      onClick={() => dispatch(markDirty(uriJoin(currentDirectory, path)))}>refresh</FlexItem>
             <FlexItem component='a'
                       href={uriJoin("http://54.71.92.65:8082/files", dataPath + "?json=1&download=0")}
                       target="_blank">view json</FlexItem>
             <FlexItem component='a'
                       href={uriJoin("http://54.71.92.65:8082/files", dataPath + "?download=1")}
                       target="_blank">download pkl</FlexItem>
+            <FlexItem component="button"
+                      onClick={() => dispatch(removePath(experimentDirectory))}>delete experiment</FlexItem>
         </Flex>
         <Flex row style={{overflowX: "auto", overflowY: "hidden"}}>
             {children}
