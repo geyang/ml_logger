@@ -157,9 +157,11 @@ class Experiment extends Component {
                             <ExperimentRow key={f.path}
                                            bucketKey={bucketKey} experimentKey={experimentKey} path={f.path}
                                            chartKeys={chartKeys} dispatch={dispatch} currentDirectory={currentDirectory}
-                            >{
-                                chartKeys.map(chartKey =>
-                                    <FlexItemChartContainer
+                            >{chartKeys.map(chartKey =>
+                                chartKey.match("video:")
+                                    ? <video src={"http://54.71.92.65:8082/files/2018-07-22/super-expert-debug/reacher-task-baselines-ec2/debug-batch(2k)-static_var(true)-reacher_single_goal-164904-648890/reacher.mp4"}
+                                             height={150} controls/>
+                                    : <FlexItemChartContainer
                                         dispatch={dispatch}
                                         key={chartKey}
                                         component={LineChartConfidence}

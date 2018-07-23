@@ -410,14 +410,14 @@ class ML_Logger:
         self.logger.log_buffer(path, buf.read())
         return key
 
-    def savefig(self, key="plot", fig=None, format=None, step=None, **kwargs):
+    def savefig(self, key, fig=None, format=None, **kwargs):
         """
         This one overrides the namespace default of log_pyplot.
         This way, the key behave exactly the same way pyplot.savefig behaves.
 
         default plotting file name is plot.png under the current directory
         """
-        self.log_pyplot(key=key, fig=fig, format=format, step=step, namespace="", **kwargs)
+        self.log_pyplot(key=key, fig=fig, format=format, namespace="", **kwargs)
 
     def log_module(self, namespace="modules", fmt="04d", step=None, **kwargs):
         """
