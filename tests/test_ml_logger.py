@@ -60,7 +60,7 @@ def test_pyplot():
     fig = plt.figure(figsize=(4, 2))
     xs = np.linspace(0, 5, 1000)
     plt.plot(xs, np.cos(xs))
-    logger.savefig(fig=fig)
+    logger.savefig("face_02.png", fig=fig)
     plt.close()
 
     fig = plt.figure(figsize=(4, 2))
