@@ -22,7 +22,7 @@ export function connectLocationToStore(store) {
 
     history.listen((location, action) => {
         const {location: oldLocation} = store.getValue();
-        if (location != oldLocation) {
+        if (location !== oldLocation) {
             store.dispatch({
                 type: PUSH_LOCATION,
                 location

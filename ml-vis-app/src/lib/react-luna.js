@@ -27,7 +27,15 @@ export default function selector(
         }
 
         _storeToState(store) {
-            if (store !== this.state) this.setState(selectorFunction(store));
+            const selected = selectorFunction(store);
+            // console.log('======== deciding if refresh =========', this.state, selected);
+            if (!this.state ^ !selected) return this.setState(selected);
+            for (let key of Object.keys(selected)) {
+                // console.log(key, selected[key], this.state[key]);
+                if (selected[key] !== this.state[key]) return this.setState(selected);
+            }
+            // console.log('xxxxxxxxxx no refresh xxxxxxxxxx')
+
         }
 
         componentWillMount() {

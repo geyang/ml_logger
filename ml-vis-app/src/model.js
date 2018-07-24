@@ -24,7 +24,7 @@ function storageSelector({searchQuery, chartKeys, showComparison, yMin, yMax}) {
 
 
 export const store$ = new Store(rootReducer);
-store$.update$.subscribe(({state, action}) => console.log(state, action));
+// store$.update$.subscribe(({state, action}) => console.log(state, action));
 registerStore(store$);
 const {syncStore} = connectLocalStorage(store$, storageSelector);
 syncStore();

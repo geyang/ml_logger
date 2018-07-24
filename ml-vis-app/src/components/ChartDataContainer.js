@@ -12,9 +12,12 @@ class _ChartDataContainer extends Component {
 
 
     static getDerivedStateFromProps(props, state) {
-        const {metricRecords, dataKey, chartKey, xKey = "_step"} = props;
+        const {metricRecords, dataKey, chartKey, xKey = "_step", fetchCallback} = props;
         const {records} = metricRecords[dataKey] || {};
-        if (!state.records && !records) return null;
+        if ((!state.records || !state.records.length) && !records) {
+            // might want to throttle this.
+            return null;
+        }
         if (state.records !== records) {
             if (!records) return {records: [], serieses: []};
             // } else if (this.state.records !== records && !(!this.state.records && !records)) {
@@ -24,6 +27,29 @@ class _ChartDataContainer extends Component {
         }
         return null;
     }
+
+    componentDidMount() {
+        const {metricRecords, dataKey, fetchCallback} = this.props;
+        const {records} = metricRecords[dataKey] || {};
+        console.log(records);
+        if (!records) {
+            console.log('launched fetch request', dataKey);
+            // might want to throttle this.
+            fetchCallback(dataKey);
+        }
+    }
+
+    componentDidUpdate() {
+        const {metricRecords, dataKey, fetchCallback} = this.props;
+        const {records} = metricRecords[dataKey] || {};
+        console.log(records);
+        if (!records) {
+            console.log('launched fetch request', dataKey);
+            // might want to throttle this.
+            fetchCallback(dataKey);
+        }
+    }
+
 
     render() {
         const {children, component: Component, ...props} = this.props;

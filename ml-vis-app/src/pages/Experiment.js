@@ -4,6 +4,7 @@ import {Link} from "react-router-dom"
 import {Flex, FlexItem, FlexSpacer} from 'layout-components';
 import selector, {identity} from "../lib/react-luna";
 import {
+    fetchData,
     goTo, markDirty,
     parentDir,
     queryInput,
@@ -21,12 +22,14 @@ import SplitPane from "react-split-pane";
 import styled from "styled-components";
 import {ChartDataContainer, ComparisonDataContainer} from "../components/ChartDataContainer";
 import {ChartKeyTagInput} from "../components/chart-key-tag-input";
+import VisibilitySensor from 'react-visibility-sensor';
 
 const FlexItemChartContainer = styled(ChartDataContainer)`flex: auto 0 0`;
 const FlexItemComparisonContainer = styled(ComparisonDataContainer)`flex: auto 0 0`;
 const DashboardHeader = styled(Flex)`
     padding: 10px 0;
     border-bottom: 1px solid #e6e6e6;
+    flex: auto 0 0;
 `;
 const TagInputStyle = styled.div`
      .ReactTags__selected {
@@ -67,12 +70,14 @@ class Experiment extends Component {
         return {}
     }
 
+
     render() {
         const {
             currentDirectory, searchQuery, filteredFiles, filteredMetricsFiles, showComparison, showConfig, dispatch,
             chartKeys, yMin, yMax,
             match: {params: {bucketKey, experimentKey = ""}}, location, history, ...props
         } = this.props;
+        console.log(filteredMetricsFiles);
 
         return <Flex>
             <Helmet>
@@ -108,7 +113,7 @@ class Experiment extends Component {
                         </div>
                     )}
                 </div>
-                <div className="dash-container">
+                <Flex column className="dash-container" style={{height: "100%"}}>
                     <DashboardHeader row className="dash-board-header">
                         <FlexItem component="div">{experimentKey}</FlexItem>
                         <TagInputStyle><ChartKeyTagInput/></TagInputStyle>
@@ -116,7 +121,7 @@ class Experiment extends Component {
                         <FlexSpacer/>
                     </DashboardHeader>
                     {showComparison ?
-                        <div>
+                        <FlexItem>
                             <Flex row align='center'>
                                 <FlexItem component={'h3'}>Comparisons</FlexItem>
                                 <FlexItem component={'button'} style={{margin: "0 10px"}}
@@ -148,61 +153,78 @@ class Experiment extends Component {
                                     />)}
                             </Flex>
 
-                        </div>
+                        </FlexItem>
                         : null
                     }
-                    <div>
-                        <h3>Experiments</h3>
-                        {filteredMetricsFiles.map((f) =>
-                            <ExperimentRow key={f.path}
-                                           bucketKey={bucketKey} experimentKey={experimentKey} path={f.path}
-                                           chartKeys={chartKeys} dispatch={dispatch} currentDirectory={currentDirectory}
-                            >{chartKeys.map(chartKey =>
-                                chartKey.match("video:")
-                                    ? <video src={"http://54.71.92.65:8082/files/2018-07-22/super-expert-debug/reacher-task-baselines-ec2/debug-batch(2k)-static_var(true)-reacher_single_goal-164904-648890/reacher.mp4"}
-                                             height={150} controls/>
-                                    : <FlexItemChartContainer
-                                        dispatch={dispatch}
-                                        key={chartKey}
-                                        component={LineChartConfidence}
-                                        dataKey={uriJoin(currentDirectory, f.path)}
-                                        chartKey={chartKey}/>)
-                            }</ExperimentRow>
-                        )}
-                    </div>
-                </div>
+                    <FlexItem component={'h3'}>Experiments</FlexItem>
+                    <FlexItem fluid style={{overflowY: "auto"}}>
+                        {filteredMetricsFiles.map(f => {
+                            const dataKey = uriJoin(currentDirectory, f.path);
+                            return <VisibilitySensor partialVisibility={true}>{
+                                ({isVisible}) =>
+                                    <ExperimentRow key={f.path}
+                                                   bucketKey={bucketKey}
+                                                   experimentKey={experimentKey}
+                                                   path={f.path}
+                                                   chartKeys={chartKeys}
+                                                   dispatch={dispatch}
+                                                   currentDirectory={currentDirectory}>
+                                        {isVisible
+                                            ? chartKeys.map(chartKey =>
+                                                chartKey.match("video:")
+                                                    ? <video
+                                                        src={`http://54.71.92.65:8082/files/${experimentKey}/${chartKey.slice(5)}`}
+                                                        height={150} controls/>
+                                                    : <FlexItemChartContainer
+                                                        dispatch={dispatch}
+                                                        fetchCallback={(dataKey) => dispatch(fetchData(dataKey))}
+                                                        key={chartKey}
+                                                        component={LineChartConfidence}
+                                                        dataKey={dataKey}
+                                                        chartKey={chartKey}/>)
+                                            : <div style={{height: "150px"}}> placeholder <br/> placeholder <br/> placeholder <br/> placeholder <br/> ============= </div>
+                                        } </ExperimentRow>
+                            }</VisibilitySensor>
+                        })}
+                    </FlexItem>
+                </Flex>
             </SplitPane>
         </Flex>;
     };
 }
 
 
-function ExperimentRow({bucketKey, experimentKey, path, chartKeys, dispatch, children, currentDirectory}) {
-    const parentDirectory = parentDir(path);
-    const experimentDirectory = uriJoin(experimentKey, parentDirectory);
-    const dataPath = uriJoin(experimentKey, path);
-    return <div key={path}>
-        <Flex row>
-            <FlexItem fixed component={Link}
-                      to={uriJoin("/experiments", bucketKey, experimentDirectory)}>
-                {parentDirectory}
-            </FlexItem>
-            <FlexItem component="button"
-                      onClick={() => dispatch(markDirty(uriJoin(currentDirectory, path)))}>refresh</FlexItem>
-            <FlexItem component='a'
-                      href={uriJoin("http://54.71.92.65:8082/files", dataPath + "?json=1&download=0")}
-                      target="_blank">view json</FlexItem>
-            <FlexItem component='a'
-                      href={uriJoin("http://54.71.92.65:8082/files", dataPath + "?download=1")}
-                      target="_blank">download pkl</FlexItem>
-            <FlexItem component="button"
-                      onClick={() => dispatch(removePath(experimentDirectory))}>delete experiment</FlexItem>
-        </Flex>
-        <Flex row style={{overflowX: "auto", overflowY: "hidden"}}>
-            {children}
-        </Flex>
-    </div>
+class ExperimentRow extends Component {
+    state = {};
 
+    render() {
+        const {bucketKey, experimentKey, path, chartKeys, dispatch, children, currentDirectory, ...props} = this.props;
+        const parentDirectory = parentDir(path);
+        const experimentDirectory = uriJoin(experimentKey, parentDirectory);
+        const dataPath = uriJoin(experimentKey, path);
+        return <div key={path} {...props}>
+            <Flex row>
+                <FlexItem fixed component={Link}
+                          to={uriJoin("/experiments", bucketKey, experimentDirectory)}>
+                    {parentDirectory}
+                </FlexItem>
+                <FlexItem component="button"
+                          onClick={() => dispatch(fetchData(uriJoin(currentDirectory, path)))}>refresh</FlexItem>
+                <FlexItem component='a'
+                          href={uriJoin("http://54.71.92.65:8082/files", dataPath + "?json=1&download=0")}
+                          target="_blank">view json</FlexItem>
+                <FlexItem component='a'
+                          href={uriJoin("http://54.71.92.65:8082/files", dataPath + "?download=1")}
+                          target="_blank">download pkl</FlexItem>
+                <FlexItem component="button"
+                          onClick={() => dispatch(removePath(experimentDirectory))}>delete experiment</FlexItem>
+            </Flex>
+            <Flex row style={{overflowX: "auto", overflowY: "hidden"}}>
+                {children}
+            </Flex>
+        </div>
+
+    }
 }
 
 
