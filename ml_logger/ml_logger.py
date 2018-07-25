@@ -126,11 +126,12 @@ class ML_Logger:
         """
         import subprocess
         try:
-            cmd = f'cd "{os.path.realpath(diff_directory)}" && git add . && git --no-pager diff'
-            r = subprocess.check_call(cmd, shell=True)  # Save git diff to experiment directory
-            self.log_text(str(r), diff_filename, silent=silent)
+            cmd = f'cd "{os.path.realpath(diff_directory)}" && git add . && git --no-pager diff --staged'
+            self.print(cmd)
+            p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
+            self.log_text(str(p), diff_filename, silent=silent)
         except subprocess.CalledProcessError as e:
-            print("configure_output_dir: not storing the git diff due to {}".format(e))
+            self.print("not storing the git diff due to {}".format(e))
 
     # noinspection PyInitNewSignature
     def __init__(self, log_directory: str = None, prefix="", buffer_size=2048, max_workers=5):

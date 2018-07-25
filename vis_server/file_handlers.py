@@ -56,7 +56,7 @@ async def get_path(request, file_path=""):
     query = request.args.get('query', "*").strip()
     start = int(request.args.get('start', '0'))
     stop = int(request.args.get('stop', '200'))
-    reservoir_k = int(request.args.get('reservoir', '500'))
+    reservoir_k = int(request.args.get('reservoir', '200'))
 
     # limit for the search itself.
     search_limit = 500
