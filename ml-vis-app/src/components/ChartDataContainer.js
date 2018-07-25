@@ -31,7 +31,6 @@ class _ChartDataContainer extends Component {
     componentDidMount() {
         const {metricRecords, dataKey, fetchCallback} = this.props;
         const {records} = metricRecords[dataKey] || {};
-        console.log(records);
         if (!records) {
             console.log('launched fetch request', dataKey);
             // might want to throttle this.
@@ -42,7 +41,6 @@ class _ChartDataContainer extends Component {
     componentDidUpdate() {
         const {metricRecords, dataKey, fetchCallback} = this.props;
         const {records} = metricRecords[dataKey] || {};
-        console.log(records);
         if (!records) {
             console.log('launched fetch request', dataKey);
             // might want to throttle this.

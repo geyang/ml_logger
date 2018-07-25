@@ -28,12 +28,13 @@ export function matchExp(exp) {
 export function recordsToSeries(records, yKey = null, xKey = "_step", title = null) {
     let line = [];
     records.forEach(function (r, i) {
-        if (typeof r[yKey] !== "undefined")
+        if (typeof r[yKey] !== "undefined" && r[yKey] !== null) {
             try {
                 line.push({x: r[xKey] || i, y: r[yKey]});
             } catch (e) {
                 line = [{x: r[xKey] || i, y: r[yKey]}];
             }
+        }
     });
     return {title: title || yKey, data: line}
 }
@@ -42,12 +43,13 @@ export function recordsToSerieses(records, xKey = "_step") {
     const lines = {};
     records.forEach(function (r, i) {
         getKeys(r).forEach(function (k) {
-            if (typeof r[xKey] !== 'undefined' && typeof r[k] !== "undefined")
+            if (typeof r[xKey] !== 'undefined' && typeof r[k] !== "undefined" && r[k] !== null) {
                 try {
                     lines[k].push({x: r[xKey] || i, y: r[k]})
                 } catch (e) {
                     lines[k] = [{x: r[xKey] || i, y: r[k]}]
                 }
+            }
         });
     });
     return Object.entries(lines).map(([t, l]) => ({title: t, data: l}));

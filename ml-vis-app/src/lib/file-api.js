@@ -342,10 +342,11 @@ export function markDirty(experimentKey) {
     }
 }
 
-export function fetchData(experimentKey) {
+export function fetchData(experimentKey, force = false) {
     return {
         type: "FETCH",
-        key: experimentKey
+        key: experimentKey,
+        force
     }
 }
 
@@ -375,11 +376,11 @@ function notFetchingDirtyOrUndefined(record) {
 export function* metricsDownloadProc() {
     /** fullKey should be of the form uriJoin(currentDirectory, path); */
     while (true) try {
-        const {state: {metricRecords}, action: {key}} = yield take('FETCH');
+        const {state: {metricRecords}, action: {key, force}} = yield take('FETCH');
         // console.log(key, metricRecords[key]);
         /* mark the metric as being downloaded */
         // console.log('detected dirty!!');
-        if (notFetchingDirtyOrUndefined(metricRecords[key])) {
+        if (force || notFetchingDirtyOrUndefined(metricRecords[key])) {
             // console.log('mark we are downloading', key);
             yield dispatch(markDownloading(key));
             // console.log('download', key);
@@ -397,7 +398,7 @@ export function* metricsProc() {
         let files;
         try {
             files = yield fileApi
-                .getFiles(state.currentDirectory, "**/*[dr][ai][tc][as].pkl", 1, 500) //metrics and data.pkl.
+                .getFiles(state.currentDirectory, "**/*[dr][ai][tc][as].pkl", 1, 10000) //metrics and data.pkl.
             // .catch(yield ERROR_CALLBACK);
         } catch (e) {
             console.error(e);

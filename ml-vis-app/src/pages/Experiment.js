@@ -77,7 +77,6 @@ class Experiment extends Component {
             chartKeys, yMin, yMax,
             match: {params: {bucketKey, experimentKey = ""}}, location, history, ...props
         } = this.props;
-        console.log(filteredMetricsFiles);
 
         return <Flex>
             <Helmet>
@@ -160,7 +159,8 @@ class Experiment extends Component {
                     <FlexItem fluid style={{overflowY: "auto"}}>
                         {filteredMetricsFiles.map(f => {
                             const dataKey = uriJoin(currentDirectory, f.path);
-                            return <VisibilitySensor partialVisibility={true}>{
+                            const experimentDir = uriJoin(currentDirectory, parentDir(f.path));
+                            return <VisibilitySensor key={f.path} partialVisibility={true}>{
                                 ({isVisible}) =>
                                     <ExperimentRow key={f.path}
                                                    bucketKey={bucketKey}
@@ -172,9 +172,9 @@ class Experiment extends Component {
                                         {isVisible
                                             ? chartKeys.map(chartKey =>
                                                 chartKey.match("video:")
-                                                    ? <video
-                                                        src={`http://54.71.92.65:8082/files/${experimentKey}/${chartKey.slice(5)}`}
-                                                        height={150} controls/>
+                                                    ? <video key={chartKey}
+                                                        src={`http://54.71.92.65:8082/files${experimentDir}/${chartKey.slice(6)}`}
+                                                        height={150} controls playsInline={true} type="video/mp4"/>
                                                     : <FlexItemChartContainer
                                                         dispatch={dispatch}
                                                         fetchCallback={(dataKey) => dispatch(fetchData(dataKey))}
@@ -182,7 +182,9 @@ class Experiment extends Component {
                                                         component={LineChartConfidence}
                                                         dataKey={dataKey}
                                                         chartKey={chartKey}/>)
-                                            : <div style={{height: "150px"}}> placeholder <br/> placeholder <br/> placeholder <br/> placeholder <br/> ============= </div>
+                                            : <div
+                                                style={{height: "150px"}}> placeholder <br/> placeholder <br/> placeholder <br/> placeholder <br/> =============
+                                            </div>
                                         } </ExperimentRow>
                             }</VisibilitySensor>
                         })}
@@ -209,7 +211,7 @@ class ExperimentRow extends Component {
                     {parentDirectory}
                 </FlexItem>
                 <FlexItem component="button"
-                          onClick={() => dispatch(fetchData(uriJoin(currentDirectory, path)))}>refresh</FlexItem>
+                          onClick={() => dispatch(fetchData(uriJoin(currentDirectory, path), true))}>refresh</FlexItem>
                 <FlexItem component='a'
                           href={uriJoin("http://54.71.92.65:8082/files", dataPath + "?json=1&download=0")}
                           target="_blank">view json</FlexItem>
