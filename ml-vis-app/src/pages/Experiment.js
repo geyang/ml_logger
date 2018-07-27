@@ -179,7 +179,7 @@ class Experiment extends Component {
                                                                   type="video/mp4"/>;
                                                 else if (chartKey.match(/^text:/))
                                                     return <Text src={`${experimentDir}/${chartKey.slice(5)}`}
-                                                                 height={150} width={200}/>;
+                                                                 style={{height: "150px", width: "200px", overflowY: "auto"}}/>;
                                                 else if (chartKey.match(/parameters\.pkl/))
                                                     return <table></table>
                                                 else return <FlexItemChartContainer
