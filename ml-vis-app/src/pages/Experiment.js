@@ -23,6 +23,7 @@ import styled from "styled-components";
 import {ChartDataContainer, ComparisonDataContainer} from "../components/ChartDataContainer";
 import {ChartKeyTagInput} from "../components/chart-key-tag-input";
 import VisibilitySensor from 'react-visibility-sensor';
+import {Text} from "../components/text-components";
 
 const FlexItemChartContainer = styled(ChartDataContainer)`flex: auto 0 0`;
 const FlexItemComparisonContainer = styled(ComparisonDataContainer)`flex: auto 0 0`;
@@ -170,21 +171,26 @@ class Experiment extends Component {
                                                    dispatch={dispatch}
                                                    currentDirectory={currentDirectory}>
                                         {isVisible
-                                            ? chartKeys.map(chartKey =>
-                                                chartKey.match("video:")
-                                                    ? <video key={chartKey}
-                                                        src={`http://54.71.92.65:8082/files${experimentDir}/${chartKey.slice(6)}`}
-                                                        height={150} controls playsInline={true} type="video/mp4"/>
-                                                    : <FlexItemChartContainer
+                                            ? chartKeys.map(chartKey => {
+                                                if (chartKey.match(/^video:/))
+                                                    return <video key={chartKey}
+                                                                  src={`http://54.71.92.65:8082/files${experimentDir}/${chartKey.slice(6)}`}
+                                                                  height={150} controls playsInline={true}
+                                                                  type="video/mp4"/>;
+                                                else if (chartKey.match(/^text:/))
+                                                    return <Text src={`${experimentDir}/${chartKey.slice(5)}`}
+                                                                 height={150} width={200}/>;
+                                                else if (chartKey.match(/parameters\.pkl/))
+                                                    return <table></table>
+                                                else return <FlexItemChartContainer
                                                         dispatch={dispatch}
                                                         fetchCallback={(dataKey) => dispatch(fetchData(dataKey))}
                                                         key={chartKey}
                                                         component={LineChartConfidence}
                                                         dataKey={dataKey}
-                                                        chartKey={chartKey}/>)
-                                            : <div
-                                                style={{height: "150px"}}> placeholder <br/> placeholder <br/> placeholder <br/> placeholder <br/> =============
-                                            </div>
+                                                        chartKey={chartKey}/>;
+                                            })
+                                            : <div style={{height: "150px"}}> placeholder <br/> placeholder <br/> placeholder <br/> placeholder <br/> ============= </div>
                                         } </ExperimentRow>
                             }</VisibilitySensor>
                         })}

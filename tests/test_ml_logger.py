@@ -83,7 +83,6 @@ def test_video():
     frames = [im(100 + i, 80) for i in range(20)]
 
     logger.log_video(frames, "test_video.mp4")
-    
 
 
 class FakeTensor:
@@ -118,14 +117,19 @@ def test_load_params():
     pass
 
 
+def test_diff():
+    logger.diff()
+
+
 if __name__ == "__main__":
-    test()
-    test_load_params()
-    test_pyplot()
-    test_module()
-    test_load_module()
-    test_image()
-    test_video()
+    test_diff()
+    # test()
+    # test_load_params()
+    # test_pyplot()
+    # test_module()
+    # test_load_module()
+    # test_image()
+    # test_video()
     # todo: logger.log_module(6, rgba_face=image_rgba)
     # todo: logger.log_params(6, rgba_face=image_rgba)
     # todo: logger.log_file(6, rgba_face=image_rgba)

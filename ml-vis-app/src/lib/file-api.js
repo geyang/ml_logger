@@ -50,6 +50,17 @@ export class FileApi {
         return fetch(uri).then(status200).then(j => j.json())
     }
 
+    getText(fileKey= "/", query = "", stop = 100, start = 0) {
+        // todo: start and stop are not being used
+        let uri = `${this.fileEndpoint}${fileKey}`;
+        const params = {};
+        if (!!query) params.query = query;
+        if (!!start) params.start = start;
+        if (!!stop) params.stop = stop;
+        if (!!params) uri += `?${stringify(params)}`;
+        return fetch(uri).then(status200).then(j => j.text())
+    }
+
     subscribeFileEvents(currentDirectory = "/", query = "") {
         let uri = uriJoin(this.fileEvents, currentDirectory);
         const params = {};
@@ -59,7 +70,7 @@ export class FileApi {
     }
 
     getMetricData(path) {
-        const src = uriJoin(this.fileEndpoint, path) + "?json=1";
+        const src = uriJoin(this.fileEndpoint, path) + "?log=1";
         return fetch(src, {headers: {'Content-Type': 'application/json; charset=utf-8'}})
             .then(status200)
             .then((r) => r.json())

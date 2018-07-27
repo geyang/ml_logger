@@ -50,6 +50,7 @@ async def get_path(request, file_path=""):
 
     as_records = request.args.get('records')
     as_json = request.args.get('json')
+    as_log = request.args.get('log')
     as_attachment = int(request.args.get('download', '0'))
     is_recursive = request.args.get('recursive')
     show_hidden = request.args.get('hidden')
@@ -76,11 +77,16 @@ async def get_path(request, file_path=""):
             from ml_logger.helpers import load_pickle_as_dataframe
             df = load_pickle_as_dataframe(path, reservoir_k)
             res = response.text(df.to_json(orient="records"), status=200, content_type='application/json')
-        elif as_json:
+        elif as_log:
             from ml_logger.helpers import load_pickle_as_dataframe
             df = load_pickle_as_dataframe(path, reservoir_k)
             res = response.text(df.to_json(orient="records"), status=200, content_type='application/json')
+        elif as_json:
+            from ml_logger.helpers import load_from_pickle
+            data = [_ for _ in load_from_pickle(path)]
+            res = response.json(data, status=200, content_type='application/json')
         else:
+            # todo: check the file handling here. Does this use correct mimeType for text files?
             res = await response.file(path)
             if as_attachment:
                 res.headers['Content-Disposition'] = 'attachment'
