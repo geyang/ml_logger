@@ -30,4 +30,8 @@ publish: convert-rst
 	twine upload dist/*
 test:
 	python -m pytest tests --capture=no
+deploy-vis-app:
+	git subtree push --prefix ml-vis-app/build ml-vis-ghpage gh-pages
+build-vis-app:
+	cd ml-vis-app && yarn build
 

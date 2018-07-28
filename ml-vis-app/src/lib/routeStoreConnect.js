@@ -16,7 +16,8 @@ function locationReducer(state, action) {
 }
 
 export function connectLocationToStore(store) {
-    const history = createHistory();
+    console.log(process.env.PUBLIC_URL);
+    const history = createHistory({basename: process.env.PUBLIC_URL});
     const original = store.rootReducer;
     store.rootReducer = (state, action) => locationReducer(original(state, action), action);
 
@@ -45,9 +46,9 @@ export function connectLocationToStore(store) {
 
     class ConnectedRouter extends Component {
         render() {
-            const {children} = this.props;
+            const {children, ...props} = this.props;
             return (
-                <Router history={history}>{children}</Router>
+                <Router history={history} {...props}>{children}</Router>
             )
         }
     }
