@@ -7,8 +7,8 @@
 /coverage
 
 # production
-/build
-/ml-vis
+#/build
+#/ml-vis
 
 # misc
 .DS_Store
