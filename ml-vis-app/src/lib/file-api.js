@@ -50,7 +50,7 @@ export class FileApi {
         return fetch(uri).then(status200).then(j => j.json())
     }
 
-    getText(fileKey= "/", query = "", stop = 100, start = 0) {
+    getText(fileKey = "/", query = "", stop = 100, start = 0) {
         // todo: start and stop are not being used
         let uri = `${this.fileEndpoint}${fileKey}`;
         const params = {};
@@ -239,7 +239,7 @@ function fileReducer(state = defaultState, action) {
 export function* searchProc() {
     let state, action, searchQuery, currentDirectory, metrics, files, metricRecords;
     while (true) try {
-        yield take(/(UPDATE_SEARCH_RESULTS|SET_QUERY)/);
+        yield take(/(UPDATE_SEARCH_RESULTS|SET_QUERY|FILES_SORT|METRIC_SORT)/);
         yield call(delay, 200);
         ({searchQuery, currentDirectory, metrics, files} = yield select());
         console.log('got state through select');
@@ -306,21 +306,21 @@ export function* directoryProc() {
         let files;
         try {
             files = yield fileApi
-                .getFiles(state.currentDirectory, "*", false, 1000)
+                .getFiles(state.currentDirectory, "*", false, 1000);
             // .catch(yield ERROR_CALLBACK);
+            ({state, action} = yield dispatch({
+                type: "FILES_ASSIGN",
+                data: files
+            }));
+            ({state, action} = yield dispatch({
+                type: "FILES_SORT",
+                sortBy: "creation",
+                order: -1
+            }));
+            yield dispatch({type: "UPDATE_SEARCH_RESULTS"})
         } catch (e) {
             console.error(e);
         }
-        ({state, action} = yield dispatch({
-            type: "FILES_ASSIGN",
-            data: files
-        }));
-        ({state, action} = yield dispatch({
-            type: "SORT_FILES",
-            sortBy: "creation",
-            order: -1
-        }));
-        yield dispatch({type: "UPDATE_SEARCH_RESULTS"})
     }
 }
 
@@ -409,21 +409,21 @@ export function* metricsProc() {
         let files;
         try {
             files = yield fileApi
-                .getFiles(state.currentDirectory, "**/*[dr][ai][tc][as].pkl", 1, 10000) //metrics and data.pkl.
+                .getFiles(state.currentDirectory, "**/*[dr][ai][tc][as].pkl", 1, 10000); //metrics and data.pkl.
             // .catch(yield ERROR_CALLBACK);
+            ({state, action} = yield dispatch({
+                type: "METRICS_ASSIGN",
+                data: files
+            }));
+            ({state: {currentDirectory, metrics, metricRecords}, action} = yield dispatch({
+                type: "METRICS_SORT",
+                sortBy: "creation",
+                order: -1
+            }));
+            yield dispatch({type: "UPDATE_SEARCH_RESULTS"})
         } catch (e) {
             console.error(e);
         }
-        ({state, action} = yield dispatch({
-            type: "METRICS_ASSIGN",
-            data: files
-        }));
-        ({state: {currentDirectory, metrics, metricRecords}, action} = yield dispatch({
-            type: "METRICS_SORT",
-            sortBy: "creation",
-            order: -1
-        }));
-        yield dispatch({type: "UPDATE_SEARCH_RESULTS"})
         // for (let stat of metrics) {
         //     let fullKey = uriJoin(currentDirectory, stat.path);
         //     console.log(fullKey);

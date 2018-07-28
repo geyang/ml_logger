@@ -1,5 +1,7 @@
 import React, {Component} from 'react';
 import {fileApi} from '../lib/file-api';
+import Highlight from "react-highlight";
+// import Highlight from '@episodeyang/react-highlight.js/dist/main';
 
 
 export class Text extends Component {
@@ -19,3 +21,7 @@ export class Text extends Component {
     }
 }
 
+
+export function TextHighlight (props) {
+    return <Text component={Highlight} {...props}/>
+}

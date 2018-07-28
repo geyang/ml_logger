@@ -23,7 +23,7 @@ import styled from "styled-components";
 import {ChartDataContainer, ComparisonDataContainer} from "../components/ChartDataContainer";
 import {ChartKeyTagInput} from "../components/chart-key-tag-input";
 import VisibilitySensor from 'react-visibility-sensor';
-import {Text} from "../components/text-components";
+import {Text, TextHighlight} from "../components/text-components";
 
 const FlexItemChartContainer = styled(ChartDataContainer)`flex: auto 0 0`;
 const FlexItemComparisonContainer = styled(ComparisonDataContainer)`flex: auto 0 0`;
@@ -83,6 +83,9 @@ class Experiment extends Component {
             <Helmet>
                 <link sync href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet"/>
                 <link sync href="https://unpkg.com/react-vis/dist/style.css" rel="stylesheet"/>
+                <link sync href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"
+                      rel="stylesheet"/>
+                <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"/>
                 <style>{"body {font-family: 'lato'; margin: 0}"}</style>
                 <title>Escher.ml</title>
             </Helmet>
@@ -179,7 +182,12 @@ class Experiment extends Component {
                                                                   type="video/mp4"/>;
                                                 else if (chartKey.match(/^text:/))
                                                     return <Text src={`${experimentDir}/${chartKey.slice(5)}`}
-                                                                 style={{height: "150px", width: "200px", overflowY: "auto"}}/>;
+                                                                          className={'diff'}
+                                                                          style={{
+                                                                              height: "150px",
+                                                                              width: "500px",
+                                                                              overflowY: "auto"
+                                                                          }}/>;
                                                 else if (chartKey.match(/parameters\.pkl/))
                                                     return <table></table>
                                                 else return <FlexItemChartContainer
@@ -190,7 +198,9 @@ class Experiment extends Component {
                                                         dataKey={dataKey}
                                                         chartKey={chartKey}/>;
                                             })
-                                            : <div style={{height: "150px"}}> placeholder <br/> placeholder <br/> placeholder <br/> placeholder <br/> ============= </div>
+                                            : <div
+                                                style={{height: "150px"}}> placeholder <br/> placeholder <br/> placeholder <br/> placeholder <br/> =============
+                                            </div>
                                         } </ExperimentRow>
                             }</VisibilitySensor>
                         })}

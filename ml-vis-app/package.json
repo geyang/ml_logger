@@ -9,11 +9,12 @@
     "luna-saga": "6.2.1",
     "math.gl": "^2.0.0",
     "micromatch": "^3.1.10",
-    "query-string": "^6.1.0",
+    "query-string": "5",
     "re-resizable": "^4.7.1",
     "react": "^16.4.1",
     "react-dom": "^16.4.1",
     "react-helmet": "^5.2.0",
+    "react-highlight": "^0.12.0",
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
     "react-scripts": "^1.1.4",
@@ -29,8 +30,12 @@
   "devDependencies": {},
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && mv build ml-vis",
     "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "setup-remote": "git remote add ml-vis-ghpage https://github.com/escher-ai/ml-vis.git",
+    "gh-deploy": "git subtree push --prefix ml-vis ml-vis-ghpage gh-pages",
+    "build-and-deploy": "yarn run build && git add . && git ci -m \"BUILD update\" && npm run gh-deploy",
+    "push-build-and-deploy": "git push && yarn run build && git add . && git ci -m \"BUILD update\" && npm run gh-deploy"
   }
 }
