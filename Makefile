@@ -32,6 +32,8 @@ test:
 	python -m pytest tests --capture=no
 deploy-vis-app:
 	git subtree push --prefix ml-vis-app/build ml-vis-ghpage gh-pages
+deploy-vis-app-force:
+	git push ml-vis-ghpage `git subtree split --prefix ml-vis-app/build`:gh-pages --force
 build-vis-app:
 	cd ml-vis-app && yarn build
 

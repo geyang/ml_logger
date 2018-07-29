@@ -290,18 +290,18 @@ class ML_Logger:
             return output
 
     def flush(self, file_name="metrics.pkl", fmt=".3f"):
-        if not self.data:
-            return
-        try:
-            output = self._tabular(self.data, fmt, self.do_not_print_list)
-        except Exception as e:
-            print(e)
-            output = self._row_table(self.data, fmt, self.do_not_print_list)
-        self.print(output)
-        self.logger.log(key=os.path.join(self.prefix or "", file_name or "metrics.pkl"),
-                        data=dict(_step=self.step, _timestamp=str(self.timestamp), **self.data))
-        self.data.clear()
-        self.do_not_print_list.clear()
+        if self.data:
+            try:
+                output = self._tabular(self.data, fmt, self.do_not_print_list)
+            except Exception as e:
+                print(e)
+                output = self._row_table(self.data, fmt, self.do_not_print_list)
+            self.print(output)
+            self.logger.log(key=os.path.join(self.prefix or "", file_name or "metrics.pkl"),
+                            data=dict(_step=self.step, _timestamp=str(self.timestamp), **self.data))
+            self.data.clear()
+            self.do_not_print_list.clear()
+            
         self.print_flush()
 
     def log_file(self, file_path, namespace='files', silent=True):
@@ -334,6 +334,7 @@ class ML_Logger:
         for the file name (key). as a result, we generate the numerated filename for the user.
 
         value: numpy object Size(w, h, 3)
+
         """
         if format:
             key += "." + format
@@ -347,7 +348,8 @@ class ML_Logger:
         Let's do the compression here. Video frames are first written to a temporary file
         and the file containing the compressed data is sent over as a file buffer.
         
-        Save a stack of images to 
+        Save a stack of images to
+
         :param frame_stack:
         :param key:
         :param namespace:
@@ -384,6 +386,7 @@ class ML_Logger:
         does not handle pdf and svg file formats. A big annoying.
 
         ref: see this link https://stackoverflow.com/a/8598881/1560241
+
         :param key:
         :param fig:
         :param namespace:
@@ -420,6 +423,8 @@ class ML_Logger:
         This way, the key behave exactly the same way pyplot.savefig behaves.
 
         default plotting file name is plot.png under the current directory
+
+
         """
         self.log_pyplot(key=key, fig=fig, format=format, namespace="", **kwargs)
 
@@ -448,13 +453,16 @@ class ML_Logger:
 
     def load_file(self, key):
         """ return the binary stream, most versatile.
+
         :param key:
         :return:
         """
         return self.logger.read(os.path.join(self.prefix, key))
 
     def load_pkl(self, key):
-        """ load a pkl file (as a tuple)
+        """
+        load a pkl file (as a tuple)
+
         :param key:
         :return:
         """
@@ -462,6 +470,7 @@ class ML_Logger:
 
     def load_np(self, key):
         """ load a np file
+
         :param key:
         :return:
         """
@@ -470,6 +479,7 @@ class ML_Logger:
     @staticmethod
     def plt2data(fig):
         """
+
         @brief Convert a Matplotlib figure to a 4D numpy array with RGBA channels and return it
         @param fig a matplotlib figure
         @return a numpy 3D array of RGBA values

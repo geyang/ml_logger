@@ -7,9 +7,8 @@ from ml_logger.server import LogEntry, LoadEntry, LoggingServer, ALLOWED_TYPES
 
 class LogClient:
     local_server = None
-    prefix = None
 
-    def __init__(self, url: str = None, prefix=None, max_workers=None):
+    def __init__(self, url: str = None, max_workers=None):
         if url.startswith("file://"):
             self.local_server = LoggingServer(data_dir=url[6:])
         elif os.path.isabs(url):
@@ -19,9 +18,6 @@ class LogClient:
         else:
             # todo: add https://, and s3://
             raise TypeError('log url need to begin with `/`, `file://` or `http://`.')
-        if prefix:
-            assert not os.path.isabs(prefix), "prefix can not have leading slash`/`"
-            self.prefix = prefix
         if max_workers:
             self.session = FuturesSession(ThreadPoolExecutor(max_workers=max_workers))
         else:
