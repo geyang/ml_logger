@@ -500,7 +500,7 @@ class ML_Logger:
     def log_json(self):
         raise NotImplementedError
 
-    def print(self, *args, sep=' ', end='\n', silent=False):
+    def print(self, *args, sep=' ', end='\n', silent=False, flush=False):
         text = sep.join([str(a) for a in args]) + end
         try:
             self.print_buffer += text
@@ -508,7 +508,7 @@ class ML_Logger:
             self.print_buffer = text
         if not silent:
             print(*args, sep=sep, end=end)
-        if len(self.print_buffer) > self.print_buffer_size:
+        if flush or len(self.print_buffer) > self.print_buffer_size:
             self.print_flush()
 
     def print_flush(self):
