@@ -182,11 +182,14 @@ class ML_Logger:
             self.print('═' * (key_width + 1) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
             self.print(c('{:^{}}'.format(title, key_width), 'yellow'))
             self.print('─' * (key_width + 1) + "┬" + '─' * (value_width + 1))
-            for key, value in section_data.items():
-                value_string = str(value)
-                table.append((key, value_string))
-                self.print('{:^{}}'.format(key, key_width), "│",
-                           '{:<{}}'.format(value_string, value_width))
+            if not hasattr(section_data, 'items'):
+                self.print(section_data)
+            else:
+                for key, value in section_data.items():
+                    value_string = str(value)
+                    table.append((key, value_string))
+                    self.print('{:^{}}'.format(key, key_width), "│",
+                               '{:<{}}'.format(value_string, value_width))
 
         if "n" in locals():
             self.print('═' * (key_width + 1) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
