@@ -1,5 +1,5 @@
 import {take, dispatch, ERROR_CALLBACK, THEN_CALLBACK, spawn, delay, call, select} from 'luna-saga';
-import {recordsToSeries} from "../data-helpers";
+import {flattenParams, recordsToSeries} from "../data-helpers";
 import {stringify} from "query-string";
 import {status200} from "./fetch-helper";
 import {PUSH_LOCATION} from "./routeStoreConnect";
@@ -23,6 +23,7 @@ export function uriJoin(...chunks) {
 }
 
 export function parentDir(path) {
+    if (!path) return;
     let slashInd = path.lastIndexOf('/');
     return path.slice(0, slashInd > -1 ? slashInd : 0);
 }
@@ -31,6 +32,11 @@ export function parentDir(path) {
 export class FileApi {
     constructor(server = "") {
         this.configure(server);
+        this.getFiles = this._getFiles.bind(this);
+        this.getText = this._getText.bind(this);
+        this.subscribeFileEvents = this._subscribeFileEvents.bind(this);
+        this.getMetricData = this._getMetricData.bind(this);
+        this.deletePath = this._deletePath.bind(this);
     }
 
     configure(server = "") {
@@ -39,7 +45,7 @@ export class FileApi {
         this.fileEvents = `${this.serverUri}/file-events`;
     }
 
-    getFiles(currentDirectory = "/", query = "", recursive = false, stop = 10, start = 0) {
+    _getFiles(currentDirectory = "/", query = "", recursive = false, stop = 10, start = 0) {
         let uri = this.fileEndpoint + currentDirectory;
         const params = {};
         if (!!query) params.query = query;
@@ -50,7 +56,7 @@ export class FileApi {
         return fetch(uri).then(status200).then(j => j.json())
     }
 
-    getText(fileKey = "/", query = "", stop = 100, start = 0) {
+    _getText(fileKey = "/", query = "", stop = 100, start = 0) {
         // todo: start and stop are not being used
         let uri = this.fileEndpoint + fileKey;
         const params = {};
@@ -61,7 +67,7 @@ export class FileApi {
         return fetch(uri).then(status200).then(j => j.text())
     }
 
-    subscribeFileEvents(currentDirectory = "/", query = "") {
+    _subscribeFileEvents(currentDirectory = "/", query = "") {
         let uri = this.fileEvents + currentDirectory;
         const params = {};
         if (!!query) params.query = query;
@@ -69,7 +75,7 @@ export class FileApi {
         return fetch(uri).then(status200).then(j => j.json());
     }
 
-    getMetricData(path) {
+    _getMetricData(path) {
         const src = this.fileEndpoint + path + "?log=1";
         return fetch(src, {headers: {'Content-Type': 'application/json; charset=utf-8'}})
             .then(status200)
@@ -77,7 +83,7 @@ export class FileApi {
         // .then((d) => recordsToSeries(d));
     }
 
-    deletePath(path) {
+    _deletePath(path) {
         const src = this.fileEndpoint + path;
         // console.log(src);
         return fetch(src, {method: "DELETE",}).then(status200)
@@ -125,7 +131,7 @@ export function goTo(path) {
 }
 
 export function queryInput(query) {
-    return {type: 'SET_QUERY', query};
+    return {type: 'QUERY_SET', value: query};
 }
 
 export function removePath(path) {
@@ -169,10 +175,13 @@ export const defaultState = {
 };
 
 const _fileReducer = combineReducers({
+    searchQuery: ValueReducer('QUERY', ""),
     bucket: ValueReducer('BUCKET', ''),
     files: Files('FILES'),
+    paramFiles: Files('PARAM_FILES'),
     metrics: Files('METRICS'),
-    metricRecords: MetricRecordsReducer(),
+    srcCache: CacheReducer('SRC'),
+    filteredParamFiles: ValueReducer('FILTERED_PARAM_FILES', []),
     filteredFiles: ValueReducer('FILTERED_FILES', []),
     filteredMetricsFiles: ValueReducer('FILTERED_METRIC_FILES', []),
     chartKeys: ArrayReducer("CHARTKEYS", ["loss.*", ".*"]),
@@ -181,6 +190,15 @@ const _fileReducer = combineReducers({
     yMin: ValueReducer('Y_MIN', null),
     yMax: ValueReducer('Y_MAX', null),
 });
+
+export function BatchReducer(reducer, key = "BATCH_ACTIONS") {
+    return function batchReducer(state, action) {
+        if (action.type === key) for (let act of action.actions) {
+            state = reducer(state, act)
+        }
+        return reducer(state, action);
+    }
+}
 
 export function setYMax(value) {
     return {
@@ -225,9 +243,7 @@ export function setBucket(bucketKey) {
 }
 
 function fileReducer(state = defaultState, action) {
-    if (action.type === "SET_QUERY") {
-        return {...state, searchQuery: action.query};
-    } else if (action.type === "TOGGLE_COMPARISON") {
+    if (action.type === "TOGGLE_COMPARISON") {
         return {...state, showComparison: !state.showComparison}
     } else if (action.type === "TOGGLE_CONFIG") {
         return {...state, showConfig: !state.showConfig}
@@ -248,32 +264,45 @@ function fileReducer(state = defaultState, action) {
             }
         }
         if (!!path) currentDirectory = uriJoin(currentDirectory, path);
-        return _fileReducer({...state, currentDirectory,
-            files: [], metrics: [],
+        return _fileReducer({
+            ...state, currentDirectory,
+            files: [], metrics: [], paramFiles: [],
             filteredFiles: [], filteredMetricsFiles: []
         }, action);
     }
     return _fileReducer(state, action);
 }
 
+
+export const rootReducer = BatchReducer(fileReducer, "BATCH_ACTIONS");
+
+
 export function* searchProc() {
-    let state, action, searchQuery, currentDirectory, metrics, files, metricRecords;
+    let state, action, searchQuery, currentDirectory, metrics, files, metricRecords, paramFiles, filteredMetrics;
     while (true) try {
-        yield take(/(UPDATE_SEARCH_RESULTS|SET_QUERY|FILES_SORT|METRIC_SORT)/);
-        yield call(delay, 200);
-        ({searchQuery, currentDirectory, metrics, files} = yield select());
-        console.log('got state through select');
-        ({state: {metricRecords, currentDirectory}} = yield dispatch({
-            type: "FILTERED_FILES_SET",
-            value: files.filter(f => uriJoin(currentDirectory, f.path).match(searchQuery))
-        }));
-        console.log('updated filtered files');
-        let filteredMetrics = metrics.filter(f => uriJoin(currentDirectory, f.path).match(searchQuery));
-        ({state: {metricRecords, currentDirectory}} = yield dispatch({
-            type: "FILTERED_METRIC_FILES_SET",
-            value: filteredMetrics
-        }));
-        console.log('updated filtered metrics');
+        ({action} = yield take(/(UPDATE_SEARCH_RESULTS|QUERY_SET|FILES_SORT|METRIC_SORT)/));
+        console.log('search process is started', action);
+        if (!action.no_delay) yield call(delay, 200);
+        ({searchQuery, currentDirectory, metrics, files, paramFiles, metricRecords, filteredMetrics} = yield select());
+        yield dispatch({
+            type: "BATCH_ACTIONS",
+            actions: [
+                {
+                    type: "FILTERED_PARAM_FILES_SET",
+                    value: paramFiles.filter(f => uriJoin(currentDirectory, f.path).match(searchQuery))
+                },
+                {
+                    type: "FILTERED_FILES_SET",
+                    value: files.filter(f => uriJoin(currentDirectory, f.path).match(searchQuery))
+                },
+                {
+                    type: "FILTERED_METRIC_FILES_SET",
+                    value: metrics.filter(f => uriJoin(currentDirectory, f.path).match(searchQuery))
+                }
+
+            ]
+        });
+        // const filteredMetrics = metrics.filter(f => metricRecords[f.path]
     } catch (e) {
         console.warn(e);
     }
@@ -290,9 +319,6 @@ export function toggleConfig() {
         type: "TOGGLE_CONFIG"
     }
 }
-
-// export const rootReducer = (state, action) => fileReducer(_fileReducer(state, action), action);
-export const rootReducer = fileReducer;
 
 const apiRoot = "http://54.71.92.65:8082";
 export const fileApi = new FileApi(apiRoot);
@@ -314,9 +340,6 @@ export function* removeProc() {
     while (true) {
         ({state, action} = yield take("REMOVE_PATH"));
         res = yield fileApi.deletePath(action.path);
-        // dispatch({
-        //     type: "G"
-        // })
     }
 
 }
@@ -331,15 +354,23 @@ export function* directoryProc() {
             files = yield fileApi
                 .getFiles(state.currentDirectory, "*", false, 1000);
             // .catch(yield ERROR_CALLBACK);
-            ({state, action} = yield dispatch({
-                type: "FILES_ASSIGN",
-                data: files
-            }));
-            ({state, action} = yield dispatch({
-                type: "FILES_SORT",
-                sortBy: "creation",
-                order: -1
-            }));
+            try {
+                yield dispatch({
+                    type: "BATCH_ACTIONS",
+                    actions: [
+                        {
+                            type: "FILES_ASSIGN",
+                            data: files
+                        }, {
+                            type: "FILES_SORT",
+                            sortBy: "creation",
+                            order: -1
+                        }
+                    ]
+                });
+            } catch (e) {
+                console.warn(e)
+            }
             yield dispatch({type: "UPDATE_SEARCH_RESULTS"})
         } catch (e) {
             console.error(e);
@@ -349,21 +380,21 @@ export function* directoryProc() {
 
 //this is only needed for the metrics data b/c we want to plot them over.
 //might also need for text files.
-function MetricRecordsReducer() {
+function CacheReducer(key = "SRC") {
     return function metricReducer(state = {}, action) {
-        if (action.type === "SET_METRIC") {
-            state = {...state, [action.key]: {records: action.records}};
+        if (action.type === `${key}_DATA_SET`) {
+            state = {...state, [action.key]: {data: action.data}};
             return state
-        } else if (action.type === "REMOVE_METRIC") {
+        } else if (action.type === `${key}_DATA_REMOVE`) {
             state = {...state};
             delete state[action.key];
             return state;
-        } else if (action.type === 'DIRTY') {
+        } else if (action.type === `${key}_DATA_DIRTY`) {
             let record = state[action.key];
-            return {...state, [action.key]: {...record, dirty: true}}
-        } else if (action.type === 'FETCHING_METRIC_DATA') {
+            return {...state, [action.key]: {...record, $dirty: true}}
+        } else if (action.type === `${key}_DATA_FETCHING`) {
             let record = state[action.key];
-            return {...state, [action.key]: {...record, fetching: true}}
+            return {...state, [action.key]: {...record, $fetching: true}}
         }
         return state
     }
@@ -371,79 +402,84 @@ function MetricRecordsReducer() {
 
 export function markDirty(experimentKey) {
     return {
-        type: "DIRTY",
+        type: "SRC_DATA_DIRTY",
         key: experimentKey
     }
 }
 
-export function fetchData(experimentKey, force = false) {
+export function fetchData(src, force = false) {
     return {
-        type: "FETCH",
-        key: experimentKey,
+        type: "SRC_DATA_FETCH@@",
+        key: src,
         force
     }
 }
 
-export function markDownloading(experimentKey) {
+export function markFetching(experimentKey) {
     return {
-        type: "FETCHING_METRIC_DATA",
+        type: "SRC_DATA_FETCHING",
         key: experimentKey
     }
 }
 
-function* downloadMetrics(src) {
-    // fixit: somehow this is called twice...
-    console.log('fetching ', src);
-    const records = yield fileApi.getMetricData(src);
+function* downloadData(src) {
+    let data = yield fileApi.getMetricData(src);
+    if (src.match(/parameters.pkl/)) {
+        data = flattenParams(data);
+    }
     yield dispatch({
-        type: "SET_METRIC",
+        type: "SRC_DATA_SET",
         key: src,
-        records: records
+        data
     })
 }
 
-function notFetchingDirtyOrUndefined(record) {
-    return (typeof record === 'undefined') || !!record.dirty && !record.fetching;
+function notFetchingDirtyOrUndefined(data) {
+    return (data === undefined || data === null) || !!data.$dirty && !data.$fetching;
 }
 
 
-export function* metricsDownloadProc() {
+export function* DownloadProc() {
     /** fullKey should be of the form uriJoin(currentDirectory, path); */
     while (true) try {
-        const {state: {metricRecords}, action: {key, force}} = yield take('FETCH');
+        const {state: {srcCache}, action: {key, force}} = yield take('SRC_DATA_FETCH@@');
         // console.log(key, metricRecords[key]);
         /* mark the metric as being downloaded */
         // console.log('detected dirty!!');
-        if (force || notFetchingDirtyOrUndefined(metricRecords[key])) {
-            // console.log('mark we are downloading', key);
-            yield dispatch(markDownloading(key));
-            // console.log('download', key);
-            yield spawn(downloadMetrics, key);
+        if (force || notFetchingDirtyOrUndefined(srcCache[key])) {
+            // todo: it is a bit annoying that this updates the store and triggers a rerendering
+            yield dispatch(markFetching(key));
+            yield spawn(downloadData, key);
         }
     } catch (e) {
         console.warn(e);
     }
 }
 
-export function* metricsProc() {
-    let state, action, metrics, metricRecords, currentDirectory;
+export function* paramsProc() {
+    let state, action;
     while (true) {
         ({state, action} = yield take('GO_TO'));
-        console.log('=====================================');
         let files;
         try {
-            files = yield fileApi
-                .getFiles(state.currentDirectory, "**/*[dr][ai][tc][as].pkl", 1, 10000); //metrics and data.pkl.
-            // .catch(yield ERROR_CALLBACK);
-            ({state, action} = yield dispatch({
-                type: "METRICS_ASSIGN",
-                data: files
-            }));
-            ({state: {currentDirectory, metrics, metricRecords}, action} = yield dispatch({
-                type: "METRICS_SORT",
-                sortBy: "creation",
-                order: -1
-            }));
+            files = yield call(fileApi.getFiles, state.currentDirectory, "**/parameters.pkl", 1, 10000); //metrics and data.pkl.
+            try {
+                yield dispatch({
+                    type: "BATCH_ACTIONS",
+                    actions: [
+                        {
+                            type: "PARAM_FILES_ASSIGN",
+                            data: files
+                        }, {
+                            type: "PARAM_FILES_SORT",
+                            sortBy: "creation",
+                            order: -1
+                        }
+                    ]
+                });
+            } catch (e) {
+                console.error(e);
+            }
             yield dispatch({type: "UPDATE_SEARCH_RESULTS"})
         } catch (e) {
             console.error(e);

@@ -4,8 +4,8 @@ import {registerStore} from "./lib/react-luna";
 import {
     directoryProc,
     locationProc,
-    metricsDownloadProc,
-    metricsProc,
+    DownloadProc,
+    paramsProc,
     removeProc,
     rootReducer,
     searchProc
@@ -30,12 +30,12 @@ const {syncStore} = connectLocalStorage(store$, storageSelector);
 syncStore();
 export const {ConnectedRouter, initiate: initiateLocationStore} = connectLocationToStore(store$);
 initiateLocationStore();
-sagaConnect(store$, metricsProc());
+sagaConnect(store$, paramsProc());
 sagaConnect(store$, locationProc());
 sagaConnect(store$, directoryProc());
 sagaConnect(store$, searchProc());
 /* the ordering here somehow matters. */
-sagaConnect(store$, metricsDownloadProc());
+sagaConnect(store$, DownloadProc());
 sagaConnect(store$, removeProc());
 
 

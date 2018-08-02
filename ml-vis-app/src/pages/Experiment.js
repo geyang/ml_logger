@@ -20,13 +20,19 @@ import {Helmet} from 'react-helmet';
 import {uriJoin} from '../lib/file-api';
 import SplitPane from "react-split-pane";
 import styled from "styled-components";
-import {ChartDataContainer, ComparisonDataContainer} from "../components/ChartDataContainer";
+import {
+    ParameterDataContainer,
+    ChartDataContainer,
+    ComparisonDataContainer,
+    ChartToSeries
+} from "../components/ChartDataContainer";
 import {ChartKeyTagInput} from "../components/chart-key-tag-input";
 import VisibilitySensor from 'react-visibility-sensor';
 import {Text, TextHighlight} from "../components/text-components";
 import {ExperimentParameterFilter} from "../components/experiment-params-filter";
+import {SrcContainer} from "../components/SrcContainer";
 
-const FlexItemChartContainer = styled(ChartDataContainer)`flex: auto 0 0`;
+const FlexItemSrcContainer = styled(SrcContainer)`flex: auto 0 0`;
 const FlexItemComparisonContainer = styled(ComparisonDataContainer)`flex: auto 0 0`;
 const DashboardHeader = styled(Flex)`
     padding: 10px 0;
@@ -60,18 +66,21 @@ const ParamKeyStyle = styled.div`
         flex-direction: row;
         > .ReactTags__tag {
             flex: auto 0 0;
-            margin: 0 5px;
-            border-radius: 4px;
-            font-size: 12px
-            background-color: #23aaff
-            color: white;
-            padding: 2px 4px 2px 10px;
+            margin: 0 0;
+            border-radius: 0px;
+            font-size: 15px
+            background-color: while;
+            color: black;
+            padding: 2px 4px 2px 12px;
+            border-right: solid 1px black;
             a {
-                padding: 4px 4px 6px 4px;
-                color: rgba(255, 255, 255, 0.7);
+                padding: 4px 4px 4px 8px;
+                color: black;
             }
         }
         .ReactTags__tagInput {
+            margin-left: 14px;
+            box-shadow: none;
         }
      }
 `;
@@ -80,16 +89,6 @@ const ParamKeyStyle = styled.div`
 const Chart = LineChartConfidence;
 
 class Experiment extends Component {
-
-    // constructor(props) {
-    //     super(props);
-    //     const {currentDirectory, dispatch, match: {params: {bucketKey, experimentKey = ""}}} = props;
-    //     dispatch(goTo("/" + experimentKey));
-    // }
-
-    // static getDerivedStateFromProps(props) {
-    //     return null;
-    // }
 
     componentDidMount() {
         this.props.dispatch(setBucket(this.props.match.params.bucketKey));
@@ -108,7 +107,9 @@ class Experiment extends Component {
 
     render() {
         const {
-            bucket, currentDirectory, searchQuery, filteredFiles, filteredMetricsFiles, showComparison, showConfig, dispatch,
+            bucket, currentDirectory, parameterKeys, paramFiles,
+            searchQuery, filteredFiles = [], filteredMetricsFiles = [], filteredParamFiles = [],
+            showComparison, showConfig, dispatch,
             chartKeys, yMin, yMax,
         } = this.props;
 
@@ -178,7 +179,6 @@ class Experiment extends Component {
                             <Flex row style={{overflowX: "auto"}}>
                                 {chartKeys.map(chartKey =>
                                     <FlexItemComparisonContainer
-                                        dispatch={dispatch}
                                         key={chartKey}
                                         component={Chart}
                                         yMin={yMin}
@@ -195,47 +195,55 @@ class Experiment extends Component {
                     <FlexItem component={'h3'}>Experiments</FlexItem>
                     <ParamKeyStyle><ExperimentParameterFilter/></ParamKeyStyle>
                     <FlexItem fluid style={{overflowY: "auto"}}>
-                        {filteredMetricsFiles.map(f => {
-                            const dataKey = uriJoin(currentDirectory, f.path);
+                        {filteredParamFiles.map(function (f) {
+
+                            const paramsSrc = uriJoin(currentDirectory, f.path);
                             const experimentDir = uriJoin(currentDirectory, parentDir(f.path));
-                            return <VisibilitySensor key={f.path} partialVisibility={true}>{
+                            const metricsSrc = uriJoin(experimentDir, 'metrics.pkl');
+                            return <VisibilitySensor partialVisibility={true}>{
                                 ({isVisible}) =>
-                                    <ExperimentRow key={f.path}
-                                                   bucketKey={bucket}
-                                                   currentDirectory={currentDirectory}
-                                                   path={f.path}
-                                                   chartKeys={chartKeys}
-                                                   dispatch={dispatch}
-                                    >
+                                    <Flex column key={f.path}>
                                         {isVisible
-                                            ? chartKeys.map(chartKey => {
-                                                if (chartKey.match(/^video:/))
-                                                    return <video key={chartKey}
-                                                                  src={`http://54.71.92.65:8082/files${experimentDir}/${chartKey.slice(6)}`}
-                                                                  height={150} controls playsInline={true}
-                                                                  type="video/mp4"/>;
-                                                else if (chartKey.match(/^text:/))
-                                                    return <Text src={`${experimentDir}/${chartKey.slice(5)}`}
-                                                                 className={'diff'}
-                                                                 style={{
-                                                                     height: "150px",
-                                                                     width: "500px",
-                                                                     overflowY: "auto"
-                                                                 }}/>;
-                                                else if (chartKey.match(/parameters\.pkl/))
-                                                    return <table></table>
-                                                else return <FlexItemChartContainer
-                                                        dispatch={dispatch}
-                                                        fetchCallback={(dataKey) => dispatch(fetchData(dataKey))}
-                                                        key={chartKey}
-                                                        component={LineChartConfidence}
-                                                        dataKey={dataKey}
-                                                        chartKey={chartKey}/>;
-                                            })
-                                            : <div
-                                                style={{height: "150px"}}> placeholder <br/> placeholder <br/> placeholder <br/> placeholder <br/> =============
-                                            </div>
-                                        } </ExperimentRow>
+                                            ? <SrcContainer key='params-bar'
+                                                            src={paramsSrc}
+                                                            fetchCallback={() => dispatch(fetchData(paramsSrc))}>{
+                                                data => data
+                                                    ? <Flex row>{parameterKeys.map(k => <FlexItem
+                                                        key={k}>{k + ":" + data[k]}</FlexItem>)}</Flex>
+                                                    : <Flex row>{parameterKeys.map(k => <FlexItem
+                                                        key={k}>{k + ": "}</FlexItem>)}</Flex>
+                                            }</SrcContainer>
+                                            : <div>not visible</div>}
+                                        <Flex row style={{overflowX: "auto", overflowY: "hidden"}}>{
+                                            isVisible
+                                                ? chartKeys.map(chartKey => {
+                                                    if (chartKey.match(/^video:/))
+                                                        return <video key={chartKey}
+                                                                      src={`http://54.71.92.65:8082/files${experimentDir}/${chartKey.slice(6)}`}
+                                                                      height={150} controls playsInline={true}
+                                                                      type="video/mp4"/>;
+                                                    else if (chartKey.match(/^text:/))
+                                                        return <Text src={`${experimentDir}/${chartKey.slice(5)}`}
+                                                                     className={'diff'}
+                                                                     style={{
+                                                                         height: "150px",
+                                                                         width: "500px",
+                                                                         overflowY: "auto"
+                                                                     }}/>;
+                                                    else if (chartKey.match(/parameters\.pkl/))
+                                                        return <table></table>
+                                                    else return <FlexItemSrcContainer key={chartKey}
+                                                                                      src={metricsSrc}
+                                                                                      fetchCallback={() => dispatch(fetchData(metricsSrc))}
+                                                        >{data => <ChartToSeries records={data} chartKey={chartKey}
+                                                                                 component={LineChartConfidence}/>
+                                                        }</FlexItemSrcContainer>;
+                                                })
+                                                : <div
+                                                    style={{height: "150px"}}> placeholder <br/> placeholder <br/> placeholder <br/> placeholder <br/> =============
+                                                </div>
+                                        }</Flex>
+                                    </Flex>
                             }</VisibilitySensor>
                         })}
                     </FlexItem>
@@ -271,9 +279,7 @@ class ExperimentRow extends Component {
                 <FlexItem component="button"
                           onClick={() => dispatch(removePath(experimentDirectory))}>delete experiment</FlexItem>
             </Flex>
-            <Flex row style={{overflowX: "auto", overflowY: "hidden"}}>
-                {children}
-            </Flex>
+            {children}
         </div>
 
     }

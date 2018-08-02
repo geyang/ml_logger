@@ -54,3 +54,46 @@ export function recordsToSerieses(records, xKey = "_step") {
     });
     return Object.entries(lines).map(([t, l]) => ({title: t, data: l}));
 }
+
+function flattenObject(ob) {
+    let toReturn = {};
+    let flatObject;
+    for (let i in ob) {
+        if (!ob.hasOwnProperty(i)) {
+            continue;
+        }
+        //Exclude arrays from the final result
+        //Check this http://stackoverflow.com/questions/4775722/check-if-object-is-array
+        if (ob[i] && Array === ob[i].constructor) {
+            continue;
+        }
+        if ((typeof ob[i]) === 'object') {
+            flatObject = flattenObject(ob[i]);
+            for (let x in flatObject) {
+                if (!flatObject.hasOwnProperty(x)) {
+                    continue;
+                }
+                //Exclude arrays from the final result
+                if (flatObject[x] && Array === flatObject.constructor) {
+                    continue;
+                }
+                toReturn[i + (!!isNaN(x) ? '.' + x : '')] = flatObject[x];
+            }
+        } else {
+            toReturn[i] = ob[i];
+        }
+    }
+    return toReturn;
+}
+
+function assignTrueful(a, b) {
+    const n = {...a};
+    for (let k in b) if (b[k] !== null && b[k] !== undefined) n[k] = b[k];
+    return n;
+}
+
+export function flattenParams(records) {
+    //done: if b.key == null, do NOT over-write existing value;
+    let obj = records.reduce((a, b) => assignTrueful(a, b), {});
+    return flattenObject(obj);
+}

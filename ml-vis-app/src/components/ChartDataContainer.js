@@ -3,49 +3,25 @@ import {getKeysFromRecords, matchExp, recordsToSeries} from "../data-helpers";
 import selector from "../lib/react-luna";
 import {markDirty, uriJoin} from "../lib/file-api";
 
+
 // takes in dataKey, chartKey and a charting component. Outputs the chart.
-class _ChartDataContainer extends Component {
+export class ChartToSeries extends Component {
     state = {
-        records: [],
+        records: null,
         serieses: []
     };
 
 
     static getDerivedStateFromProps(props, state) {
-        const {metricRecords, dataKey, chartKey, xKey = "_step", fetchCallback} = props;
-        const {records} = metricRecords[dataKey] || {};
-        if ((!state.records || !state.records.length) && !records) {
-            // might want to throttle this.
-            return null;
-        }
+        const {records, chartKey, xKey = "_step"} = props;
         if (state.records !== records) {
             if (!records) return {records: [], serieses: []};
-            // } else if (this.state.records !== records && !(!this.state.records && !records)) {
+            // } else if (this.state.data !== data && !(!this.state.data && !data)) {
             const keys = getKeysFromRecords(records);
             let serieses = keys.filter(matchExp(chartKey)).map(key => recordsToSeries(records, key, xKey));
             return {records, serieses: serieses || []};
         }
         return null;
-    }
-
-    componentDidMount() {
-        const {metricRecords, dataKey, fetchCallback} = this.props;
-        const {records} = metricRecords[dataKey] || {};
-        if (!records) {
-            console.log('launched fetch request', dataKey);
-            // might want to throttle this.
-            fetchCallback(dataKey);
-        }
-    }
-
-    componentDidUpdate() {
-        const {metricRecords, dataKey, fetchCallback} = this.props;
-        const {records} = metricRecords[dataKey] || {};
-        if (!records) {
-            console.log('launched fetch request', dataKey);
-            // might want to throttle this.
-            fetchCallback(dataKey);
-        }
     }
 
 
@@ -56,11 +32,6 @@ class _ChartDataContainer extends Component {
     }
 }
 
-
-export const ChartDataContainer = selector(
-    ({metricRecords}) => ({metricRecords}),
-    _ChartDataContainer
-);
 
 function sharedPrefix(array) {
     if (!array || array.length === 0) return '';
