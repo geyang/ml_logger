@@ -115,7 +115,7 @@ async def get_path(request, file_path=""):
         elif type(start) is int or type(stop) is int:
             from itertools import islice
             with open(path, 'r') as f:
-                text = '\n'.join([l for l in islice(f, start, stop)])
+                text = ''.join([l for l in islice(f, start, stop)])
             res = response.text(text, status=200)
         else:
             # todo: check the file handling here. Does this use correct mimeType for text files?
