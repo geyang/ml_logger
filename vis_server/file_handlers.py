@@ -114,7 +114,7 @@ async def get_path(request, file_path=""):
             res = response.json(data, status=200, content_type='application/json')
         elif type(start) is int or type(stop) is int:
             with open(path, 'r') as f:
-                text = '\n'.join([l for l in itertools.islice(f, start, stop)])
+                text = '\n'.join([l for l in islice(f, start, stop)])
             res = response.text(text, status=200)
         else:
             # todo: check the file handling here. Does this use correct mimeType for text files?
