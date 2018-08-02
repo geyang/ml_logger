@@ -18,8 +18,8 @@ import {connectLocalStorage} from "./lib/connect-local-storage";
 const history = createHistory();
 const location = history.location;
 
-function storageSelector({searchQuery, chartKeys, showComparison, yMin, yMax}) {
-    return {searchQuery, chartKeys, showComparison, yMin, yMax};
+function storageSelector({searchQuery, parameterKeys, chartKeys, showComparison, yMin, yMax}) {
+    return {searchQuery, parameterKeys, chartKeys, showComparison, yMin, yMax};
 }
 
 

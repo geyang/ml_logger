@@ -12,7 +12,6 @@ function locationReducer(state, action) {
         return {...state, location: action.location};
     }
     return state;
-
 }
 
 export function connectLocationToStore(store) {

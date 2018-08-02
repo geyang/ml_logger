@@ -8,7 +8,7 @@ import {
     goTo, markDirty,
     parentDir,
     queryInput,
-    removePath,
+    removePath, setBucket,
     setYMax,
     setYMin,
     toggleComparison,
@@ -24,6 +24,7 @@ import {ChartDataContainer, ComparisonDataContainer} from "../components/ChartDa
 import {ChartKeyTagInput} from "../components/chart-key-tag-input";
 import VisibilitySensor from 'react-visibility-sensor';
 import {Text, TextHighlight} from "../components/text-components";
+import {ExperimentParameterFilter} from "../components/experiment-params-filter";
 
 const FlexItemChartContainer = styled(ChartDataContainer)`flex: auto 0 0`;
 const FlexItemComparisonContainer = styled(ComparisonDataContainer)`flex: auto 0 0`;
@@ -53,39 +54,73 @@ const TagInputStyle = styled.div`
         }
      }
 `;
+const ParamKeyStyle = styled.div`
+     .ReactTags__selected {
+        display: flex;
+        flex-direction: row;
+        > .ReactTags__tag {
+            flex: auto 0 0;
+            margin: 0 5px;
+            border-radius: 4px;
+            font-size: 12px
+            background-color: #23aaff
+            color: white;
+            padding: 2px 4px 2px 10px;
+            a {
+                padding: 4px 4px 6px 4px;
+                color: rgba(255, 255, 255, 0.7);
+            }
+        }
+        .ReactTags__tagInput {
+        }
+     }
+`;
 
 
 const Chart = LineChartConfidence;
 
 class Experiment extends Component {
 
-    constructor(props) {
-        super(props);
-        const {currentDirectory, dispatch, match: {params: {bucketKey, experimentKey = ""}}} = props;
-        dispatch(goTo("/" + experimentKey));
+    // constructor(props) {
+    //     super(props);
+    //     const {currentDirectory, dispatch, match: {params: {bucketKey, experimentKey = ""}}} = props;
+    //     dispatch(goTo("/" + experimentKey));
+    // }
+
+    // static getDerivedStateFromProps(props) {
+    //     return null;
+    // }
+
+    componentDidMount() {
+        this.props.dispatch(setBucket(this.props.match.params.bucketKey));
+        this.props.dispatch(goTo("/" + (this.props.match.params.experimentKey || "")));
     }
 
-    static getDerivedStateFromProps(props) {
-        const {currentDirectory, dispatch, match: {params: {bucketKey, experimentKey = ""}}} = props;
-        if (currentDirectory !== "/" + experimentKey) dispatch(goTo("/" + experimentKey));
-        return {}
+    componentWillUpdate(nextProps) {
+        if (nextProps.match.params.bucketKey !== this.props.match.params.bucketKey) {
+            nextProps.dispatch(setBucket(nextProps.match.params.bucketKey));
+        }
+        if (nextProps.match.params.experimentKey !== this.props.match.params.experimentKey) {
+            nextProps.dispatch(goTo("/" + (nextProps.match.params.experimentKey || "")));
+        }
     }
 
 
     render() {
         const {
-            currentDirectory, searchQuery, filteredFiles, filteredMetricsFiles, showComparison, showConfig, dispatch,
+            bucket, currentDirectory, searchQuery, filteredFiles, filteredMetricsFiles, showComparison, showConfig, dispatch,
             chartKeys, yMin, yMax,
-            match: {params: {bucketKey, experimentKey = ""}}, location, history, ...props
         } = this.props;
+
+        const parentDirectory = parentDir(currentDirectory) || '/';
 
         return <Flex>
             <Helmet>
                 <link sync href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet"/>
                 <link sync href="https://unpkg.com/react-vis/dist/style.css" rel="stylesheet"/>
-                <link sync href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"
+                <link sync href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"
                       rel="stylesheet"/>
-                <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"/>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"/>
                 <style>{"body {font-family: 'lato'; margin: 0}"}</style>
                 <title>Escher.ml</title>
             </Helmet>
@@ -103,22 +138,20 @@ class Experiment extends Component {
                 <div>
                     <Header/>
                     <input onInput={(e) => dispatch(queryInput(e.target.value))} value={searchQuery}/>
-                    <Link
-                        to={uriJoin('/experiments', bucketKey, parentDir(experimentKey))}>go
-                        back</Link>
-                    <h1>{experimentKey}</h1>
+                    <Link to={uriJoin('/experiments', bucket + parentDirectory)}>go back</Link>
+                    <h1>{currentDirectory}</h1>
                     {filteredFiles.map((f) =>
                         <div key={f.name}>
-                            <Link to={uriJoin("/experiments", bucketKey, experimentKey, f.path)}>
+                            <Link to={uriJoin("/experiments", bucket + currentDirectory, f.path)}>
                                 <h6>{f.name}</h6>
                             </Link>
-                            <button onClick={() => dispatch(removePath(uriJoin(experimentKey, f.path)))}/>
+                            <button onClick={() => dispatch(removePath(uriJoin(currentDirectory, f.path)))}/>
                         </div>
                     )}
                 </div>
                 <Flex column className="dash-container" style={{height: "100%"}}>
                     <DashboardHeader row className="dash-board-header">
-                        <FlexItem component="div">{experimentKey}</FlexItem>
+                        <FlexItem component="div">{currentDirectory}</FlexItem>
                         <TagInputStyle><ChartKeyTagInput/></TagInputStyle>
                         <FlexItem component="button" onClick={() => dispatch(toggleComparison())}>compare</FlexItem>
                         <FlexSpacer/>
@@ -160,6 +193,7 @@ class Experiment extends Component {
                         : null
                     }
                     <FlexItem component={'h3'}>Experiments</FlexItem>
+                    <ParamKeyStyle><ExperimentParameterFilter/></ParamKeyStyle>
                     <FlexItem fluid style={{overflowY: "auto"}}>
                         {filteredMetricsFiles.map(f => {
                             const dataKey = uriJoin(currentDirectory, f.path);
@@ -167,12 +201,12 @@ class Experiment extends Component {
                             return <VisibilitySensor key={f.path} partialVisibility={true}>{
                                 ({isVisible}) =>
                                     <ExperimentRow key={f.path}
-                                                   bucketKey={bucketKey}
-                                                   experimentKey={experimentKey}
+                                                   bucketKey={bucket}
+                                                   currentDirectory={currentDirectory}
                                                    path={f.path}
                                                    chartKeys={chartKeys}
                                                    dispatch={dispatch}
-                                                   currentDirectory={currentDirectory}>
+                                    >
                                         {isVisible
                                             ? chartKeys.map(chartKey => {
                                                 if (chartKey.match(/^video:/))
@@ -182,12 +216,12 @@ class Experiment extends Component {
                                                                   type="video/mp4"/>;
                                                 else if (chartKey.match(/^text:/))
                                                     return <Text src={`${experimentDir}/${chartKey.slice(5)}`}
-                                                                          className={'diff'}
-                                                                          style={{
-                                                                              height: "150px",
-                                                                              width: "500px",
-                                                                              overflowY: "auto"
-                                                                          }}/>;
+                                                                 className={'diff'}
+                                                                 style={{
+                                                                     height: "150px",
+                                                                     width: "500px",
+                                                                     overflowY: "auto"
+                                                                 }}/>;
                                                 else if (chartKey.match(/parameters\.pkl/))
                                                     return <table></table>
                                                 else return <FlexItemChartContainer
@@ -216,23 +250,23 @@ class ExperimentRow extends Component {
     state = {};
 
     render() {
-        const {bucketKey, experimentKey, path, chartKeys, dispatch, children, currentDirectory, ...props} = this.props;
+        const {bucketKey, currentDirectory, path, chartKeys, dispatch, children, ...props} = this.props;
         const parentDirectory = parentDir(path);
-        const experimentDirectory = uriJoin(experimentKey, parentDirectory);
-        const dataPath = uriJoin(experimentKey, path);
+        const experimentDirectory = uriJoin(currentDirectory, parentDirectory);
+        const dataPath = uriJoin(currentDirectory, path);
         return <div key={path} {...props}>
             <Flex row>
                 <FlexItem fixed component={Link}
-                          to={uriJoin("/experiments", bucketKey, experimentDirectory)}>
+                          to={uriJoin("/experiments", bucketKey + experimentDirectory)}>
                     {parentDirectory}
                 </FlexItem>
                 <FlexItem component="button"
                           onClick={() => dispatch(fetchData(uriJoin(currentDirectory, path), true))}>refresh</FlexItem>
                 <FlexItem component='a'
-                          href={uriJoin("http://54.71.92.65:8082/files", dataPath + "?json=1&download=0")}
+                          href={"http://54.71.92.65:8082/files" + dataPath + "?json=1&download=0"}
                           target="_blank">view json</FlexItem>
                 <FlexItem component='a'
-                          href={uriJoin("http://54.71.92.65:8082/files", dataPath + "?download=1")}
+                          href={"http://54.71.92.65:8082/files" + dataPath + "?download=1"}
                           target="_blank">download pkl</FlexItem>
                 <FlexItem component="button"
                           onClick={() => dispatch(removePath(experimentDirectory))}>delete experiment</FlexItem>

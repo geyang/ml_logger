@@ -40,7 +40,7 @@ export class FileApi {
     }
 
     getFiles(currentDirectory = "/", query = "", recursive = false, stop = 10, start = 0) {
-        let uri = `${this.fileEndpoint}${currentDirectory}`;
+        let uri = this.fileEndpoint + currentDirectory;
         const params = {};
         if (!!query) params.query = query;
         if (!!recursive) params.recursive = 1;
@@ -52,7 +52,7 @@ export class FileApi {
 
     getText(fileKey = "/", query = "", stop = 100, start = 0) {
         // todo: start and stop are not being used
-        let uri = `${this.fileEndpoint}${fileKey}`;
+        let uri = this.fileEndpoint + fileKey;
         const params = {};
         if (!!query) params.query = query;
         if (!!start) params.start = start;
@@ -62,7 +62,7 @@ export class FileApi {
     }
 
     subscribeFileEvents(currentDirectory = "/", query = "") {
-        let uri = uriJoin(this.fileEvents, currentDirectory);
+        let uri = this.fileEvents + currentDirectory;
         const params = {};
         if (!!query) params.query = query;
         if (!!params) uri += `?${stringify(params)}`;
@@ -70,7 +70,7 @@ export class FileApi {
     }
 
     getMetricData(path) {
-        const src = uriJoin(this.fileEndpoint, path) + "?log=1";
+        const src = this.fileEndpoint + path + "?log=1";
         return fetch(src, {headers: {'Content-Type': 'application/json; charset=utf-8'}})
             .then(status200)
             .then((r) => r.json())
@@ -78,7 +78,7 @@ export class FileApi {
     }
 
     deletePath(path) {
-        const src = uriJoin(this.fileEndpoint, path);
+        const src = this.fileEndpoint + path;
         // console.log(src);
         return fetch(src, {method: "DELETE",}).then(status200)
     }
@@ -93,13 +93,6 @@ export class FileApi {
 
     }
 }
-
-export const defaultState = {
-    currentDirectory: "/",
-    searchQuery: "",
-    showComparison: false,
-    showConfig: false,
-};
 
 export function ValueReducer(namespace = "", defaultState = null) {
     return function arrayReducer(state = defaultState, action) {
@@ -168,16 +161,25 @@ export function Files(reducerKey) {
     }
 }
 
+export const defaultState = {
+    currentDirectory: "/",
+    searchQuery: "",
+    showComparison: false,
+    showConfig: false,
+};
+
 const _fileReducer = combineReducers({
+    bucket: ValueReducer('BUCKET', ''),
     files: Files('FILES'),
     metrics: Files('METRICS'),
     metricRecords: MetricRecordsReducer(),
+    filteredFiles: ValueReducer('FILTERED_FILES', []),
+    filteredMetricsFiles: ValueReducer('FILTERED_METRIC_FILES', []),
     chartKeys: ArrayReducer("CHARTKEYS", ["loss.*", ".*"]),
+    parameterKeys: ArrayReducer("PARAMKEYS", []),
     // todo: absorb this into the chart definition, as part of chartConfig object.
     yMin: ValueReducer('Y_MIN', null),
     yMax: ValueReducer('Y_MAX', null),
-    filteredMetricsFiles: ValueReducer('FILTERED_METRIC_FILES', []),
-    filteredFiles: ValueReducer('FILTERED_FILES', []),
 });
 
 export function setYMax(value) {
@@ -206,6 +208,22 @@ export function moveChartKey(index, newIndex) {
     return {type: "CHARTKEYS_MOVE", ind: index, newInd: newIndex}
 }
 
+export function insertParamKey(ParamKey) {
+    return {type: "PARAMKEYS_PUSH", item: ParamKey}
+}
+
+export function deleteParamKey(index) {
+    return {type: "PARAMKEYS_DELETE", ind: index}
+}
+
+export function moveParamKey(index, newIndex) {
+    return {type: "PARAMKEYS_MOVE", ind: index, newInd: newIndex}
+}
+
+export function setBucket(bucketKey) {
+    return {type: "BUCKET_SET", value: bucketKey}
+}
+
 function fileReducer(state = defaultState, action) {
     if (action.type === "SET_QUERY") {
         return {...state, searchQuery: action.query};
@@ -230,8 +248,10 @@ function fileReducer(state = defaultState, action) {
             }
         }
         if (!!path) currentDirectory = uriJoin(currentDirectory, path);
-        state = _fileReducer({...state, currentDirectory}, action);
-        return state
+        return _fileReducer({...state, currentDirectory,
+            files: [], metrics: [],
+            filteredFiles: [], filteredMetricsFiles: []
+        }, action);
     }
     return _fileReducer(state, action);
 }
@@ -279,10 +299,13 @@ export const fileApi = new FileApi(apiRoot);
 
 export function* locationProc() {
     let state, action;
-    while (true) {
+    while (true) try {
         ({state, action} = yield take(PUSH_LOCATION));
         console.log(action.location);
+        //todo: need to parse the parameters from the location object.
         // yield dispatch(goTo())
+    } catch (e) {
+        console.warn(e)
     }
 }
 
@@ -406,6 +429,7 @@ export function* metricsProc() {
     let state, action, metrics, metricRecords, currentDirectory;
     while (true) {
         ({state, action} = yield take('GO_TO'));
+        console.log('=====================================');
         let files;
         try {
             files = yield fileApi
@@ -424,16 +448,6 @@ export function* metricsProc() {
         } catch (e) {
             console.error(e);
         }
-        // for (let stat of metrics) {
-        //     let fullKey = uriJoin(currentDirectory, stat.path);
-        //     console.log(fullKey);
-        //     // if (undefinedOrDirty(metricRecords[fullKey])) yield spawn(downloadMetrics, fullKey);
-        // }
-        // for (let stat of metrics) {
-        //     let fullKey = uriJoin(currentDirectory, stat.path);
-        //     if (undefinedOrDirty(metricRecords[fullKey]))
-        //         yield spawn(downloadMetrics, fullKey);
-        // }
     }
 }
 

@@ -32,6 +32,9 @@ class LoggingServer:
         self.app.run(port=port, debug=Params.debug)
 
     def read_handler(self, req):
+        if not req.json:
+            print(f'request json is empty: {req.text}')
+            return req.Response(text="Reuqest json is empty")
         load_entry = LoadEntry(**req.json)
         print("loading: {} type: {}".format(load_entry.key, load_entry.type))
         res = self.load(load_entry.key, load_entry.type)
@@ -39,7 +42,10 @@ class LoggingServer:
         return req.Response(text=data)
 
     def log_handler(self, req):
-        log_entry = LogEntry(**req.json)
+        if not req.json:
+            print(f'request json is empty: {req.text}')
+            return req.Response(text="Reuqest json is empty")
+        log_entry = LoadEntry(**req.json)
         print("writing: {} type: {}".format(log_entry.key, log_entry.type))
         data = deserialize(log_entry.data)
         self.log(log_entry.key, data, log_entry.type)
