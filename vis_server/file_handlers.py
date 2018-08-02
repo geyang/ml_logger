@@ -113,6 +113,7 @@ async def get_path(request, file_path=""):
             data = [_ for _ in load_from_pickle(path)]
             res = response.json(data, status=200, content_type='application/json')
         elif type(start) is int or type(stop) is int:
+            from itertools import islice
             with open(path, 'r') as f:
                 text = '\n'.join([l for l in islice(f, start, stop)])
             res = response.text(text, status=200)
