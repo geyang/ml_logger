@@ -20,6 +20,7 @@ import {Helmet} from 'react-helmet';
 import {uriJoin} from '../lib/file-api';
 import SplitPane from "react-split-pane";
 import styled from "styled-components";
+import {parse as parseQuery} from "query-string";
 import {
     ParameterDataContainer,
     ChartDataContainer,
@@ -31,6 +32,8 @@ import VisibilitySensor from 'react-visibility-sensor';
 import {Text, TextHighlight} from "../components/text-components";
 import {ExperimentParameterFilter} from "../components/experiment-params-filter";
 import {SrcContainer} from "../components/SrcContainer";
+import {ExpLink, ParamCell, ParamKey, ParamValue} from "../components/parameter-bar";
+import Ansi from "ansi-to-react";
 
 const FlexItemSrcContainer = styled(SrcContainer)`flex: auto 0 0`;
 const FlexItemComparisonContainer = styled(ComparisonDataContainer)`flex: auto 0 0`;
@@ -64,6 +67,10 @@ const ParamKeyStyle = styled.div`
      .ReactTags__selected {
         display: flex;
         flex-direction: row;
+        margin: 0 0 10px 0;
+        > .ReactTags__tag:first-child {
+            padding-left: 0;
+        }
         > .ReactTags__tag {
             flex: auto 0 0;
             margin: 0 0;
@@ -154,8 +161,8 @@ class Experiment extends Component {
                     <DashboardHeader row className="dash-board-header">
                         <FlexItem component="div">{currentDirectory}</FlexItem>
                         <TagInputStyle><ChartKeyTagInput/></TagInputStyle>
-                        <FlexItem component="button" onClick={() => dispatch(toggleComparison())}>compare</FlexItem>
                         <FlexSpacer/>
+                        <FlexItem component="button" onClick={() => dispatch(toggleComparison())}>compare</FlexItem>
                     </DashboardHeader>
                     {showComparison ?
                         <FlexItem>
@@ -183,7 +190,7 @@ class Experiment extends Component {
                                         component={Chart}
                                         yMin={yMin}
                                         yMax={yMax}
-                                        dataKeys={filteredMetricsFiles.map(f => uriJoin(currentDirectory, f.path))}
+                                        dataKeys={filteredParamFiles.map(f => uriJoin(currentDirectory, parentDir(f.path), 'metrics.pkl'))}
                                         chartKey={chartKey}
                                         legendWidth={null}
                                     />)}
@@ -197,21 +204,41 @@ class Experiment extends Component {
                     <FlexItem fluid style={{overflowY: "auto"}}>
                         {filteredParamFiles.map(function (f) {
 
+                            const parentDirectory = parentDir(f.path);
                             const paramsSrc = uriJoin(currentDirectory, f.path);
                             const experimentDir = uriJoin(currentDirectory, parentDir(f.path));
                             const metricsSrc = uriJoin(experimentDir, 'metrics.pkl');
                             return <VisibilitySensor partialVisibility={true}>{
                                 ({isVisible}) =>
                                     <Flex column key={f.path}>
+                                        <Flex row>
+                                            <ExpLink to={uriJoin("/experiments", bucket + experimentDir)}>
+                                                {parentDirectory}
+                                            </ExpLink>
+                                            <FlexSpacer/>
+                                            <FlexItem component="button"
+                                                      onClick={() => dispatch(fetchData(metricsSrc, true))}>refresh</FlexItem>
+                                            {/*<FlexItem component='a'*/}
+                                            {/*href={"http://54.71.92.65:8082/files" + metricsSrc + "?json=1&download=0"}*/}
+                                            {/*target="_blank">view json</FlexItem>*/}
+                                            {/*<FlexItem component='a'*/}
+                                            {/*href={"http://54.71.92.65:8082/files" + metricsSrc + "?download=1"}*/}
+                                            {/*target="_blank">download pkl</FlexItem>*/}
+                                            <FlexItem component="button"
+                                                      onClick={() => dispatch(removePath(experimentDir))}>delete
+                                                experiment</FlexItem>
+                                        </Flex>
                                         {isVisible
                                             ? <SrcContainer key='params-bar'
                                                             src={paramsSrc}
                                                             fetchCallback={() => dispatch(fetchData(paramsSrc))}>{
                                                 data => data
-                                                    ? <Flex row>{parameterKeys.map(k => <FlexItem
-                                                        key={k}>{k + ":" + data[k]}</FlexItem>)}</Flex>
-                                                    : <Flex row>{parameterKeys.map(k => <FlexItem
-                                                        key={k}>{k + ": "}</FlexItem>)}</Flex>
+                                                    ? <Flex row>
+                                                        {parameterKeys.map(k => <ParamCell
+                                                            key={k}><ParamKey>{k.split(".").slice(-1)}</ParamKey>(<ParamValue>{data[k]}</ParamValue>)</ParamCell>)}
+                                                    </Flex>
+                                                    : <Flex row>{parameterKeys.map(k => <ParamCell
+                                                        key={k}><ParamKey>{k.split(".").slice(-1)}</ParamKey>(<ParamValue/>)</ParamCell>)}</Flex>
                                             }</SrcContainer>
                                             : <div>not visible</div>}
                                         <Flex row style={{overflowX: "auto", overflowY: "hidden"}}>{
@@ -222,6 +249,28 @@ class Experiment extends Component {
                                                                       src={`http://54.71.92.65:8082/files${experimentDir}/${chartKey.slice(6)}`}
                                                                       height={150} controls playsInline={true}
                                                                       type="video/mp4"/>;
+                                                    else if (chartKey.match(/^log:/)) {
+                                                        const search = chartKey.slice(4).match(/([^?]*)\?(.*)/);
+                                                        const options = search ? parseQuery(search[1]) : {};
+                                                        const stem = search? search[0] : chartKey.slice(4);
+                                                        return <Text src={`${experimentDir}/${stem}`}
+                                                                     format={(content) => <Ansi>{content}</Ansi>}
+                                                                     style={{
+                                                                         backgroundColor: "#444",
+                                                                         color: "#eee",
+                                                                         height: "150px",
+                                                                         width: "500px",
+                                                                         overflowY: "auto"
+                                                                     }}
+                                                                     {...options}/>;
+                                                    } else if (chartKey.match(/^diff:/))
+                                                        return <Text src={`${experimentDir}/${chartKey.slice(5)}`}
+                                                                     className={'diff'}
+                                                                     style={{
+                                                                         height: "150px",
+                                                                         width: "500px",
+                                                                         overflowY: "auto"
+                                                                     }}/>;
                                                     else if (chartKey.match(/^text:/))
                                                         return <Text src={`${experimentDir}/${chartKey.slice(5)}`}
                                                                      className={'diff'}
@@ -251,38 +300,6 @@ class Experiment extends Component {
             </SplitPane>
         </Flex>;
     };
-}
-
-
-class ExperimentRow extends Component {
-    state = {};
-
-    render() {
-        const {bucketKey, currentDirectory, path, chartKeys, dispatch, children, ...props} = this.props;
-        const parentDirectory = parentDir(path);
-        const experimentDirectory = uriJoin(currentDirectory, parentDirectory);
-        const dataPath = uriJoin(currentDirectory, path);
-        return <div key={path} {...props}>
-            <Flex row>
-                <FlexItem fixed component={Link}
-                          to={uriJoin("/experiments", bucketKey + experimentDirectory)}>
-                    {parentDirectory}
-                </FlexItem>
-                <FlexItem component="button"
-                          onClick={() => dispatch(fetchData(uriJoin(currentDirectory, path), true))}>refresh</FlexItem>
-                <FlexItem component='a'
-                          href={"http://54.71.92.65:8082/files" + dataPath + "?json=1&download=0"}
-                          target="_blank">view json</FlexItem>
-                <FlexItem component='a'
-                          href={"http://54.71.92.65:8082/files" + dataPath + "?download=1"}
-                          target="_blank">download pkl</FlexItem>
-                <FlexItem component="button"
-                          onClick={() => dispatch(removePath(experimentDirectory))}>delete experiment</FlexItem>
-            </Flex>
-            {children}
-        </div>
-
-    }
 }
 
 

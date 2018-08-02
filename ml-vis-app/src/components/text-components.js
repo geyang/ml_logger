@@ -15,8 +15,8 @@ export class Text extends Component {
 
     render() {
         const {content} = this.state;
-        const {render, start, stop, component: Component = 'pre', ...props} = this.props;
-        const _text = render ? render(content) : content;
+        const {format, start, stop, component: Component = 'pre', ...props} = this.props;
+        const _text = format ? format(content) : content;
         return <Component {...props}>{_text}</Component>
     }
 }

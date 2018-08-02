@@ -83,7 +83,7 @@ class _ComparisonDataContainer extends Component {
     static getDerivedStateFromProps(props, state) {
         // caching here is a bit non-trivial.
         // todo: make the state update here more efficient.
-        const {metricRecords, dataKeys, chartKey, xKey = "_step"} = props;
+        const {srcCache, dataKeys, chartKey, xKey = "_step"} = props;
         let dirty = false;
         let newDataKeys, newChartKey, newRecords = {};
         if (chartKey !== state.chartKey) dirty = true;
@@ -91,22 +91,22 @@ class _ComparisonDataContainer extends Component {
         newChartKey = chartKey;
         newDataKeys = dataKeys;
         dataKeys.forEach(dataKey => {
-            const {records} = metricRecords[dataKey] || {};
-            newRecords[dataKey] = records;
-            if (records !== state.records[dataKey]) dirty = true;
+            const {data} = srcCache[dataKey] || {};
+            newRecords[dataKey] = data;
+            if (data !== state.records[dataKey]) dirty = true;
         });
         if (!dirty) return null;
         let serieses = [];
         let prefix = removeAlphabeticalPostfix(sharedPrefix(dataKeys));
         let postfix = sharedPostfix(dataKeys);
         dataKeys.forEach(dataKey => {
-            const {records} = metricRecords[dataKey] || {};
+            const {data} = srcCache[dataKey] || {};
             let shortKey = dataKey.slice(prefix.length, (postfix.length) ? -postfix.length : undefined);
-            if (records) {
-                const keys = getKeysFromRecords(records);
+            if (data) {
+                const keys = getKeysFromRecords(data);
                 keys.filter(matchExp(chartKey)).forEach(key =>
                     // todo: insert logic to make dataKey shorter.
-                    serieses.push(recordsToSeries(records, key, xKey, uriJoin(shortKey, key))))
+                    serieses.push(recordsToSeries(data, key, xKey, uriJoin(shortKey, key))))
             }
         });
         return {dataKeys: newDataKeys, chartKey: newChartKey, records: newRecords, serieses}
@@ -121,6 +121,6 @@ class _ComparisonDataContainer extends Component {
 
 
 export const ComparisonDataContainer = selector(
-    ({metricRecords}) => ({metricRecords}),
+    ({srcCache}) => ({srcCache}),
     _ComparisonDataContainer
 );

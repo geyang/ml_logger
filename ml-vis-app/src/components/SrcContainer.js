@@ -23,12 +23,14 @@ class _SrcContainer extends Component {
     componentDidMount() {
         const {cache, src, fetchCallback} = this.props;
         const {data, $dirty, $fetching} = cache[src] || {};
+        //todo: use $dirty
         if (!$fetching && !data && typeof fetchCallback === 'function') fetchCallback(src);
     }
 
     componentDidUpdate() {
         const {cache, src, fetchCallback} = this.props;
         const {data, $dirty, $fetching} = cache[src] || {};
+        //todo: use $dirty
         if (!$fetching && !data && typeof fetchCallback === 'function') fetchCallback(src);
     }
 

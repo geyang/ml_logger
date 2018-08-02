@@ -115,6 +115,10 @@ amdefine@>=0.0.4:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/amdefine/-/amdefine-1.0.1.tgz#4a5282ac164729e93619bcfd3ad151f817ce91f5"
 
+anser@^1.4.1:
+  version "1.4.7"
+  resolved "https://registry.yarnpkg.com/anser/-/anser-1.4.7.tgz#78c0ce6aefffaa09bed267bd7d26ee5b9fb6d575"
+
 ansi-align@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ansi-align/-/ansi-align-2.0.0.tgz#c36aeccba563b89ceb556f3690f0b1d9e3547f7f"
@@ -150,6 +154,14 @@ ansi-styles@^3.0.0, ansi-styles@^3.2.1:
   resolved "https://registry.yarnpkg.com/ansi-styles/-/ansi-styles-3.2.1.tgz#41fbb20243e50b12be0f04b8dedbf07520ce841d"
   dependencies:
     color-convert "^1.9.0"
+
+ansi-to-react@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/ansi-to-react/-/ansi-to-react-3.3.0.tgz#5df93d710b75f4ff746b28cd4b3a51d721f705b4"
+  dependencies:
+    anser "^1.4.1"
+    babel-runtime "^6.26.0"
+    escape-carriage "^1.2.0"
 
 anymatch@^1.3.0:
   version "1.3.2"
@@ -2426,6 +2438,10 @@ es6-weak-map@^2.0.1:
     es5-ext "^0.10.14"
     es6-iterator "^2.0.1"
     es6-symbol "^3.1.1"
+
+escape-carriage@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/escape-carriage/-/escape-carriage-1.2.0.tgz#35ce51a7960efcb5ae8bb59b83f566a98c946dfd"
 
 escape-html@~1.0.3:
   version "1.0.3"

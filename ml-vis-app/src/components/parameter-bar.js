@@ -1,31 +1,34 @@
 import React, {Component} from 'react';
-import {Flex} from 'layout-components';
-import selector from "../lib/react-luna";
+import {FlexItem} from "layout-components";
+import styled from 'styled-components';
+import {Link} from "react-router-dom";
 
-class ParameterBar extends Component {
-    state = {};
-
-    render() {
-        const {parameters, paramKeys} = this.props;
-        return <Flex row>
-            {records.map()}
-        </Flex>
+export const ParamCell = styled(FlexItem)`
+    margin: 0 0;
+    display: flex;
+    flex-direction: row;
+    min-width: 60px;
+    &:not(:first-child) {
+        margin-left: 20px;
     }
-}
-class _ParameterCell extends Component {
-    state = {};
+`;
+export const ParamKey = styled(FlexItem)`
+    padding: 0 4px 0 0;
+`;
+export const ParamValue = styled(FlexItem)`
+    padding: 0 2px;
+    font-weight: 900;
+    font-style: bold;
+`;
 
-    static getDerivedStateFromProps(props, state) {
-        return null;
+
+export const ExpLink = styled(Link)`
+    flex: 0 0 auto;
+    color: #c6c6c6;
+    font-weight: 300;
+    text-decoration: none;
+    &:hover {
+        color: gray;
+        text-decoration: underline;
     }
-
-    render() {
-        const {parameterKey,...props} = this.props;
-        const [key, ...rest] = parameterKey.split(':');
-        return <div {...props} >{key}:</div>
-    }
-}
-
-export const ChartKeyTagInput = selector(({chartKeys}) => ({chartKeys}), _ParameterCell);
-
-
+`;

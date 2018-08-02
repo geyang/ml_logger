@@ -4,6 +4,7 @@
   "private": true,
   "homepage": "https://escher-ai.github.io/ml-vis",
   "dependencies": {
+    "ansi-to-react": "^3.3.0",
     "babel-core": "^6.26.0",
     "gh-pages": "^1.2.0",
     "history": "^4.7.2",

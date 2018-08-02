@@ -45,6 +45,29 @@ def cwd(path):
         os.chdir(owd)
 
 
+async def batch_get_path(request):
+    try:
+        data = request.json
+
+        file_paths = data['paths']
+        options = data['options']
+
+        batch_res_data = dict()
+
+        if options.get('json', False):
+            for path in file_paths:
+                from ml_logger.helpers import load_from_pickle
+                batch_res_data[path] = [_ for _ in load_from_pickle(path)]
+
+            res = response.json(batch_res_data, status=200, content_type='application/json')
+            return res
+
+    except Exception as e:
+        print('Exception: ', e)
+        res = response.text('Internal Error' + str(e), status=502)
+        return res
+
+
 async def get_path(request, file_path=""):
     print(file_path)
 
@@ -55,8 +78,12 @@ async def get_path(request, file_path=""):
     is_recursive = request.args.get('recursive')
     show_hidden = request.args.get('hidden')
     query = request.args.get('query', "*").strip()
-    start = int(request.args.get('start', '0'))
-    stop = int(request.args.get('stop', '200'))
+
+    _start = request.args.get('start', None)
+    _stop = request.args.get('stop', None)
+    start = None if _start is None else int(_start)
+    stop = None if _stop is None else int(_stop)
+
     reservoir_k = int(request.args.get('reservoir', '200'))
 
     # limit for the search itself.
@@ -69,7 +96,7 @@ async def get_path(request, file_path=""):
         from itertools import islice
         with cwd(path):
             print(os.getcwd(), query, is_recursive)
-            file_paths = list(islice(iglob(query, recursive=is_recursive), start, stop))
+            file_paths = list(islice(iglob(query, recursive=is_recursive), start or 0, stop or 200))
             files = map(file_stat, file_paths)
             res = response.json(files, status=200)
     elif os.path.isfile(path):
@@ -85,6 +112,10 @@ async def get_path(request, file_path=""):
             from ml_logger.helpers import load_from_pickle
             data = [_ for _ in load_from_pickle(path)]
             res = response.json(data, status=200, content_type='application/json')
+        elif type(start) is int or type(stop) is int:
+            with open(path, 'r') as f:
+                text = '\n'.join([l for l in itertools.islice(f, start, stop)])
+            res = response.text(text, status=200)
         else:
             # todo: check the file handling here. Does this use correct mimeType for text files?
             res = await response.file(path)

@@ -37,10 +37,13 @@ export class FileApi {
         this.subscribeFileEvents = this._subscribeFileEvents.bind(this);
         this.getMetricData = this._getMetricData.bind(this);
         this.deletePath = this._deletePath.bind(this);
+        this.batchGetPklAsJson = this._batchGetPklAsJson.bind(this);
+        this.getPklAsJson = this._getPklAsJson.bind(this);
     }
 
     configure(server = "") {
         this.serverUri = server;
+        this.batchFileEndpoint = `${this.serverUri}/batch-files`;
         this.fileEndpoint = `${this.serverUri}/files`;
         this.fileEvents = `${this.serverUri}/file-events`;
     }
@@ -52,18 +55,18 @@ export class FileApi {
         if (!!recursive) params.recursive = 1;
         if (!!start) params.start = start;
         if (!!stop) params.stop = stop;
-        if (!!params) uri += `?${stringify(params)}`;
+        if (Object.keys(params).length) uri += `?${stringify(params)}`;
         return fetch(uri).then(status200).then(j => j.json())
     }
 
-    _getText(fileKey = "/", query = "", stop = 100, start = 0) {
+    _getText(fileKey = "/", query = "", stop, start) {
         // todo: start and stop are not being used
         let uri = this.fileEndpoint + fileKey;
         const params = {};
         if (!!query) params.query = query;
-        if (!!start) params.start = start;
-        if (!!stop) params.stop = stop;
-        if (!!params) uri += `?${stringify(params)}`;
+        if (start !== undefined) params.start = start;
+        if (stop !== undefined) params.stop = stop;
+        if (Object.keys(params).length) uri += `?${stringify(params)}`;
         return fetch(uri).then(status200).then(j => j.text())
     }
 
@@ -73,6 +76,26 @@ export class FileApi {
         if (!!query) params.query = query;
         if (!!params) uri += `?${stringify(params)}`;
         return fetch(uri).then(status200).then(j => j.json());
+    }
+
+    _getPklAsJson(path) {
+        const src = this.fileEndpoint + path + "?json=1";
+        return fetch(src, {headers: {'Content-Type': 'application/json; charset=utf-8'}})
+            .then(status200)
+            .then((r) => r.json())
+        // .then((d) => recordsToSeries(d));
+    }
+
+    _batchGetPklAsJson(paths, options = {json: 1}) {
+        const src = this.batchFileEndpoint;
+        return fetch(src, {
+            headers: {'Content-Type': 'application/json; charset=utf-8'},
+            method: "POST",
+            data: {paths, options}
+        })
+            .then(status200)
+            .then((r) => r.json())
+        // .then((d) => recordsToSeries(d));
     }
 
     _getMetricData(path) {
