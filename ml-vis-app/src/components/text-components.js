@@ -1,10 +1,11 @@
 import React, {Component} from 'react';
 import {fileApi} from '../lib/file-api';
 import Highlight from "react-highlight";
+import styled from "styled-components";
 // import Highlight from '@episodeyang/react-highlight.js/dist/main';
 
 
-export class Text extends Component {
+class _Text extends Component {
     state = {};
 
     componentDidMount() {
@@ -20,6 +21,9 @@ export class Text extends Component {
         return <Component {...props}>{_text}</Component>
     }
 }
+export const Text = styled(_Text)`
+    margin: 0;
+`;
 
 
 export function TextHighlight (props) {

@@ -129,8 +129,8 @@ class Experiment extends Component {
                 <link sync href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"
                       rel="stylesheet"/>
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"/>
-                <style>{"body {font-family: 'lato'; margin: 0}"}</style>
-                <title>Escher.ml</title>
+                <style>{"body {font-family: 'lato'; margin: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;}"}</style>
+                <title>{currentDirectory && currentDirectory.split('/').slice(-1).join('') || "Escher.ml"}</title>
             </Helmet>
             <SplitPane minSize={50} defaultSize={300}
                        resizerStyle={{
@@ -233,9 +233,9 @@ class Experiment extends Component {
                                                             src={paramsSrc}
                                                             fetchCallback={() => dispatch(fetchData(paramsSrc))}>{
                                                 data => data
-                                                    ? <Flex row>
+                                                    ? <Flex row style={{overflowY: "auto"}}>
                                                         {parameterKeys.map(k => <ParamCell
-                                                            key={k}><ParamKey>{k.split(".").slice(-1)}</ParamKey>(<ParamValue>{data[k]}</ParamValue>)</ParamCell>)}
+                                                            key={k}><ParamKey>{k.split(".").slice(-1)}</ParamKey>(<ParamValue>{JSON.stringify(data[k])}</ParamValue>)</ParamCell>)}
                                                     </Flex>
                                                     : <Flex row>{parameterKeys.map(k => <ParamCell
                                                         key={k}><ParamKey>{k.split(".").slice(-1)}</ParamKey>(<ParamValue/>)</ParamCell>)}</Flex>
@@ -252,8 +252,9 @@ class Experiment extends Component {
                                                     else if (chartKey.match(/^log:/)) {
                                                         const search = chartKey.slice(4).match(/([^?]*)\?(.*)/);
                                                         const options = search ? parseQuery(search[1]) : {};
-                                                        const stem = search? search[0] : chartKey.slice(4);
+                                                        const stem = search ? search[0] : chartKey.slice(4);
                                                         return <Text src={`${experimentDir}/${stem}`}
+                                                                     key={chartKey}
                                                                      format={(content) => <Ansi>{content}</Ansi>}
                                                                      style={{
                                                                          backgroundColor: "#444",
@@ -265,6 +266,7 @@ class Experiment extends Component {
                                                                      {...options}/>;
                                                     } else if (chartKey.match(/^diff:/))
                                                         return <Text src={`${experimentDir}/${chartKey.slice(5)}`}
+                                                                     key={chartKey}
                                                                      className={'diff'}
                                                                      style={{
                                                                          height: "150px",
@@ -273,6 +275,7 @@ class Experiment extends Component {
                                                                      }}/>;
                                                     else if (chartKey.match(/^text:/))
                                                         return <Text src={`${experimentDir}/${chartKey.slice(5)}`}
+                                                                     key={chartKey}
                                                                      className={'diff'}
                                                                      style={{
                                                                          height: "150px",

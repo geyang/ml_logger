@@ -299,6 +299,13 @@ function fileReducer(state = defaultState, action) {
 
 export const rootReducer = BatchReducer(fileReducer, "BATCH_ACTIONS");
 
+export function createBatchAction(...actions) {
+    return {
+        type: "BATCH_ACTIONS",
+        actions
+    }
+}
+
 
 export function* searchProc() {
     let state, action, searchQuery, currentDirectory, metrics, files, metricRecords, paramFiles, filteredMetrics;
@@ -445,17 +452,38 @@ export function markFetching(experimentKey) {
     }
 }
 
+const batch_action_buffer = [];
+
+
 function* downloadData(src) {
     let data = yield fileApi.getMetricData(src);
     if (src.match(/parameters.pkl/)) {
         data = flattenParams(data);
     }
-    yield dispatch({
+    batch_action_buffer.push({
         type: "SRC_DATA_SET",
         key: src,
         data
-    })
+    });
+    let mem_length = batch_action_buffer.length;
+    console.log('add action but not dispatching it.');
+    if (batch_action_buffer.length >= 100) {
+        console.log('buffer is full. Now dispatch throttled actions');
+        let _ = createBatchAction(...batch_action_buffer);
+        batch_action_buffer.length = 0;
+        yield dispatch(_);
+    } else {
+        yield call(delay, 500);
+        /* This makes sure that this is the last request.*/
+        if (batch_action_buffer.length === mem_length) {
+            console.log('dispatch throttled actions');
+            let _ = createBatchAction(...batch_action_buffer);
+            batch_action_buffer.length = 0;
+            yield dispatch(_);
+        }
+    }
 }
+
 
 function notFetchingDirtyOrUndefined(data) {
     return (data === undefined || data === null) || !!data.$dirty && !data.$fetching;

@@ -1,5 +1,5 @@
 export function getKeys(record) {
-    return Object.keys(record).filter(k => (record.hasOwnProperty(k) && k !== "_step" && k !== "_timestamp"));
+    return Object.keys(record).filter(k => (record.hasOwnProperty(k) && k !== "_step"));// && k !== "_timestamp"));
 }
 
 /** This only gets key from the first element in the record.
