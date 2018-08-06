@@ -13,6 +13,19 @@ logger.configure(TEST_LOG_DIR, prefix='main')
 print("logging to {}".format(TEST_LOG_DIR))
 
 
+def test_pkl():
+    import numpy
+    d1 = numpy.random.randn(20, 10)
+    logger.log_data(d1, 'test_file.pkl')
+    d2 = numpy.random.randn(20, 10)
+    logger.log_data(d2, 'test_file.pkl')
+
+    data = logger.load_pkl('test_file.pkl')
+    assert len(data) == 2, "data should contain two arrays"
+    assert numpy.array_equal(data[0], d1), "first should be the same as d1"
+    assert numpy.array_equal(data[1], d2), "first should be the same as d2"
+
+
 def test():
     d = Color(3.1415926, 'red')
     s = "{:.1}".format(d)
@@ -108,6 +121,7 @@ def test_module():
 
 
 def test_load_module():
+    data = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
     result, = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
     import numpy as np
     assert (result['var_1'] == np.ones([100, 2])).all(), "should be the same as test data"
@@ -122,6 +136,7 @@ def test_diff():
 
 
 if __name__ == "__main__":
+    test_pkl()
     test_diff()
     test()
     test_load_params()

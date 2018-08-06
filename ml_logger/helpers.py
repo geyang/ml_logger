@@ -11,6 +11,15 @@ def load_from_pickle(path='parameters.pkl'):
                 break
 
 
+def load_from_numpy(path='parameters.pkl'):
+    with open(path, 'rb') as f:
+        while True:
+            try:
+                yield np.load(f)
+            except EOFError:
+                break
+
+
 def sample(stream, k):
     """
 

@@ -198,7 +198,7 @@ class ML_Logger:
         # todo: add yml support
         self.log_data(path=path, data=kwargs)
 
-    def log_data(self, path="data.pkl", data=None):
+    def log_data(self, data, path="data.pkl"):
         self.logger.log(key=os.path.join(self.prefix or "", path), data=data)
 
     def log_keyvalue(self, key: str, value: Any, step: Union[int, Color] = None, silent=False) -> None:
@@ -447,11 +447,11 @@ class ML_Logger:
             self.flush()
             self.step = step
 
-        for k, m in kwargs.items():
+        for var_name, module in kwargs.items():
             # todo: this is torch-specific code. figure out a better way.
-            ps = {k: v.cpu().detach().numpy() for k, v in m.state_dict().items()},
+            ps = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
             # we use the number first file names to help organize modules by epoch.
-            path = os.path.join(namespace, f'{k}.pkl' if self.step is None else f'{step:{fmt}}_{k}.pkl')
+            path = os.path.join(namespace, f'{var_name}.pkl' if self.step is None else f'{step:{fmt}}_{var_name}.pkl')
             self.log_data(path=path, data=ps)
 
     def load_file(self, key):
