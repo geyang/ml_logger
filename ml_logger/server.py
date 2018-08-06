@@ -74,10 +74,10 @@ class LoggingServer:
             except FileNotFoundError as e:
                 return e
         elif dtype == 'read_np':
-            from ml_logger.helpers import load_from_numpy
+            import numpy
             abs_path = os.path.join(self.data_dir, key)
             try:
-                return list(load_from_numpy(abs_path))
+                return numpy.load(abs_path)
             except FileNotFoundError as e:
                 return e
         elif dtype == 'read_image':
