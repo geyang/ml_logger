@@ -127,11 +127,31 @@ class ML_Logger:
         import subprocess
         try:
             cmd = f'cd "{os.path.realpath(diff_directory)}" && git add . && git --no-pager diff --staged'
-            self.print(cmd)
+            if not silent: self.print(cmd)
             p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
             self.log_text(p.decode('utf-8'), diff_filename, silent=silent)
         except subprocess.CalledProcessError as e:
             self.print("not storing the git diff due to {}".format(e))
+
+    @property
+    def __head__(self):
+        """returns the git revision hash of the head if inside a git repository"""
+        return self.git_rev('HEAD')
+
+    def git_rev(self, branch):
+        """
+        returns the git revision hash of the branch that you pass in.
+        full reference here: https://stackoverflow.com/a/949391
+        the `show-ref` and the `for-each-ref` commands both show a list of refs. We only need to get the
+        ref hash for the revision, not the entire branch of by tag.
+        """
+        import subprocess
+        try:
+            cmd = f'git rev-parse {branch}'
+            p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
+            return p.decode('utf-8')
+        except subprocess.CalledProcessError:
+            return None
 
     def diff_file(self, path, silent=False):
         raise NotImplemented
@@ -304,7 +324,7 @@ class ML_Logger:
                             data=dict(_step=self.step, _timestamp=str(self.timestamp), **self.data))
             self.data.clear()
             self.do_not_print_list.clear()
-            
+
         self.print_flush()
 
     def log_file(self, file_path, namespace='files', silent=True):

@@ -133,8 +133,11 @@ def test_load_params():
 def test_diff():
     logger.diff()
 
+def test_git_rev():
+    print(logger.__head__)  
 
 if __name__ == "__main__":
+    test_git_rev()
     test_load_pkl()
     test_diff()
     test()
