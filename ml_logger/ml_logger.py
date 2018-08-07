@@ -134,6 +134,16 @@ class ML_Logger:
             self.print("not storing the git diff due to {}".format(e))
 
     @property
+    def __current_branch__(self):
+        import subprocess
+        try:
+            cmd = f'git symbolic-ref HEAD'
+            p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
+            return p.decode('utf-8')
+        except subprocess.CalledProcessError:
+            return None
+
+    @property
     def __head__(self):
         """returns the git revision hash of the head if inside a git repository"""
         return self.git_rev('HEAD')

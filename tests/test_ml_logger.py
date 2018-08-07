@@ -138,8 +138,13 @@ def test_git_rev():
     print(logger.__head__)
 
 
+def test_current_branch():
+    print(logger.__current_branch__)
+
+
 if __name__ == "__main__":
     test_git_rev()
+    test_current_branch()
     test_load_pkl()
     test_diff()
     test()
