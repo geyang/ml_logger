@@ -135,11 +135,11 @@ def test_diff():
 
 
 def test_git_rev():
-    print(logger.__head__)
+    print([logger.__head__])
 
 
 def test_current_branch():
-    print(logger.__current_branch__)
+    print([logger.__current_branch__])
 
 
 if __name__ == "__main__":

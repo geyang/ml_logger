@@ -158,7 +158,7 @@ class ML_Logger:
         try:
             cmd = f'git rev-parse {branch}'
             p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
-            return p.decode('utf-8')
+            return p.decode('utf-8').strip()
         except subprocess.CalledProcessError:
             return None
 
