@@ -113,7 +113,6 @@ class ML_Logger:
     def now(self, fmt=None):
         from datetime import datetime
         now = datetime.now()
-        # now.strftime("%Y-%m-%d-%H-%M-%S-%f")
         return now.strftime(fmt) if fmt else now
 
     def diff(self, diff_directory=".", diff_filename="index.diff", silent=False):
@@ -129,7 +128,7 @@ class ML_Logger:
             cmd = f'cd "{os.path.realpath(diff_directory)}" && git add . && git --no-pager diff --staged'
             if not silent: self.print(cmd)
             p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
-            self.log_text(p.decode('utf-8'), diff_filename, silent=silent)
+            self.log_text(p.decode('utf-8').strip(), diff_filename, silent=silent)
         except subprocess.CalledProcessError as e:
             self.print("not storing the git diff due to {}".format(e))
 
@@ -139,7 +138,7 @@ class ML_Logger:
         try:
             cmd = f'git symbolic-ref HEAD'
             p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
-            return p.decode('utf-8')
+            return p.decode('utf-8').strip()
         except subprocess.CalledProcessError:
             return None
 
