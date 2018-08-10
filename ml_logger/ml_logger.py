@@ -114,13 +114,13 @@ class ML_Logger:
         returns a datetime object. You can get integer seconds and miliseconds (both int) from it.
         Note: This is Not idempotent, which is why it is not a property.
 
-        :return: int (seconds/miliseconds)
+        :return: float (seconds/miliseconds)
         """
         new_tic = self.now
         try:
             dt = new_tic - self._tic
             self._tic = new_tic
-            return dt
+            return dt.total_seconds()
         except AttributeError:
             self._tic = new_tic
             return None

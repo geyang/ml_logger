@@ -144,7 +144,7 @@ def test_current_branch():
 
 def test_split():
     assert logger.split() is None, 'The first tick should be None'
-    assert type(logger.split().microseconds) is int, 'Then it should return a a floating for the seconds'
+    assert type(logger.split()) is float, 'Then it should return a a float in the seconds.'
 
 
 if __name__ == "__main__":
