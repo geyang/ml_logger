@@ -142,7 +142,13 @@ def test_current_branch():
     print([logger.__current_branch__])
 
 
+def test_split():
+    assert logger.split() is None, 'The first tick should be None'
+    assert type(logger.split().microseconds) is int, 'Then it should return a a floating for the seconds'
+
+
 if __name__ == "__main__":
+    test_split()
     test_git_rev()
     test_current_branch()
     test_load_pkl()

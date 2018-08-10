@@ -109,6 +109,22 @@ class ML_Logger:
     logger = None
     log_directory = None
 
+    def split(self):
+        """
+        returns a datetime object. You can get integer seconds and miliseconds (both int) from it.
+        Note: This is Not idempotent, which is why it is not a property.
+
+        :return: int (seconds/miliseconds)
+        """
+        new_tic = self.now
+        try:
+            dt = new_tic - self._tic
+            self._tic = new_tic
+            return dt
+        except AttributeError:
+            self._tic = new_tic
+            return None
+
     @property
     def now(self, fmt=None):
         from datetime import datetime
