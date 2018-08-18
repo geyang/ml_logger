@@ -24,7 +24,7 @@ resize: # from https://stackoverflow.com/a/28221795/1560241
 	convert ./figures/!(*resized).jpg -resize 888x1000 -set filename:f '%t' ./figures/'%[filename:f]_resized.jpg'
 update-doc: convert-rst
 	python setup.py sdist upload
-tag:
+release:
 	git tag v$(cat ./VERSION) -m $(msg)
 	git push origin --tags
 publish: convert-rst
