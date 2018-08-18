@@ -25,6 +25,7 @@ class LogEntry(NamedTuple):
 
 
 LoadEntry = namedtuple("LoadEntry", ['key', 'type'])
+RemoveEntry = namedtuple("RemoveEntry", ['key'])
 
 
 class PingData(NamedTuple):
@@ -52,6 +53,7 @@ class LoggingServer:
         self.app.router.add_route('/', self.log_handler, method='POST')
         self.app.router.add_route('/', self.read_handler, method='GET')
         self.app.router.add_route('/ping', self.ping_handler, method='POST')
+        self.app.router.add_route('/', self.remove_handler, method='DELETE')
         # todo: need a file serving url
         self.app.run(port=port, debug=Params.debug)
 
@@ -85,6 +87,16 @@ class LoggingServer:
         res = self.load(load_entry.key, load_entry.type)
         data = serialize(res)
         return req.Response(text=data)
+
+    def remove_handler(self, req):
+        if not req.json:
+            msg = f'request json is empty: {req.text}'
+            print(msg)
+            return req.Response(text=msg)
+        remove_entry = RemoveEntry(**req.json)
+        print("removing: {}".format(remove_entry.key))
+        self.remove(remove_entry.key)
+        return req.Response(text='ok')
 
     def log_handler(self, req):
         if not req.json:
@@ -129,15 +141,20 @@ class LoggingServer:
             raise NotImplemented('reading images is not implemented.')
 
     def remove(self, key):
-        """Not used and not tested."""
+        """
+        removes by key.
+
+        :param key: the path from the logging directory.
+        :return: None
+        """
         abs_path = os.path.join(self.data_dir, key)
         try:
             os.remove(abs_path)
-        except IsADirectoryError as e:
-            import shutil
-            shutil.rmtree(abs_path)
         except FileNotFoundError as e:
             return None
+        except OSError as e:
+            import shutil
+            shutil.rmtree(abs_path)
 
     def log(self, key, data, dtype, options: LogOptions = None):
         """

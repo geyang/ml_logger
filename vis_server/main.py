@@ -25,7 +25,7 @@ def run(logdir=None, **kwargs):
     if logdir:
         config.Args.logdir = os.path.realpath(logdir)
 
-    assert os.path.isabs(config.Args.logdir), "the processed logdir has to start with '/'."
+    assert os.path.isabs(config.Args.logdir), "the processed log_dir has to start with '/'."
     app.run(**vars(config.ServerArgs))
 
 

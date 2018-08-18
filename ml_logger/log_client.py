@@ -2,7 +2,8 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from requests_futures.sessions import FuturesSession
 from ml_logger.serdes import serialize, deserialize
-from ml_logger.server import LogEntry, LoadEntry, PingData, LoggingServer, ALLOWED_TYPES, Signal, LogOptions
+from ml_logger.server import LogEntry, LoadEntry, PingData, LoggingServer, ALLOWED_TYPES, Signal, LogOptions, \
+    RemoveEntry
 
 
 class LogClient:
@@ -41,6 +42,14 @@ class LogClient:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
             json = LogEntry(key, serialize(data), dtype, options)._asdict()
             self.session.post(self.url, json=json)
+
+    def _delete(self, key):
+        if self.local_server:
+            self.local_server.remove(key)
+        else:
+            # todo: make the json serialization more robust. Not priority b/c this' client-side.
+            json = RemoveEntry(key)._asdict()
+            self.session.delete(self.url, json=json)
 
     def ping(self, exp_key, status, _duplex=True, burn=True):
         # todo: add configuration for early termination

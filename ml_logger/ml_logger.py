@@ -244,6 +244,16 @@ class ML_Logger:
         # todo: wait for logger to finish upload in async mode.
         self.flush()
 
+    def remove(self, path):
+        """
+        removes by path
+
+        :param path:
+        :return:
+        """
+        abs_path = os.path.join(self.prefix, path)
+        self.logger._delete(abs_path)
+
     def log_params(self, path="parameters.pkl", **kwargs):
         key_width = 30
         value_width = 20
