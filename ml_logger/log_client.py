@@ -2,7 +2,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from requests_futures.sessions import FuturesSession
 from ml_logger.serdes import serialize, deserialize
-from ml_logger.server import LogEntry, LoadEntry, PingData, LoggingServer, ALLOWED_TYPES
+from ml_logger.server import LogEntry, LoadEntry, PingData, LoggingServer, ALLOWED_TYPES, Signal, LogOptions
 
 
 class LogClient:
@@ -42,18 +42,24 @@ class LogClient:
             json = LogEntry(key, serialize(data), dtype, options)._asdict()
             self.session.post(self.url, json=json)
 
-    def ping(self, exp_key, status, _duplex=False):
+    def ping(self, exp_key, status, _duplex=True, burn=True):
         # todo: add configuration for early termination
         if self.local_server:
             signals = self.local_server.ping(exp_key, status)
             return deserialize(signals) if _duplex else None
         else:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
-            ping_data = PingData(exp_key, status)._asdict()
-            req = self.session.post(self.url, json=ping_data)
+            ping_data = PingData(exp_key, status, burn=burn)._asdict()
+            req = self.session.post(self.ping_url, json=ping_data)
             if _duplex:
                 signals = req.result()
                 return deserialize(signals)
+
+    # send signals to the worker
+    def send_signal(self, exp_key, signal=None):
+        options = LogOptions(overwrite=True)
+        channel = os.path.join(exp_key, "__signal.pkl")
+        self._post(channel, signal, dtype="log", options=options)
 
     # Reads binary data
     def read(self, key):

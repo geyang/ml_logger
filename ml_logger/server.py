@@ -1,10 +1,8 @@
 from datetime import datetime
-
-import StringIO
 import os
 # todo: switch to dill instead
 import dill
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML, StringIO
 from collections import namedtuple
 
 from params_proto import cli_parse, Proto, BoolFlag
@@ -27,7 +25,15 @@ class LogEntry(NamedTuple):
 
 
 LoadEntry = namedtuple("LoadEntry", ['key', 'type'])
-PingData = namedtuple("PingData", ['exp_key', 'status'])
+
+
+class PingData(NamedTuple):
+    exp_key: str
+    status: Any
+    burn: bool = False
+
+
+Signal = namedtuple("Signal", ['exp_key', 'signal'])
 ALLOWED_TYPES = (np.uint8,)  # ONLY uint8 is supported.
 
 
@@ -59,12 +65,14 @@ class LoggingServer:
         data = self.ping(**ping_data)
         return req.Response(text=data)
 
-    def ping(self, exp_key, status):
+    def ping(self, exp_key, status, burn=True):
         status_path = os.path.join(exp_key, '__presence')
-        options = LogOptions(overwrite=True, write_mode='key')
-        self.log(status_path, dict(status=status, time=datetime.now()), dtype="yaml", options=options)
+        self.log(status_path, dict(status=status, time=datetime.now()), dtype="yaml",
+                 options=LogOptions(overwrite=True, write_mode='key'))
         signal_path = os.path.join(exp_key, '__signal.pkl')
         res = self.load(signal_path, 'read_pkl')
+        if burn:
+            self.remove(signal_path)
         return serialize(res)
 
     def read_handler(self, req):
@@ -95,38 +103,41 @@ class LoggingServer:
                 with open(abs_path, 'rb') as f:
                     return f.decode('utf-8')
             except FileNotFoundError as e:
-                return e
+                return None
         elif dtype == 'read_text':
             abs_path = os.path.join(self.data_dir, key)
             try:
                 with open(abs_path, 'r') as f:
                     return f.decode('utf-8')
             except FileNotFoundError as e:
-                return e
+                return None
         elif dtype == 'read_pkl':
             from ml_logger.helpers import load_from_pickle
             abs_path = os.path.join(self.data_dir, key)
             try:
                 return list(load_from_pickle(abs_path))
             except FileNotFoundError as e:
-                return e
+                return None
         elif dtype == 'read_np':
             import numpy
             abs_path = os.path.join(self.data_dir, key)
             try:
                 return numpy.load(abs_path)
             except FileNotFoundError as e:
-                return e
+                return None
         elif dtype == 'read_image':
             raise NotImplemented('reading images is not implemented.')
-        elif dtype == 'delete':
-            """Not used and not tested."""
-            abs_path = os.path.join(self.data_dir, key)
-            try:
-                import shutil
-                shutil.rmtree(abs_path)
-            except FileNotFoundError as e:
-                return e
+
+    def remove(self, key):
+        """Not used and not tested."""
+        abs_path = os.path.join(self.data_dir, key)
+        try:
+            os.remove(abs_path)
+        except IsADirectoryError as e:
+            import shutil
+            shutil.rmtree(abs_path)
+        except FileNotFoundError as e:
+            return None
 
     def log(self, key, data, dtype, options: LogOptions = None):
         """
@@ -178,14 +189,18 @@ class LoggingServer:
                 with open(abs_path, write_mode + "+") as f:
                     if options.write_mode == 'key':
                         d = yaml.load('\n'.join(f))
-                        output = d.update(output)
+                        if d is not None:
+                            d.update(output)
+                            output = d
                     f.write(output)
             except FileNotFoundError:
                 os.makedirs(os.path.dirname(abs_path))
                 with open(abs_path, write_mode + "+") as f:
                     if options.write_mode == 'key':
                         d = yaml.load('\n'.join(f))
-                        output = d.update(output)
+                        if d is not None:
+                            d.update(output)
+                            output = d
                     f.write(output)
         elif dtype.startswith("image"):
             abs_path = os.path.join(self.data_dir, key)

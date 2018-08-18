@@ -1,9 +1,6 @@
-from copy import copy
-
 import threading
 import time
 
-from . import LogClient
 
 
 class Duplex(object):
@@ -53,11 +50,15 @@ class Duplex(object):
         """ Method that runs forever """
         import random  # add random bits to avoid simultaneous requests
         while True:
-            r = self.thunk(*self.send_buffer).results()
-            self.send_buffer.clear()
-            self.buffer.append(r)
-            scale = 1 + (random.random() - 0.5) * 0.1
-            time.sleep(self.keep_alive_interval * scale)
+            try:
+                r = self.thunk(*self.send_buffer)
+                self.send_buffer.clear()
+                if r is not None:
+                    self.buffer.append(r)
+                scale = 1 + (random.random() - 0.5) * 0.1
+                time.sleep(self.keep_alive_interval * scale)
+            except Exception as e:
+                print(e)
 
     def control_thunk(self, signal=None):
         stream = self.thunk(signal) or []

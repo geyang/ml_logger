@@ -149,9 +149,6 @@ class ML_Logger:
         except subprocess.CalledProcessError as e:
             self.print("not storing the git diff due to {}".format(e))
 
-
-        
-
     @property
     def __current_branch__(self):
         import subprocess
@@ -214,7 +211,7 @@ class ML_Logger:
 
     configure = __init__
 
-    def ping(self, status, interval=10):
+    def ping(self, status='running', interval=None):
         """
         pings the instrumentation server to stay alive. Gets a control signal in return.
         The background thread is responsible for making the call . This method just returns the buffered
@@ -223,8 +220,17 @@ class ML_Logger:
         :return: tuple signals
         """
         if not self.duplex:
-            thunk = lambda *_, last_status: self.logger.ping(self.prefix, last_status)
-            self.duplex = Duplex(thunk, interval)
+            def thunk(*statuses):
+                nonlocal self
+                if len(statuses) > 0:
+                    return self.logger.ping(self.prefix, statuses[-1])
+                else:
+                    return self.logger.ping(self.prefix, "running")
+
+            self.duplex = Duplex(thunk, interval or 120)  # default interval is two minutes
+            self.duplex.start()
+        if interval:
+            self.duplex.keep_alive_interval = interval
 
         buffer = self.duplex.read_buffer()
         self.duplex.send(status)

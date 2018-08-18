@@ -1,19 +1,26 @@
+import pytest, params_proto
+from os.path import join as pathJoin
 from ml_logger import logger, Color, percent
 from shutil import rmtree
 
-# clean up previous tasks
-TEST_LOG_DIR = '/tmp/ml_logger/test'
-try:
-    rmtree(TEST_LOG_DIR)
-except FileNotFoundError as e:
-    print(e)
+@params_proto.cli_parse
+class Args:
+    TEST_LOG_DIR = '/tmp/ml_logger/test'
 
-logger.configure(TEST_LOG_DIR, prefix='main')
+@pytest.fixture
+def setup():
+    # clean up previous tasks
+    try:
+        rmtree(Args.TEST_LOG_DIR)
+    except FileNotFoundError as e:
+        print(e)
 
-print("logging to {}".format(TEST_LOG_DIR))
+    logger.configure(TEST_LOG_DIR, prefix='main_test_script')
+
+    print(f"logging to {pathJoin(TEST_LOG_DIR, logger.prefix)}")
 
 
-def test_load_pkl():
+def test_load_pkl(setup):
     import numpy
     d1 = numpy.random.randn(20, 10)
     logger.log_data(d1, 'test_file.pkl')
@@ -26,7 +33,7 @@ def test_load_pkl():
     assert numpy.array_equal(data[1], d2), "first should be the same as d2"
 
 
-def test():
+def test(setup):
     d = Color(3.1415926, 'red')
     s = "{:.1}".format(d)
     print(s)
@@ -39,7 +46,7 @@ def test():
     logger.log(step=4, some=Color(10, 'yellow'))
 
 
-def test_image():
+def test_image(setup):
     import scipy.misc
     import numpy as np
 
@@ -60,7 +67,7 @@ def test_image():
     #     logger.log_image(i, animation=[image_rgba] * 5)
 
 
-def test_pyplot():
+def test_pyplot(setup):
     import os, scipy.misc
     import matplotlib
     matplotlib.use('TKAgg')
@@ -82,7 +89,7 @@ def test_pyplot():
     logger.savefig('sine.pdf')
 
 
-def test_video():
+def test_video(setup):
     import numpy as np
 
     def im(x, y):
@@ -116,50 +123,75 @@ class FakeModule:
         return dict(var_1=FakeTensor())
 
 
-def test_module():
+@pytest.fixture
+def test_module(setup):
     logger.log_module(step=0, Test=FakeModule)
 
 
-def test_load_module():
+def test_load_module(setup, test_module):
     result, = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
     import numpy as np
     assert (result['var_1'] == np.ones([100, 2])).all(), "should be the same as test data"
 
 
-def test_load_params():
+def test_load_params(setup):
     pass
 
 
-def test_diff():
+def test_diff(setup):
     logger.diff()
 
 
-def test_git_rev():
+def test_git_rev(setup):
     print([logger.__head__])
 
 
-def test_current_branch():
+def test_current_branch(setup):
     print([logger.__current_branch__])
 
 
-def test_split():
+def test_split(setup):
     assert logger.split() is None, 'The first tick should be None'
     assert type(logger.split()) is float, 'Then it should return a a float in the seconds.'
 
 
+def test_ping(setup):
+    print('test ping starts')
+    signals = logger.ping('alive', 0.1)
+    print(f"signals => {signals}")
+    import time
+    time.sleep(0.2)
+    signals = logger.ping('alive', 0.2)
+    print(f"signals => {signals}")
+
+    logger.logger.send_signal(logger.prefix, signal="stop")
+    time.sleep(0.25)
+    logger.logger.send_signal(logger.prefix, signal="pause")
+    time.sleep(0.15)
+
+    for i in range(4):
+        signals = logger.ping('other ping')
+        print(f"signals => {signals}")
+        time.sleep(0.4)
+
+    logger.ping('completed')
+
+
 if __name__ == "__main__":
-    test_split()
-    test_git_rev()
-    test_current_branch()
-    test_load_pkl()
-    test_diff()
-    test()
-    test_load_params()
-    test_pyplot()
-    test_module()
-    test_load_module()
-    test_image()
-    test_video()
+    # test_split()
+    # test_git_rev()
+    # test_current_branch()
+    # test_load_pkl()
+    # test_diff()
+    # test()
+    # test_load_params()
+    # test_pyplot()
+    # test_module()
+    # test_load_module()
+    # test_image()
+    # test_video()
+    # test_ping()
     # todo: logger.log_module(6, rgba_face=image_rgba)
     # todo: logger.log_params(6, rgba_face=image_rgba)
     # todo: logger.log_file(6, rgba_face=image_rgba)
+    pass
