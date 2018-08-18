@@ -2,7 +2,6 @@ import os
 # todo: switch to dill instead
 import dill
 from collections import namedtuple
-from japronto.router import Router
 
 from params_proto import cli_parse, Proto, BoolFlag
 
