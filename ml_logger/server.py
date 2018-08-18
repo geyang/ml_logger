@@ -1,15 +1,33 @@
+from datetime import datetime
+
+import StringIO
 import os
 # todo: switch to dill instead
 import dill
+from ruamel.yaml import YAML
 from collections import namedtuple
 
 from params_proto import cli_parse, Proto, BoolFlag
 
 from ml_logger.serdes import deserialize, serialize
 import numpy as np
+from typing import NamedTuple, Any
 
-LogEntry = namedtuple("LogEntry", ['key', 'data', 'type'])
-LoadEntry = namedtuple("LogEntry", ['key', 'type'])
+
+class LogOptions(NamedTuple):
+    overwrite: bool = None
+    write_mode: str = None
+
+
+class LogEntry(NamedTuple):
+    key: str
+    data: Any
+    type: str
+    options: LogOptions = None
+
+
+LoadEntry = namedtuple("LoadEntry", ['key', 'type'])
+PingData = namedtuple("PingData", ['exp_key', 'status'])
 ALLOWED_TYPES = (np.uint8,)  # ONLY uint8 is supported.
 
 
@@ -27,13 +45,33 @@ class LoggingServer:
         self.app = Application()
         self.app.router.add_route('/', self.log_handler, method='POST')
         self.app.router.add_route('/', self.read_handler, method='GET')
+        self.app.router.add_route('/ping', self.ping_handler, method='POST')
         # todo: need a file serving url
         self.app.run(port=port, debug=Params.debug)
 
+    def ping_handler(self, req):
+        if not req.json:
+            msg = f'request json is empty: {req.text}'
+            print(msg)
+            return req.Response(text=msg)
+        ping_data = PingData(**req.json)
+        print("received ping data: {} type: {}".format(ping_data.status, ping_data.exp_key))
+        data = self.ping(**ping_data)
+        return req.Response(text=data)
+
+    def ping(self, exp_key, status):
+        status_path = os.path.join(exp_key, '__presence')
+        options = LogOptions(overwrite=True, write_mode='key')
+        self.log(status_path, dict(status=status, time=datetime.now()), dtype="yaml", options=options)
+        signal_path = os.path.join(exp_key, '__signal.pkl')
+        res = self.load(signal_path, 'read_pkl')
+        return serialize(res)
+
     def read_handler(self, req):
         if not req.json:
-            print(f'request json is empty: {req.text}')
-            return req.Response(text="Reuqest json is empty")
+            msg = f'request json is empty: {req.text}'
+            print(msg)
+            return req.Response(text=msg)
         load_entry = LoadEntry(**req.json)
         print("loading: {} type: {}".format(load_entry.key, load_entry.type))
         res = self.load(load_entry.key, load_entry.type)
@@ -44,10 +82,10 @@ class LoggingServer:
         if not req.json:
             print(f'request json is empty: {req.text}')
             return req.Response(text="Reuqest json is empty")
-        log_entry = LoadEntry(**req.json)
+        log_entry = LogEntry(**req.json)
         print("writing: {} type: {}".format(log_entry.key, log_entry.type))
         data = deserialize(log_entry.data)
-        self.log(log_entry.key, data, log_entry.type)
+        self.log(log_entry.key, data, log_entry.type, log_entry.options)
         return req.Response(text='ok')
 
     def load(self, key, dtype):
@@ -81,37 +119,74 @@ class LoggingServer:
                 return e
         elif dtype == 'read_image':
             raise NotImplemented('reading images is not implemented.')
+        elif dtype == 'delete':
+            """Not used and not tested."""
+            abs_path = os.path.join(self.data_dir, key)
+            try:
+                import shutil
+                shutil.rmtree(abs_path)
+            except FileNotFoundError as e:
+                return e
 
-    def log(self, key, data, dtype):
+    def log(self, key, data, dtype, options: LogOptions = None):
+        """
+        handler function for writing data to the server. Can be called directly.
+
+        :param key:
+        :param data:
+        :param dtype:
+        :param options:
+        :return:
+        """
+        # todo: overwrite mode is not tested and not in-use.
+        write_mode = "w" if options and options.overwrite else "a"
         if dtype == "log":
             abs_path = os.path.join(self.data_dir, key)
             try:
-                with open(abs_path, 'ab') as f:
+                with open(abs_path, write_mode + 'b') as f:
                     dill.dump(data, f)
             except FileNotFoundError:
                 os.makedirs(os.path.dirname(abs_path))
-                with open(abs_path, 'ab') as f:
+                with open(abs_path, write_mode + 'b') as f:
                     dill.dump(data, f)
         if dtype == "byte":
             abs_path = os.path.join(self.data_dir, key)
             try:
-                with open(abs_path, 'ab') as f:
+                with open(abs_path, write_mode + 'b') as f:
                     f.write(data)
             except FileNotFoundError:
                 os.makedirs(os.path.dirname(abs_path))
-                with open(abs_path, 'ab') as f:
+                with open(abs_path, write_mode + 'b') as f:
                     f.write(data)
         elif dtype.startswith("text"):
             abs_path = os.path.join(self.data_dir, key)
-            if "." not in key:
-                abs_path = abs_path + ".md"
             try:
-                with open(abs_path, "a+") as f:
+                with open(abs_path, write_mode + "+") as f:
                     f.write(data)
             except FileNotFoundError:
                 os.makedirs(os.path.dirname(abs_path))
-                with open(abs_path, "a+") as f:
+                with open(abs_path, write_mode + "+") as f:
                     f.write(data)
+        elif dtype.startswith("yaml"):
+            yaml = YAML()
+            yaml.explict_start = True
+            stream = StringIO()
+            yaml.dump(data, stream)
+            output = stream.getvalue()
+            abs_path = os.path.join(self.data_dir, key)
+            try:
+                with open(abs_path, write_mode + "+") as f:
+                    if options.write_mode == 'key':
+                        d = yaml.load('\n'.join(f))
+                        output = d.update(output)
+                    f.write(output)
+            except FileNotFoundError:
+                os.makedirs(os.path.dirname(abs_path))
+                with open(abs_path, write_mode + "+") as f:
+                    if options.write_mode == 'key':
+                        d = yaml.load('\n'.join(f))
+                        output = d.update(output)
+                    f.write(output)
         elif dtype.startswith("image"):
             abs_path = os.path.join(self.data_dir, key)
             if "." not in key:

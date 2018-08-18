@@ -7,6 +7,7 @@ from typing import Union, Callable, Any
 from collections import OrderedDict, deque
 from itertools import zip_longest
 
+from ml_logger.full_duplex import Duplex
 from ml_logger.log_client import LogClient
 from termcolor import colored as c
 import numpy as np
@@ -148,6 +149,9 @@ class ML_Logger:
         except subprocess.CalledProcessError as e:
             self.print("not storing the git diff due to {}".format(e))
 
+
+        
+
     @property
     def __current_branch__(self):
         import subprocess
@@ -194,6 +198,7 @@ class ML_Logger:
         """
         # self.summary_writer = tf.summary.FileWriter(log_directory)
         self.step = None
+        self.duplex = None
         self.timestamp = None
         self.data = OrderedDict()
         self.flush()
@@ -208,6 +213,22 @@ class ML_Logger:
             self.log_directory = log_directory
 
     configure = __init__
+
+    def ping(self, status, interval=10):
+        """
+        pings the instrumentation server to stay alive. Gets a control signal in return.
+        The background thread is responsible for making the call . This method just returns the buffered
+        signal synchronously.
+
+        :return: tuple signals
+        """
+        if not self.duplex:
+            thunk = lambda *_, last_status: self.logger.ping(self.prefix, last_status)
+            self.duplex = Duplex(thunk, interval)
+
+        buffer = self.duplex.read_buffer()
+        self.duplex.send(status)
+        return buffer
 
     def __enter__(self):
         return self

@@ -2,7 +2,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from requests_futures.sessions import FuturesSession
 from ml_logger.serdes import serialize, deserialize
-from ml_logger.server import LogEntry, LoadEntry, LoggingServer, ALLOWED_TYPES
+from ml_logger.server import LogEntry, LoadEntry, PingData, LoggingServer, ALLOWED_TYPES
 
 
 class LogClient:
@@ -15,6 +15,7 @@ class LogClient:
             self.local_server = LoggingServer(data_dir=url)
         elif url.startswith('http://'):
             self.url = url
+            self.ping_url = os.path.join(url, "ping")
         else:
             # todo: add https://, and s3://
             raise TypeError('log url need to begin with `/`, `file://` or `http://`.')
@@ -27,23 +28,32 @@ class LogClient:
         if self.local_server:
             return self.local_server.load(key, dtype)
         else:
-            # todo: make the json serialization more robust. Not priority b/c this' client-side.
             json = LoadEntry(key, dtype)._asdict()
-
             # note: reading stuff from the server is always synchronous via the result call.
             res = self.session.get(self.url, json=json).result()
             result = deserialize(res.text)
             return result
 
-    def _post(self, key, data, dtype):
-        # todo: make this asynchronous
+    def _post(self, key, data, dtype, options=None):
         if self.local_server:
-            self.local_server.log(key, data, dtype)
+            self.local_server.log(key, data, dtype, options)
         else:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
-            json = LogEntry(key, serialize(data), dtype)._asdict()
+            json = LogEntry(key, serialize(data), dtype, options)._asdict()
             self.session.post(self.url, json=json)
-            # todo: verify request success. Otherwise looses data.
+
+    def ping(self, exp_key, status, _duplex=False):
+        # todo: add configuration for early termination
+        if self.local_server:
+            signals = self.local_server.ping(exp_key, status)
+            return deserialize(signals) if _duplex else None
+        else:
+            # todo: make the json serialization more robust. Not priority b/c this' client-side.
+            ping_data = PingData(exp_key, status)._asdict()
+            req = self.session.post(self.url, json=ping_data)
+            if _duplex:
+                signals = req.result()
+                return deserialize(signals)
 
     # Reads binary data
     def read(self, key):
