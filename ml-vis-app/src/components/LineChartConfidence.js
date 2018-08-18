@@ -70,7 +70,7 @@ class LineChartConfidence extends React.Component {
 
     render() {
         const {serieses, lastDrawLocation} = this.state;
-        let {legendWidth, xMin, xMax, yMin, yMax, ...props} = this.props;
+        let {legendWidth, xMin, xMax, yMin, yMax, useCanvas, ...props} = this.props;
         delete props.serieses;
 
         if (nullOrUndefined(yMin) || nullOrUndefined(yMax)) {
@@ -84,6 +84,8 @@ class LineChartConfidence extends React.Component {
             if (nullOrUndefined(yMin)) yMin = Math.min(...minMax.map(({min}) => min));
             if (nullOrUndefined(yMax)) yMax = Math.max(...minMax.map(({max}) => max));
         }
+
+        const SeriesCompo = useCanvas ? LineSeriesCanvas : LineSeries;
 
         return (
             <Flex row {...props} justify={'stretch'}
@@ -101,7 +103,7 @@ class LineChartConfidence extends React.Component {
                 >
                     <FlexibleWidthXYPlot
                         className="chart no-select"
-                        animation
+                        animation={!useCanvas}
                         xDomain={lastDrawLocation && [lastDrawLocation.left, lastDrawLocation.right]}
                         yDomain={[yMin, yMax]}
                         height={this.state.height}
@@ -111,8 +113,8 @@ class LineChartConfidence extends React.Component {
                         <YAxis/>
                         <XAxis/>
                         {serieses.map((line) =>
-                            <LineSeries key={line.title} data={line.disabled ? [] : line.data}
-                                        onNearestX={this.onNearestX(line.title)}
+                            <SeriesCompo key={line.title} data={line.disabled ? [] : line.data}
+                                         onNearestX={this.onNearestX(line.title)}
                             />)}
                         <Crosshair values={this.state.crosshairValues}/>
                         <Highlight onBrushEnd={this.onBrushEnd}/>
