@@ -1,23 +1,45 @@
-import pytest, params_proto
+"""
+# Tests for ml-logger.
+
+## Testing with a server
+
+To test with a live server, first run (in a separate console)
+```
+python -m ml_logger.server --log-dir /tmp/ml-logger-debug
+```
+or do:
+```bash
+make start-test-server
+```
+
+Then run this test script with the option:
+```bash
+python -m pytest tests --capture=no --log-dir http://0.0.0.0:8081
+```
+or do
+```bash
+make test-with-server
+```
+"""
+import pytest
+from time import sleep
 from os.path import join as pathJoin
 from ml_logger import logger, Color, percent
-from shutil import rmtree
 
-@params_proto.cli_parse
-class Args:
-    TEST_LOG_DIR = '/tmp/ml_logger/test'
 
-@pytest.fixture
-def setup():
-    # clean up previous tasks
-    try:
-        rmtree(Args.TEST_LOG_DIR)
-    except FileNotFoundError as e:
-        print(e)
+@pytest.fixture(scope='session')
+def log_dir(request):
+    return request.config.getoption('--log-dir')
 
-    logger.configure(TEST_LOG_DIR, prefix='main_test_script')
 
-    print(f"logging to {pathJoin(TEST_LOG_DIR, logger.prefix)}")
+@pytest.fixture(scope="session")
+def setup(log_dir):
+    logger.configure(log_dir, prefix='main_test_script')
+    logger.remove('')
+    logger.print('hey')
+    sleep(1.0)
+
+    print(f"logging to {pathJoin(logger.log_directory, logger.prefix)}")
 
 
 def test_load_pkl(setup):
@@ -68,7 +90,7 @@ def test_image(setup):
 
 
 def test_pyplot(setup):
-    import os, scipy.misc
+    import scipy.misc
     import matplotlib
     matplotlib.use('TKAgg')
     import matplotlib.pyplot as plt
@@ -125,7 +147,7 @@ class FakeModule:
 
 @pytest.fixture
 def test_module(setup):
-    logger.log_module(step=0, Test=FakeModule)
+    logger.log_module(Test=FakeModule, step=0, )
 
 
 def test_load_module(setup, test_module):
@@ -159,20 +181,19 @@ def test_ping(setup):
     print('test ping starts')
     signals = logger.ping('alive', 0.1)
     print(f"signals => {signals}")
-    import time
-    time.sleep(0.2)
+    sleep(0.2)
     signals = logger.ping('alive', 0.2)
     print(f"signals => {signals}")
 
     logger.logger.send_signal(logger.prefix, signal="stop")
-    time.sleep(0.25)
+    sleep(0.25)
     logger.logger.send_signal(logger.prefix, signal="pause")
-    time.sleep(0.15)
+    sleep(0.15)
 
     for i in range(4):
         signals = logger.ping('other ping')
         print(f"signals => {signals}")
-        time.sleep(0.4)
+        sleep(0.4)
 
     logger.ping('completed')
 
