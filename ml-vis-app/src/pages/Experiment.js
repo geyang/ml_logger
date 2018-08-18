@@ -287,7 +287,7 @@ class Experiment extends Component {
                                                     else return <FlexItemSrcContainer key={chartKey}
                                                                                       src={metricsSrc}
                                                                                       fetchCallback={() => dispatch(fetchData(metricsSrc))}
-                                                        >{data => <ChartToSeries records={data} chartKey={chartKey}
+                                                        >{data => <ChartToSeries records={data} chartKey={chartKey} useCanvas={true}
                                                                                  component={LineChartConfidence}/>
                                                         }</FlexItemSrcContainer>;
                                                 })
