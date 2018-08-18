@@ -26,6 +26,7 @@ update-doc: convert-rst
 	python setup.py sdist upload
 tag:
 	git tag v$(cat ./VERSION) -m $(msg)
+	git push origin --tags
 publish: convert-rst
 	make test
 	make wheel
