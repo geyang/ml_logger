@@ -62,6 +62,7 @@ class LogClient:
             req = self.session.post(self.ping_url, json=ping_data)
             if _duplex:
                 response = req.result()
+                # note: I wonder if we should raise if the response is non-ok.
                 return deserialize(response.text) if response.ok else None
 
     # send signals to the worker

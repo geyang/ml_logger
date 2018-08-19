@@ -1,6 +1,8 @@
 # shell option to use extended glob from from https://stackoverflow.com/a/6922447/1560241
 SHELL:=/bin/bash -O extglob
 
+VERSION=`< VERSION`
+
 author=$(Ge Yang)
 author_email=$(yangge1987@gmail.com)
 
@@ -25,7 +27,7 @@ resize: # from https://stackoverflow.com/a/28221795/1560241
 update-doc: convert-rst
 	python setup.py sdist upload
 release:
-	git tag v$(cat ./VERSION) -m '$(msg)'
+	git tag v$(VERSION) -m '$(msg)'
 	git push origin --tags
 publish: convert-rst
 	make test

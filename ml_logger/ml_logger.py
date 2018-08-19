@@ -182,6 +182,17 @@ class ML_Logger:
     def diff_file(self, path, silent=False):
         raise NotImplemented
 
+    @property
+    def hostname(self):
+        import subprocess
+        cmd = 'hostname -f'
+        try:
+            p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
+            return p.decode('utf-8').strip()
+        except subprocess.CalledProcessError as e:
+            self.print(f"can not get obtain hostname via `{cmd}` due to exception: {e}")
+            return None
+
     # noinspection PyInitNewSignature
     def __init__(self, log_directory: str = None, prefix="", buffer_size=2048, max_workers=5):
         """

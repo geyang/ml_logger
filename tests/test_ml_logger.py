@@ -172,6 +172,11 @@ def test_current_branch(setup):
     print([logger.__current_branch__])
 
 
+def test_hostname(setup):
+    assert len(logger.hostname) > 0, 'hostname should be non-trivial'
+    print([logger.hostname])
+
+
 def test_split(setup):
     assert logger.split() is None, 'The first tick should be None'
     assert type(logger.split()) is float, 'Then it should return a a float in the seconds.'
@@ -196,23 +201,3 @@ def test_ping(setup):
         sleep(0.4)
 
     logger.ping('completed')
-
-
-if __name__ == "__main__":
-    # test_split()
-    # test_git_rev()
-    # test_current_branch()
-    # test_load_pkl()
-    # test_diff()
-    # test()
-    # test_load_params()
-    # test_pyplot()
-    # test_module()
-    # test_load_module()
-    # test_image()
-    # test_video()
-    # test_ping()
-    # todo: logger.log_module(6, rgba_face=image_rgba)
-    # todo: logger.log_params(6, rgba_face=image_rgba)
-    # todo: logger.log_file(6, rgba_face=image_rgba)
-    pass
