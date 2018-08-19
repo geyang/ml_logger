@@ -293,11 +293,12 @@ class ML_Logger:
 
     def log_data(self, data, path="data.pkl", overwrite=False):
         """
-        append data to the file located at the path specified.
+        Append data to the file located at the path specified.
 
-        :param data:
-        :param path:
-        :return:
+        :param data: python data object to be saved
+        :param path: path for the object, relative to the root logging directory.
+        :param overwrite: boolean flag to switch between 'appending' mode and 'overwrite' mode.
+        :return: None
         """
         if overwrite:
             self.logger.log(key=os.path.join(self.prefix or "", path), data=data, overwrite=overwrite)
