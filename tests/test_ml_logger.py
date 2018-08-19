@@ -46,8 +46,10 @@ def test_load_pkl(setup):
     import numpy
     d1 = numpy.random.randn(20, 10)
     logger.log_data(d1, 'test_file.pkl')
+    sleep(1.0)
     d2 = numpy.random.randn(20, 10)
     logger.log_data(d2, 'test_file.pkl')
+    sleep(1.0)
 
     data = logger.load_pkl('test_file.pkl')
     assert len(data) == 2, "data should contain two arrays"
@@ -59,8 +61,10 @@ def test_log_data(setup):
     import numpy
     d1 = numpy.random.randn(20, 10)
     logger.log_data(d1, 'test_file.pkl')
+    sleep(1.0)
     d2 = numpy.random.randn(20, 10)
     logger.log_data(d2, 'test_file.pkl', overwrite=True)
+    sleep(1.0)
 
     data = logger.load_pkl('test_file.pkl')
     assert len(data) == 1, "data should contain only one array because we overwrote it."
@@ -160,6 +164,7 @@ class FakeModule:
 @pytest.fixture
 def test_module(setup):
     logger.log_module(Test=FakeModule, step=0, )
+    sleep(1.0)
 
 
 def test_load_module(setup, test_module):

@@ -103,9 +103,9 @@ class LoggingServer:
             print(f'request json is empty: {req.text}')
             return req.Response(text="Reuqest json is empty")
         log_entry = LogEntry(**req.json)
-        print("writing: {} type: {}".format(log_entry.key, log_entry.type))
+        print("writing: {} type: {} options: {}".format(log_entry.key, log_entry.type, log_entry.options))
         data = deserialize(log_entry.data)
-        self.log(log_entry.key, data, log_entry.type, log_entry.options)
+        self.log(log_entry.key, data, log_entry.type, LogOptions(*log_entry.options))
         return req.Response(text='ok')
 
     def load(self, key, dtype):

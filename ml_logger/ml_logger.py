@@ -300,10 +300,11 @@ class ML_Logger:
         :param overwrite: boolean flag to switch between 'appending' mode and 'overwrite' mode.
         :return: None
         """
+        abs_path = os.path.join(self.prefix or "", path)
         if overwrite:
-            self.logger.log(key=os.path.join(self.prefix or "", path), data=data, overwrite=overwrite)
+            self.logger.log(key=abs_path, data=data, overwrite=overwrite)
         else:
-            self.logger.log(key=os.path.join(self.prefix or "", path), data=data)
+            self.logger.log(key=abs_path, data=data)
 
     def log_keyvalue(self, key: str, value: Any, step: Union[int, Color] = None, silent=False) -> None:
         if self.step != step and step is not None:
