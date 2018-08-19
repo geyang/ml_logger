@@ -25,7 +25,7 @@ resize: # from https://stackoverflow.com/a/28221795/1560241
 update-doc: convert-rst
 	python setup.py sdist upload
 release:
-	git tag v$(cat ./VERSION) -m $(msg)
+	git tag v$(cat ./VERSION) -m '$(msg)'
 	git push origin --tags
 publish: convert-rst
 	make test
