@@ -35,7 +35,7 @@ class LogClient:
             result = deserialize(res.text)
             return result
 
-    def _post(self, key, data, dtype, options=None):
+    def _post(self, key, data, dtype, options: LogOptions = None):
         if self.local_server:
             self.local_server.log(key, data, dtype, options)
         else:
@@ -83,8 +83,8 @@ class LogClient:
         return self._get(key, dtype="read_np")
 
     # appends data
-    def log(self, key, data):
-        self._post(key, data, dtype="log")
+    def log(self, key, data, **options):
+        self._post(key, data, dtype="log", options=LogOptions(**options))
 
     # appends text
     def log_text(self, key, text):

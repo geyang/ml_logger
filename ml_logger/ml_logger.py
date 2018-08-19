@@ -291,8 +291,18 @@ class ML_Logger:
         # todo: add yml support
         self.log_data(path=path, data=kwargs)
 
-    def log_data(self, data, path="data.pkl"):
-        self.logger.log(key=os.path.join(self.prefix or "", path), data=data)
+    def log_data(self, data, path="data.pkl", overwrite=False):
+        """
+        append data to the file located at the path specified.
+
+        :param data:
+        :param path:
+        :return:
+        """
+        if overwrite:
+            self.logger.log(key=os.path.join(self.prefix or "", path), data=data, overwrite=overwrite)
+        else:
+            self.logger.log(key=os.path.join(self.prefix or "", path), data=data)
 
     def log_keyvalue(self, key: str, value: Any, step: Union[int, Color] = None, silent=False) -> None:
         if self.step != step and step is not None:

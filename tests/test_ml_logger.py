@@ -55,6 +55,18 @@ def test_load_pkl(setup):
     assert numpy.array_equal(data[1], d2), "first should be the same as d2"
 
 
+def test_log_data(setup):
+    import numpy
+    d1 = numpy.random.randn(20, 10)
+    logger.log_data(d1, 'test_file.pkl')
+    d2 = numpy.random.randn(20, 10)
+    logger.log_data(d2, 'test_file.pkl', overwrite=True)
+
+    data = logger.load_pkl('test_file.pkl')
+    assert len(data) == 1, "data should contain only one array because we overwrote it."
+    assert numpy.array_equal(data[0], d2), "first should be the same as d2"
+
+
 def test(setup):
     d = Color(3.1415926, 'red')
     s = "{:.1}".format(d)
