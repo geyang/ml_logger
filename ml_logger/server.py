@@ -64,7 +64,7 @@ class LoggingServer:
             return req.Response(text=msg)
         ping_data = PingData(**req.json)
         print("received ping data: {} type: {}".format(ping_data.status, ping_data.exp_key))
-        data = self.ping(**ping_data)
+        data = self.ping(ping_data.exp_key, ping_data.status, ping_data.burn)
         return req.Response(text=data)
 
     def ping(self, exp_key, status, burn=True):

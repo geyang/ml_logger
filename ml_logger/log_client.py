@@ -61,8 +61,8 @@ class LogClient:
             ping_data = PingData(exp_key, status, burn=burn)._asdict()
             req = self.session.post(self.ping_url, json=ping_data)
             if _duplex:
-                signals = req.result()
-                return deserialize(signals)
+                response = req.result()
+                return deserialize(response.text) if response.ok else None
 
     # send signals to the worker
     def send_signal(self, exp_key, signal=None):
