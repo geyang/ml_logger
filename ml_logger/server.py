@@ -105,7 +105,8 @@ class LoggingServer:
         log_entry = LogEntry(**req.json)
         print("writing: {} type: {} options: {}".format(log_entry.key, log_entry.type, log_entry.options))
         data = deserialize(log_entry.data)
-        self.log(log_entry.key, data, log_entry.type, LogOptions(*log_entry.options))
+        options = log_entry.options if log_entry.options is None else LogOptions(*log_entry.options)
+        self.log(log_entry.key, data, log_entry.type, options)
         return req.Response(text='ok')
 
     def load(self, key, dtype):
