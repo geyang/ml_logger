@@ -4,7 +4,8 @@ import os
 from datetime import datetime
 
 from typing import Union, Callable, Any
-from collections import OrderedDict, deque
+from collections import OrderedDict, deque, Sequence
+from numbers import Number
 from itertools import zip_longest
 
 from ml_logger.full_duplex import Duplex
@@ -104,6 +105,27 @@ def yellow(value, *args, **kwargs):
 
 def brown(value, *args, **kwargs):
     return Color(value, 'brown', *args, **kwargs)
+
+
+def metrify(data):
+    """Help convert non-json serializable objects, such as
+
+    :param data:
+    :return:
+    """
+    if hasattr(data, 'shape') and len(data.shape) > 0:
+        return list(data)
+    elif isinstance(data, Sequence):
+        return data
+    elif isinstance(data, Number):
+        return data
+    # todo: add datetime support
+    elif str(data.dtype).startswith('int'):
+        return int(data)
+    elif str(data.dtype).startswith('float'):
+        return float(data)
+    else:
+        return str(data)
 
 
 class ML_Logger:
@@ -355,7 +377,7 @@ class ML_Logger:
         for key, v in data_dict.items():
             if key in self.data:
                 if type(self.data) is list:
-                    self.data[key].append(v.value if type(v) is Color else v)
+                    self.data[key].append(_v)
                 else:
                     self.data[key] = [self.data[key], v.value if type(v) is Color else v]
             else:

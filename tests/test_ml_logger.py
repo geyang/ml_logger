@@ -24,7 +24,7 @@ make test-with-server
 import pytest
 from time import sleep
 from os.path import join as pathJoin
-from ml_logger import logger, Color, percent
+from ml_logger import logger, Color, percent, metrify
 
 
 @pytest.fixture(scope='session')
@@ -218,3 +218,15 @@ def test_ping(setup):
         sleep(0.4)
 
     logger.ping('completed')
+
+
+def test_metrify():
+    import numpy as np
+    d = np.array(10)
+    assert metrify(d) == 10
+    d = np.array(10.0)
+    assert metrify(d) == 10.0
+    d = np.array([10.0, 2])
+    assert metrify(d) == [10.0, 2]
+    d = np.array([10.0, 2])
+    assert metrify(d) == [10.0, 2]
