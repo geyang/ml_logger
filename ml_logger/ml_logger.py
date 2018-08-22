@@ -295,9 +295,9 @@ class ML_Logger:
 
         _kwargs = {}
         table = []
-        for n, (title, section_data) in enumerate(_kwargs.items()):
+        for n, (title, section_data) in enumerate(kwargs.items()):
             table.append('═' * (key_width) + ('═' if n == 0 else '╧') + '═' * (value_width))
-            table.append(c('{:^{}}'.format(title, key_width), 'yellow'))
+            table.append(c('{:^{}}'.format(title, key_width), 'yellow') + "")
             table.append('─' * (key_width) + "┬" + '─' * (value_width))
             if not hasattr(section_data, 'items'):
                 table.append(section_data)

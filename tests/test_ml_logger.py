@@ -25,6 +25,7 @@ import pytest
 from time import sleep
 from os.path import join as pathJoin
 from ml_logger import logger, Color, percent, metrify
+from tests.conftest import LOCAL_TEST_DIR
 
 
 @pytest.fixture(scope='session')
@@ -230,3 +231,8 @@ def test_metrify():
     assert metrify(d) == [10.0, 2]
     d = np.array([10.0, 2])
     assert metrify(d) == [10.0, 2]
+
+
+if __name__ == "__main__":
+    setup(LOCAL_TEST_DIR)
+    test(None)
