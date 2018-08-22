@@ -291,8 +291,10 @@ class ML_Logger:
         key_width = 30
         value_width = 20
 
+        _kwargs = {k: metrify(v) for k, v in kwargs.items()}
+
         table = []
-        for n, (title, section_data) in enumerate(kwargs.items()):
+        for n, (title, section_data) in enumerate(_kwargs.items()):
             table.append((title, ""))
             self.print('═' * (key_width + 1) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
             self.print(c('{:^{}}'.format(title, key_width), 'yellow'))
@@ -311,7 +313,7 @@ class ML_Logger:
 
         # todo: add logging hook
         # todo: add yml support
-        self.log_data(path=path, data=kwargs)
+        self.log_data(path=path, data=_kwargs)
 
     def log_data(self, data, path="data.pkl", overwrite=False):
         """
