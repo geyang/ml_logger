@@ -119,6 +119,8 @@ def metrify(data):
         return data
     elif isinstance(data, Number):
         return data
+    elif type(data) in [dict, str]:
+        return data
     # todo: add datetime support
     elif str(data.dtype).startswith('int'):
         return int(data)
@@ -291,28 +293,28 @@ class ML_Logger:
         key_width = 30
         value_width = 20
 
-        _kwargs = {k: metrify(v) for k, v in kwargs.items()}
-
+        _kwargs = {}
         table = []
         for n, (title, section_data) in enumerate(_kwargs.items()):
-            table.append((title, ""))
-            self.print('═' * (key_width + 1) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
-            self.print(c('{:^{}}'.format(title, key_width), 'yellow'))
-            self.print('─' * (key_width + 1) + "┬" + '─' * (value_width + 1))
+            table.append('═' * (key_width) + ('═' if n == 0 else '╧') + '═' * (value_width))
+            table.append(c('{:^{}}'.format(title, key_width), 'yellow'))
+            table.append('─' * (key_width) + "┬" + '─' * (value_width))
             if not hasattr(section_data, 'items'):
-                self.print(section_data)
+                table.append(section_data)
+                _kwargs.update(title, metrify(section_data))
             else:
+                _param_dict = {}
                 for key, value in section_data.items():
+                    _param_dict[key] = metrify(value.v if type(value) is Color else value)
                     value_string = str(value)
-                    table.append((key, value_string))
-                    self.print('{:^{}}'.format(key, key_width), "│",
-                               '{:<{}}'.format(value_string, value_width))
+                    table.append('{:^{}}'.format(key, key_width) + "│" + '{:<{}}'.format(value_string, value_width))
 
         if "n" in locals():
-            self.print('═' * (key_width + 1) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
+            table.append('═' * (key_width) + ('═' if n == 0 else '╧') + '═' * (value_width))
 
         # todo: add logging hook
         # todo: add yml support
+        self.print('\n'.join(table))
         self.log_data(path=path, data=_kwargs)
 
     def log_data(self, data, path="data.pkl", overwrite=False):
