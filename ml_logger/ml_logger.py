@@ -119,9 +119,13 @@ def metrify(data):
         return data
     elif isinstance(data, Number):
         return data
-    elif type(data) in [dict, str]:
+    elif data is None:
+        return data
+    elif type(data) in [dict, str, bool, str]:
         return data
     # todo: add datetime support
+    elif not hasattr(data, 'dtype'):
+        return str(data)
     elif str(data.dtype).startswith('int'):
         return int(data)
     elif str(data.dtype).startswith('float'):
