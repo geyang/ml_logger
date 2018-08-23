@@ -312,6 +312,7 @@ class ML_Logger:
                     _param_dict[key] = metrify(value.v if type(value) is Color else value)
                     value_string = str(value)
                     table.append('{:^{}}'.format(key, key_width) + "│" + '{:<{}}'.format(value_string, value_width))
+                _kwargs.update(title, _param_dict)
 
         if "n" in locals():
             table.append('═' * (key_width) + ('═' if n == 0 else '╧') + '═' * (value_width))
