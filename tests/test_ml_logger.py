@@ -186,6 +186,10 @@ def test_git_rev(setup):
     print([logger.__head__])
 
 
+def test_git_tags(setup):
+    print([logger.__tags__])
+
+
 def test_current_branch(setup):
     print([logger.__current_branch__])
 

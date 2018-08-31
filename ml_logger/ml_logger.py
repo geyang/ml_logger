@@ -201,8 +201,21 @@ class ML_Logger:
         """
         import subprocess
         try:
-            cmd = f'git rev-parse {branch}'
-            p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
+            cmd = ['git', 'rev-parse', branch]
+            p = subprocess.check_output(cmd)  # Save git diff to experiment directory
+            return p.decode('utf-8').strip()
+        except subprocess.CalledProcessError:
+            return None
+
+    @property
+    def __tags__(self):
+        return self.git_tags()
+
+    def git_tags(self):
+        import subprocess
+        try:
+            cmd = ["git", "describe", "--tags"]
+            p = subprocess.check_output(cmd)  # Save git diff to experiment directory
             return p.decode('utf-8').strip()
         except subprocess.CalledProcessError:
             return None
@@ -305,14 +318,14 @@ class ML_Logger:
             table.append('─' * (key_width) + "┬" + '─' * (value_width))
             if not hasattr(section_data, 'items'):
                 table.append(section_data)
-                _kwargs.update(title, metrify(section_data))
+                _kwargs[title] = metrify(section_data)
             else:
                 _param_dict = {}
                 for key, value in section_data.items():
                     _param_dict[key] = metrify(value.v if type(value) is Color else value)
                     value_string = str(value)
                     table.append('{:^{}}'.format(key, key_width) + "│" + '{:<{}}'.format(value_string, value_width))
-                _kwargs.update(title, _param_dict)
+                _kwargs[title] = _param_dict
 
         if "n" in locals():
             table.append('═' * (key_width) + ('═' if n == 0 else '╧') + '═' * (value_width))
@@ -433,7 +446,6 @@ class ML_Logger:
             try:
                 output = self._tabular(self.data, fmt, self.do_not_print_list)
             except Exception as e:
-                print(e)
                 output = self._row_table(self.data, fmt, self.do_not_print_list)
             self.print(output)
             self.logger.log(key=os.path.join(self.prefix or "", file_name or "metrics.pkl"),
