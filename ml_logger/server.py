@@ -139,7 +139,7 @@ class LoggingServer:
             except FileNotFoundError as e:
                 return None
         elif dtype == 'read_image':
-            raise NotImplemented('reading images is not implemented.')
+            raise NotImplementedError('reading images is not implemented.')
 
     def remove(self, key):
         """
