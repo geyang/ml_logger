@@ -170,7 +170,7 @@ class ML_Logger:
         """
         import subprocess
         try:
-            cmd = f'cd "{os.path.realpath(diff_directory)}" && git add . && git --no-pager diff --staged'
+            cmd = f'cd "{os.path.realpath(diff_directory)}" && git add . && git --no-pager diff HEAD'
             if not silent: self.print(cmd)
             p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
             self.log_text(p.decode('utf-8').strip(), diff_filename, silent=silent)
