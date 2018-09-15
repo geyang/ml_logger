@@ -144,6 +144,22 @@ def test_video(setup):
     logger.log_video(frames, "test_video.mp4")
 
 
+def test_video_gif(setup):
+    import numpy as np
+
+    def im(x, y):
+        canvas = np.zeros((200, 200))
+        for i in range(200):
+            for j in range(200):
+                if x - 5 < i < x + 5 and y - 5 < j < y + 5:
+                    canvas[i, j] = 1
+        return canvas
+
+    frames = [im(100 + i, 80) for i in range(20)]
+
+    logger.log_video(frames, "test_video.gif")
+
+
 class FakeTensor:
     def cpu(self):
         return self
@@ -239,4 +255,6 @@ def test_metrify():
 
 if __name__ == "__main__":
     setup(LOCAL_TEST_DIR)
-    test(None)
+    # test(None)
+    test_video(None)
+    test_video_gif(None)

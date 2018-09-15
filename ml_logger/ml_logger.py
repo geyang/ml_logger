@@ -528,12 +528,10 @@ class ML_Logger:
         import tempfile, imageio
         with tempfile.NamedTemporaryFile(suffix=f'.{format}') as ntp:
             try:
-                imageio.mimwrite(ntp.name, frame_stack, format=format, fps=fps, macro_block_size=macro_block_size,
-                                 **imageio_kwargs)
+                imageio.mimsave(ntp.name, frame_stack, format=format, fps=fps, **imageio_kwargs)
             except imageio.core.NeedDownloadError:
                 imageio.plugins.ffmpeg.download()
-                imageio.mimwrite(ntp.name, frame_stack, format=format, fps=fps, macro_block_size=macro_block_size,
-                                 **imageio_kwargs)
+                imageio.mimsave(ntp.name, frame_stack, format=format, fps=fps, **imageio_kwargs)
             ntp.seek(0)
             self.logger.log_buffer(key=filename, buf=ntp.read())
 

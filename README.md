@@ -1,9 +1,12 @@
 # ML-Logger, A Beautiful Remote Logging Utility for Any Python ML Project
 
+[![Downloads](http://pepy.tech/badge/ml-logger)](http://pepy.tech/project/ml-logger)
+
 A common pain that comes after getting to launch ML training jobs on AWS
 is a lack of a good way to manage and visualize your data. So far, a common
 practice is to upload your experiment data to aws s3 or google cloud buckets. 
 Then one quickly realizes that downloading data from s3 can be slow. s3 does 
+
 not offer diffsync like gcloud-cli's `g rsync`. This makes it hard to sync a 
 large collection of data that is constantly appended to.
 
