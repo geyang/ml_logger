@@ -249,7 +249,11 @@ class Experiment extends Component {
                                                                       src={`http://54.71.92.65:8082/files${experimentDir}/${chartKey.slice(6)}`}
                                                                       height={150} controls playsInline={true}
                                                                       type="video/mp4"/>;
-                                                    else if (chartKey.match(/^log:/)) {
+                                                    else if (chartKey.match(/^img:/)) {
+                                                        return <img key={chartKey}
+                                                                    src={`http://54.71.92.65:8082/files${experimentDir}/${chartKey.slice(4)}`}
+                                                                    height={150} controls playsInline={true}/>;
+                                                    } else if (chartKey.match(/^log:/)) {
                                                         const search = chartKey.slice(4).match(/([^?]*)\?(.*)/);
                                                         const options = search ? parseQuery(search[1]) : {};
                                                         const stem = search ? search[0] : chartKey.slice(4);
@@ -287,7 +291,8 @@ class Experiment extends Component {
                                                     else return <FlexItemSrcContainer key={chartKey}
                                                                                       src={metricsSrc}
                                                                                       fetchCallback={() => dispatch(fetchData(metricsSrc))}
-                                                        >{data => <ChartToSeries records={data} chartKey={chartKey} useCanvas={true}
+                                                        >{data => <ChartToSeries records={data} chartKey={chartKey}
+                                                                                 useCanvas={true}
                                                                                  component={LineChartConfidence}/>
                                                         }</FlexItemSrcContainer>;
                                                 })
