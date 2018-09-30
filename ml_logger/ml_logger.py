@@ -606,43 +606,63 @@ class ML_Logger:
             path = os.path.join(namespace, f'{var_name}.pkl' if self.step is None else f'{step:{fmt}}_{var_name}.pkl')
             self.log_data(path=path, data=ps)
 
-    def save_variables(self, variables, path=None, namespace="checkpoints", keys=None):
+    def save_variables(self, variables, path="variables.pkl", namespace="checkpoints", keys=None):
         """
         save tensorflow variables in a dictionary
 
-        :param variables:
-        :param path:
-        :param namespace:
-        :param keys:
-        :return:
+        :param variables: A Tuple (Array) of TensorFlow Variables.
+        :param path: default: 'variables.pkl', filepath to the pkl file, with which we save the variable values.
+        :param namespace: A folder name for the saved variable. Default to `checkpoints` to keep things organized.
+        :param keys: None or Array(size=len(variables)). When is an array the length has to be the same as that of
+        the list of variables. This parameter allows you to overwrite the key we use to save the variables.
+
+        By default, we generate the keys from the variable name, without the `:[0-9]` at the end that points to the
+        tensor (from the variable itself).
+        :return: None
         """
         import os
         if keys is None:
             keys = [v.name for v in variables]
         assert len(keys) == len(variables), 'the keys and the variables have to be the same length.'
-        if path is None:
-            path = "variables.pkl"
         import tensorflow as tf
         sess = tf.get_default_session()
         vals = sess.run(variables)
         weight_dict = {k.split(":")[0]: v for k, v in zip(keys, vals)}
         logger.log_data(weight_dict, os.path.join(namespace, path))
 
-    def load_variables(self, path):
+    def load_variables(self, path, variables=None):
         """
-        load the saved value from a pickle file, into a tensorflow variable.
-        :param path:
+        load the saved value from a pickle file into tensorflow variables.
+
+        The variables that are loaded is the intersection between the tf.global_variables() list and the
+        variables saved in the weight_dict. When a variable in the weight_dict is not present in the
+        current session's computation graph, no error is reported. When a variable present in the global
+        variables list is not present in the weight_dict, no exception is raised.
+
+        The variables argument overrides the global variable list. When a variable present in this list doesn't
+        exist in the weight list, an exception should be raised.
+
+        :param path: path to the saved checkpoint pickle file.
+        :param variables: None or a list of tensorflow variables. When this list is supplied,
+        every variable's truncated name has to exist inside the loaded weight_dict.
         :return:
         """
         import tensorflow as tf
         weight_dict, = logger.load_pkl(path)
         sess = tf.get_default_session()
-        all_variables = {v.name.split(":")[0]: v
-                         for v in tf.global_variables()
-                         if v.name.split(":")[0] in weight_dict}
-        for name, val in weight_dict.items():
-            var = all_variables[name]
-            var.load(val, sess)
+        if variables:
+            for v in variables:
+                key, *_ = v.name.split(':')
+                val = weight_dict[key]
+                v.load(val, sess)
+        else:
+            # for k, v in weight_dict.items():
+            for v in tf.global_variables():
+                key, *_ = v.name.split(':')
+                val = weight_dict.get(key, None)
+                if val is None:
+                    continue
+                v.load(val, sess)
 
     def load_file(self, key):
         """ return the binary stream, most versatile.
