@@ -7,7 +7,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'VERSION'), encoding='
     version = f.read()
 
 setup(name="ml_logger",
-      description="A print and debugging utility that makes your error printouts look nice",
+      description="A Simple and Scalable Logging Utility With a Beautiful Visualization Dashboard",
       long_description=long_description,
       version=version,
       url="https://github.com/episodeyang/ml_logger",
