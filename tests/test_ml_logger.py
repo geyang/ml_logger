@@ -109,7 +109,7 @@ def test_image(setup):
 def test_pyplot(setup):
     import scipy.misc
     import matplotlib
-    matplotlib.use('TKAgg')
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     import numpy as np
 

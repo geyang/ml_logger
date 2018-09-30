@@ -335,7 +335,7 @@ class ML_Logger:
         self.print('\n'.join(table))
         self.log_data(path=path, data=_kwargs)
 
-    def log_data(self, data, path="data.pkl", overwrite=False):
+    def log_data(self, data, path=None, overwrite=False):
         """
         Append data to the file located at the path specified.
 
@@ -344,6 +344,7 @@ class ML_Logger:
         :param overwrite: boolean flag to switch between 'appending' mode and 'overwrite' mode.
         :return: None
         """
+        path = path or "data.pkl"
         abs_path = os.path.join(self.prefix or "", path)
         if overwrite:
             self.logger.log(key=abs_path, data=data, overwrite=overwrite)
@@ -604,6 +605,44 @@ class ML_Logger:
             # we use the number first file names to help organize modules by epoch.
             path = os.path.join(namespace, f'{var_name}.pkl' if self.step is None else f'{step:{fmt}}_{var_name}.pkl')
             self.log_data(path=path, data=ps)
+
+    def save_variables(self, variables, path=None, namespace="checkpoints", keys=None):
+        """
+        save tensorflow variables in a dictionary
+
+        :param variables:
+        :param path:
+        :param namespace:
+        :param keys:
+        :return:
+        """
+        import os
+        if keys is None:
+            keys = [v.name for v in variables]
+        assert len(keys) == len(variables), 'the keys and the variables have to be the same length.'
+        if path is None:
+            path = "variables.pkl"
+        import tensorflow as tf
+        sess = tf.get_default_session()
+        vals = sess.run(variables)
+        weight_dict = {k.split(":")[0]: v for k, v in zip(keys, vals)}
+        logger.log_data(weight_dict, os.path.join(namespace, path))
+
+    def load_variables(self, path):
+        """
+        load the saved value from a pickle file, into a tensorflow variable.
+        :param path:
+        :return:
+        """
+        import tensorflow as tf
+        weight_dict, = logger.load_pkl(path)
+        sess = tf.get_default_session()
+        all_variables = {v.name.split(":")[0]: v
+                         for v in tf.global_variables()
+                         if v.name.split(":")[0] in weight_dict}
+        for name, val in weight_dict.items():
+            var = all_variables[name]
+            var.load(val, sess)
 
     def load_file(self, key):
         """ return the binary stream, most versatile.

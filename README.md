@@ -1,49 +1,24 @@
-# ML-Logger, A Beautiful Remote Logging Utility for Any Python ML Project
+# ML-Logger, A Simple and Scalable Logging Utility With a Beautiful Visualization Dashboard
 
 [![Downloads](http://pepy.tech/badge/ml-logger)](http://pepy.tech/project/ml-logger)
 
-A common pain that comes after getting to launch ML training jobs on AWS
-is a lack of a good way to manage and visualize your data. So far, a common
-practice is to upload your experiment data to aws s3 or google cloud buckets. 
-Then one quickly realizes that downloading data from s3 can be slow. s3 does 
+ML-Logger makes it easy to:
 
-not offer diffsync like gcloud-cli's `g rsync`. This makes it hard to sync a 
-large collection of data that is constantly appended to.
+- save data locally and remotely, as **binary**, in a transparent `pickle` file, with the same API and zero 
+configuration.
+- write from 500+ worker containers to a single instrumentation server
+- save `matplotlib.pyplot` figures on a remote server and visualize locally with `logger.savefig('my_figure.png')`
 
+And ml-logger does all of these with *minimal configuration* — you can use the same logging 
+code both locally and remotely with no code change.
 
-### Visualization Dashboard (Preview) :boom:
+ML-logger is highly performant -- the remote writes are asynchronous. For this reason it doesn't slow down your training
+even with 100+ metric keys.
 
-Incoming: A real-time visualization dashboard (and sever!)
-![ml visualization dashboard](./figures/ml_visualization_dashboard_preview.png)
+Why did we built this, you might ask? Because we want to make it easy for people in ML to 
+use the same logging code in all of they projects, so that it is easy to get started with 
+someone else's baseline.
 
-#### An Example Log from ML-Logger
-<img alt="example_real_log_output" src="figures/example_log_output.png" align="right"></img>
-
-So far the best way we have found for organizing experimental data is to 
-have a centralized instrumentation server. Compared with managing your data 
-on S3, a centralized instrumentation server makes it much easier to move 
-experiments around, run analysis that is co-located with your data, and 
-hosting visualization dashboards on the same machine. To download data 
-locally, you can use `sshfs`, `smba`, `rsync` or a variety of remote disks. All
-faster than s3.
-
-ML-Logger is the logging utility that allows you to do this. To make ML_logger
-easy to use, we made it so that you can use ml-logger with zero configuration,
-logging to your local hard-drive by default. When the logging directory field 
-`logger.configure(log_directory= <your directory>)` is an http end point, 
-the logger will instantiate a fast, future based logging client that launches 
-http requests in a separate thread. We optimized the client so that it won't 
-slow down your training code.
-
-API wise, ML-logger makes it easy for you to log textual printouts, simple 
-scalars, numpy tensors, image tensors, and `pyplot` figures. Because you might
-also want to read data from the instrumentation server, we also made it possible to 
-load numpy, pickle, text and binary files remotely.
-
-In the future, we will start building an integrated dashboard with fast search, 
-live figure update and markdown-based reporting/dashboarding to go with ml-logger.
-
-Now give this a try, and profit!
 
 ## Usage
 
@@ -52,9 +27,172 @@ To **install** `ml_logger`, do:
 pip install ml-logger
 ```
 
-To kickstart a logging server, run
+You don't have to kick start a server to use this logger. To save
+
+**Skip this if you just want to log locally.** To kickstart a logging server (Instrument Server), run
 ```bash
 python -m ml_logger.server
+```
+It is the easiest if you setup a long-lived instrument server with a public ip for yourself or the entire lab.
+
+### Configuring The Experiment Folder
+
+```python
+from ml_logger import logger, Color, percent
+from datetime import datetime
+
+now = datetime.now()
+logger.configure(log_directory="/tmp/ml-logger-demo", f"deep_Q_learning/{now:%Y%m%d-%H%M%S}")
+```
+This is a singleton pattern similar to `matplotlib.pyplot`. However, you could also use the logger constructor
+```python
+from ml_logger import ML_Logger
+
+logger = ML_Logger(log_directory="/tmp/ml-logger-demo", f"deep_Q_learning/{now:%Y%m%d-%H%M%S}")
+```
+
+### Logging Text, and Metrics
+
+```python
+logger.log({"some_var/smooth": 10}, some=Color(0.85, 'yellow', percent), step=3)
+```
+
+colored output: (where the values are yellow)
+```log
+╒════════════════════╤════════════════════╕
+│  some var/smooth   │         10         │
+├────────────────────┼────────────────────┤
+│        some        │       85.0%        │
+╘════════════════════╧════════════════════╛
+```
+
+### Logging Matplotlib Figures
+
+We have optimized ML-Logger, so it supports any format that `pyplot` supports. To save a figure locally or remotely, 
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+
+xs = np.linspace(-5, 5)
+
+plt.plot(xs, np.cos(xs), label='Cosine Func')
+logger.savefig('cosine_function.pdf')
+```
+
+### Logging Videos
+
+It is especially hard to visualize RL training sessions on a remote computer. With ML-Logger this is easy, and 
+super fast. We optimized the serialization and transport process, so that a large stack of video tensor gets
+first compressed by `ffmepg` before getting sent over the wire. 
+
+The compression rate (and speed boost) can be 2000:1.
+
+```python
+import numpy as np
+
+def im(x, y):
+    canvas = np.zeros((200, 200))
+    for i in range(200):
+        for j in range(200):
+            if x - 5 < i < x + 5 and y - 5 < j < y + 5:
+                canvas[i, j] = 1
+    return canvas
+
+frames = [im(100 + i, 80) for i in range(20)]
+
+logger.log_video(frames, "test_video.mp4")
+``` 
+
+### Saving PyTorch Modules
+
+PyTorch has a very nice module saving and loading API that has inspired the one in `Keras`. We make it easy to save
+this state dictionary (`state_dict`) to a server, and load it. This way you can load from 100+ of your previous 
+experiments, without having to download those weights to your code repository.
+
+```python
+# save a module
+logger.log_module(FastCNN=cnn)
+
+# load a module
+state_dict, = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
+```
+
+### Saving Tensorflow Models
+
+The format tensorflow uses to save the models is opaque. I prefer to save model weights in `pickle` as a dictionary. 
+This way the weight files are transparent. ML_Logger offers easy helper functions to save and load from checkpoints 
+saved in this format:
+
+```python
+## To save checkpoint
+from ml_logger import logger
+import tensorflow as tf
+
+logger.configure(log_directory="/tmp/ml-logger-demos")
+
+x = tf.get_variable('x', shape=[], initializer=tf.constant_initializer(0.0))
+y = tf.get_variable('y', shape=[], initializer=tf.constant_initializer(10.0))
+c = tf.Variable(1000)
+
+sess = tf.InteractiveSession()
+sess.run(tf.global_variables_initializer())
+
+trainables = tf.trainable_variables()
+logger.save_variables(trainables, path="variables.pkl", namespace="checkpoints")
+```
+which creates a file `checkpoints/variables.pkl` under `/tmp/ml-logger-demos`.
+
+## Visualization
+
+An idea visualization dashboard would be
+1. **Fast, instantaneous.** On an AWS headless server? View the plots as if they are on your local computer.
+2. **Searchable, performantly.** So that you don't have to remember where an experiment is from last week.
+3. **Answer Questions, from 100+ Experiments.** We make available Google's internal hyperparameter visualization tool, 
+on your own computer.
+
+### Searching for Hyper Parameters
+
+Experiments are identified by the `metrics.pkl` file. You can log multiple times to the same `metrics.pkl` file, 
+and the later parameter values overwrites earlier ones with the same key. We enforce namespace in this file, so each
+key/value argument you pass into the `logger.log_parameters` function call has to be a dictionary.
+
+```python
+Args = dict(
+    learning_rate=10,
+    hidden_size=200
+)
+logger.log_parameters(Args=Args)
+```
+
+## Full Logging API
+
+```python
+from ml_logger import logger, Color, percent
+
+logger.log_params(G=dict(some_config="hey"))
+logger.log(some=Color(0.1, 'yellow'), step=0)
+logger.log(some=Color(0.28571, 'yellow', lambda v: "{:.5f}%".format(v * 100)), step=1)
+logger.log(some=Color(0.85, 'yellow', percent), step=2)
+logger.log({"some_var/smooth": 10}, some=Color(0.85, 'yellow', percent), step=3)
+logger.log(some=Color(10, 'yellow'), step=4)
+```
+
+colored output: (where the values are yellow)
+```log
+╒════════════════════╤════════════════════╕
+│        some        │        0.1         │
+╘════════════════════╧════════════════════╛
+╒════════════════════╤════════════════════╕
+│        some        │     28.57100%      │
+╘════════════════════╧════════════════════╛
+╒════════════════════╤════════════════════╕
+│        some        │       85.0%        │
+╘════════════════════╧════════════════════╛
+╒════════════════════╤════════════════════╕
+│  some var/smooth   │         10         │
+├────────────────────┼────────────────────┤
+│        some        │       85.0%        │
+╘════════════════════╧════════════════════╛
 ```
 
 In your project files, do:
@@ -171,44 +309,49 @@ target_network_update_interval │ 500
 ╘════════════════════╧════════════════════╛
 ```
 
-```python
-from ml_logger import ML_Logger
-
-logger = ML_Logger('/mnt/slab/krypton/unitest')
-logger.log(0, some=Color(0.1, 'yellow'))
-logger.log(1, some=Color(0.28571, 'yellow', lambda v: f"{v * 100:.5f}%"))
-logger.log(2, some=Color(0.85, 'yellow', percent))
-logger.log(3, {"some_var/smooth": 10}, some=Color(0.85, 'yellow', percent))
-logger.log(4, some=Color(10, 'yellow'))
-logger.log_histogram(4, td_error_weights=[0, 1, 2, 3, 4, 2, 3, 4, 5])
-```
-
-colored output: (where the values are yellow)
-```log
-╒════════════════════╤════════════════════╕
-│        some        │        0.1         │
-╘════════════════════╧════════════════════╛
-╒════════════════════╤════════════════════╕
-│        some        │     28.57100%      │
-╘════════════════════╧════════════════════╛
-╒════════════════════╤════════════════════╕
-│        some        │       85.0%        │
-╘════════════════════╧════════════════════╛
-╒════════════════════╤════════════════════╕
-│  some var/smooth   │         10         │
-├────────────────────┼────────────────────┤
-│        some        │       85.0%        │
-╘════════════════════╧════════════════════╛
-```
 
 ## TODO:
 
-- [ ] Integrate with visdom, directly plot locally.
-    - (better to keep it separate, because visdom is shitty.)
-    - ml_logger does NOT know the full data set. Therefore we should not
-    expect it to do the data processing such as taking mean, reservoir
-    sampling etc. **Where should this happen though?**
-    - just log to visdom for now. Use the primitive `plot.ly` plotting
-    inteface.
-    - data: keys/values
 
+## Visualization (Preview):boom:
+
+In addition, ml-logger also comes with a powerful visualization dashboard that beats tensorboard in every aspect.
+
+![ml visualization dashboard](./figures/ml_visualization_dashboard_preview.png)
+
+#### An Example Log from ML-Logger
+<img alt="example_real_log_output" src="figures/example_log_output.png" align="right"></img>
+
+A common pain that comes after getting to launch ML training jobs on AWS
+is a lack of a good way to manage and visualize your data. So far, a common
+practice is to upload your experiment data to aws s3 or google cloud buckets. 
+Then one quickly realizes that downloading data from s3 can be slow. s3 does 
+
+not offer diffsync like gcloud-cli's `g rsync`. This makes it hard to sync a 
+large collection of data that is constantly appended to.
+
+So far the best way we have found for organizing experimental data is to 
+have a centralized instrumentation server. Compared with managing your data 
+on S3, a centralized instrumentation server makes it much easier to move 
+experiments around, run analysis that is co-located with your data, and 
+hosting visualization dashboards on the same machine. To download data 
+locally, you can use `sshfs`, `smba`, `rsync` or a variety of remote disks. All
+faster than s3.
+
+ML-Logger is the logging utility that allows you to do this. To make ML_logger
+easy to use, we made it so that you can use ml-logger with zero configuration,
+logging to your local hard-drive by default. When the logging directory field 
+`logger.configure(log_directory= <your directory>)` is an http end point, 
+the logger will instantiate a fast, future based logging client that launches 
+http requests in a separate thread. We optimized the client so that it won't 
+slow down your training code.
+
+API wise, ML-logger makes it easy for you to log textual printouts, simple 
+scalars, numpy tensors, image tensors, and `pyplot` figures. Because you might
+also want to read data from the instrumentation server, we also made it possible to 
+load numpy, pickle, text and binary files remotely.
+
+In the future, we will start building an integrated dashboard with fast search, 
+live figure update and markdown-based reporting/dashboarding to go with ml-logger.
+
+Now give this a try, and profit!
