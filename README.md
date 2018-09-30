@@ -7,7 +7,7 @@ ML-Logger makes it easy to:
 - save data locally and remotely, as **binary**, in a transparent `pickle` file, with the same API and zero 
 configuration.
 - write from 500+ worker containers to a single instrumentation server
-- save `matplotlib.pyplot` figures on a remote server and visualize locally with `logger.savefig('my_figure.png')`
+- visualize `matplotlib.pyplot` figures from a remote server locally with `logger.savefig('my_figure.png')`
 
 And ml-logger does all of these with *minimal configuration* — you can use the same logging 
 code both locally and remotely with no code change.
