@@ -2,6 +2,8 @@
 
 [![Downloads](http://pepy.tech/badge/ml-logger)](http://pepy.tech/project/ml-logger)
 
+<img alt="hyperparameter column demo" src="figures/hyperparameter-column.gif" align="right" width="50%"/>
+
 ML-Logger makes it easy to:
 
 - save data locally and remotely, as **binary**, in a transparent `pickle` file, with the same API and zero 
