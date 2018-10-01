@@ -166,6 +166,23 @@ Args = dict(
 logger.log_parameters(Args=Args)
 ```
 
+### How to launch the Vis App
+
+**This requires node.js and yarn dev environment** at the moment. We will streamline this process without these 
+requirements soon.
+
+0. download this repository
+1. go to `ml-vis-app` folder
+2. Install the dev dependencies
+    1. install node: [Installation](https://nodejs.org/en/download/)
+    2. install yarn: [Installation](https://yarnpkg.com/lang/en/docs/install/#mac-stable)
+    3. install the dependencies of this visualization app:
+        1. `yarn install`
+3. in that folder, run `yarn`.
+
+
+
+
 ## Full Logging API
 
 ```python
