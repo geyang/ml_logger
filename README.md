@@ -180,7 +180,9 @@ requirements soon.
         1. `yarn install`
 3. in that folder, run `yarn`.
 
-
+**The IP address of the server is currently hard coded 
+[here](https://github.com/episodeyang/ml_logger/blob/master/ml-vis-app/src/App.js#L11).** To use this with your own 
+instrumentation server, over-write this line. I'm planning on making this configuration more accessible.
 
 
 ## Full Logging API
