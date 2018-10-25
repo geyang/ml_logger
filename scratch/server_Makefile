@@ -1,0 +1,27 @@
+.PHONY: default
+SHELL=/bin/bash
+default: install launch-server launch-visdom sleep tail
+launch: launch-server launch-visdom sleep tail
+install:
+        source activate pytorch_p36 && pip install --upgrade pip ml-logger visdom --ignore-installed --no-cache-dir
+launch-server:
+        source activate pytorch_p36 && nohup python -u -m ml_logger.server --data-dir /home/ubuntu/runs > runs/logger.log 2> runs/logger.err.log &
+        echo "server is running"
+launch-vis-server:
+        source activate pytorch_p36 && python -m vis_server.main --workers 1 --host 0.0.0.0 > runs/vis_server.log 2> runs/vis_server.err.log &
+        echo "vis_server server is running"
+launch-visdom:
+        source activate pytorch_p36 && nohup python -u -m visdom.server > runs/visdom.log 2> runs/visdom.err.log &
+        echo "visdom server is running"
+kill-logger:
+        echo "not implemented"
+kill-visdom:
+        echo "not implemented"
+sleep:
+        sleep 4
+tail:
+        tail -f ./runs/*.log
+jupyter:
+        source activate pytorch_p36 && cd runs && jupyter notebook --ip=* --port=5040
+tunnel:
+        sudo nc -k -l 0.0.0.0 80 -n 127.0.0.1 5040
