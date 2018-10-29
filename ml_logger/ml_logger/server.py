@@ -7,6 +7,8 @@ from collections import namedtuple
 
 from params_proto import cli_parse, Proto, BoolFlag
 
+import sanic
+
 from ml_logger.serdes import deserialize, serialize
 import numpy as np
 from typing import NamedTuple, Any
@@ -48,12 +50,11 @@ class LoggingServer:
     configure = __init__
 
     def serve(self, port):
-        from japronto import Application
-        self.app = Application()
-        self.app.router.add_route('/', self.log_handler, method='POST')
-        self.app.router.add_route('/', self.read_handler, method='GET')
-        self.app.router.add_route('/ping', self.ping_handler, method='POST')
-        self.app.router.add_route('/', self.remove_handler, method='DELETE')
+        self.app = sanic.Sanic()
+        self.app.add_route(self.log_handler, '/', methods=['POST'])
+        self.app.add_route(self.read_handler, '/', methods=['GET'])
+        self.app.add_route(self.ping_handler, '/ping', methods=['POST'])
+        self.app.add_route(self.remove_handler, '/', methods=['DELETE'])
         # todo: need a file serving url
         self.app.run(port=port, debug=Params.debug)
 
@@ -61,11 +62,11 @@ class LoggingServer:
         if not req.json:
             msg = f'request json is empty: {req.text}'
             print(msg)
-            return req.Response(text=msg)
+            return sanic.response.text(msg)
         ping_data = PingData(**req.json)
         print("received ping data: {} type: {}".format(ping_data.status, ping_data.exp_key))
         data = self.ping(ping_data.exp_key, ping_data.status, ping_data.burn)
-        return req.Response(text=data)
+        return sanic.response.text(data)
 
     def ping(self, exp_key, status, burn=True):
         status_path = os.path.join(exp_key, '__presence')
@@ -81,33 +82,33 @@ class LoggingServer:
         if not req.json:
             msg = f'request json is empty: {req.text}'
             print(msg)
-            return req.Response(text=msg)
+            return sanic.response.text(msg)
         load_entry = LoadEntry(**req.json)
         print("loading: {} type: {}".format(load_entry.key, load_entry.type))
         res = self.load(load_entry.key, load_entry.type)
         data = serialize(res)
-        return req.Response(text=data)
+        return sanic.response.text(data)
 
     def remove_handler(self, req):
         if not req.json:
             msg = f'request json is empty: {req.text}'
             print(msg)
-            return req.Response(text=msg)
+            return sanic.response.text(msg)
         remove_entry = RemoveEntry(**req.json)
         print("removing: {}".format(remove_entry.key))
         self.remove(remove_entry.key)
-        return req.Response(text='ok')
+        return sanic.response.text('ok')
 
     def log_handler(self, req):
         if not req.json:
             print(f'request json is empty: {req.text}')
-            return req.Response(text="Reuqest json is empty")
+            return sanic.response.text("Reuqest json is empty")
         log_entry = LogEntry(**req.json)
         print("writing: {} type: {} options: {}".format(log_entry.key, log_entry.type, log_entry.options))
         data = deserialize(log_entry.data)
         options = log_entry.options if log_entry.options is None else LogOptions(*log_entry.options)
         self.log(log_entry.key, data, log_entry.type, options)
-        return req.Response(text='ok')
+        return sanic.response.text('ok')
 
     def load(self, key, dtype):
         if dtype == 'read':
