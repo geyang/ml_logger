@@ -4,7 +4,6 @@ from collections import OrderedDict, Sequence
 from datetime import datetime
 from io import BytesIO
 from numbers import Number
-from termcolor import colored as c
 from typing import Union, Any
 
 from .helpers.default_set import DefaultSet
@@ -229,6 +228,7 @@ class ML_Logger:
         self.logger._delete(abs_path)
 
     def log_params(self, path="parameters.pkl", **kwargs):
+        from termcolor import colored as c
         key_width = 30
         value_width = 20
 

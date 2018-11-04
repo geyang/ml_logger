@@ -92,6 +92,7 @@ logger.log_metrics_summary(silent=True)
 - [documentation under construction]
 
 ## How to Develop
+
 First clone repo, install dev dependencies, and install the module under evaluation mode.
 ```bash
 git clone https://github.com/episodeyang/ml_logger.git
@@ -106,7 +107,7 @@ pwd # ~> ml_logger/ml_logger
 make test
 ```
 
-## Testing with a server (local server)
+## Testing with a server (You need to do both for an PR)
 
 To test with a live server, first run (in a separate console)
 ```
@@ -125,6 +126,8 @@ or do
 ```bash
 make test-with-server
 ```
+
+Your PR should have both of these two tests working. ToDo: add CI to this repo.
 
 ---
 
