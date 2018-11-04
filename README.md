@@ -113,7 +113,7 @@ experiments, without having to download those weights to your code repository.
 
 ```python
 # save a module
-logger.log_module(FastCNN=cnn)
+logger.save_module(FastCNN=cnn)
 
 # load a module
 state_dict, = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
@@ -240,7 +240,7 @@ logger.log_file(__file__)
 
 for epoch in range(10):
     logger.log(step=epoch, D_loss=0.2, G_loss=0.1, mutual_information=0.01)
-    logger.log_keyvalue(epoch, 'some string key', 0.0012)
+    logger.log_key_value(epoch, 'some string key', 0.0012)
     # when the step index updates, logger flushes all of the key-value pairs to file system/logging server
     
 logger.flush()

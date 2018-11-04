@@ -29,7 +29,7 @@ def test_save_checkpoint_and_load(setup):
     sess.run(tf.global_variables_initializer())
 
     trainables = tf.trainable_variables()
-    logger.save_variables(trainables)
+    logger.save_variables(trainables, 'checkpoints/variables.pkl')
     reset_graph()
 
     # test loading variables from weight dict

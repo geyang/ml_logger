@@ -22,8 +22,8 @@ Why did we built this, you might ask? Because we want to make it easy
 for people in ML to use the same logging code-block in all of they projects,
 so that it is easy to get started with someone else's baseline.
 
-Usage
------
+Usage (Simple)
+--------------
 
 To **install** ``ml_logger``, do:
 
@@ -40,8 +40,123 @@ server (Instrument Server), run
 
     python -m ml_logger.server
 
-It is the easiest if you setup a long-lived instrument server with a
-public ip for yourself or the entire lab.
+People usually setup a long-lived instrument server with a public ip for
+yourself or the entire lab.
+
+.. code-block:: python
+
+    from ml_logger import logger
+    logger.configure('/tmp/ml-logger-debug')
+    # ~> logging data to /tmp/ml-logger-debug
+
+We can log individual keys
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    for i in range(1):
+        logger.log(metrics={'some_val/smooth': 10, 'status': f"step ({i})"}, reward=20, timestep=i)
+        ### flush the data, otherwise the value would be overwritten with new values in the next iteration.
+        logger.flush()
+    # outputs ~>
+    # ╒════════════════════╤════════════════════════════╕
+    # │       reward       │             20             │
+    # ├────────────────────┼────────────────────────────┤
+    # │      timestep      │             0              │
+    # ├────────────────────┼────────────────────────────┤
+    # │  some val/smooth   │             10             │
+    # ├────────────────────┼────────────────────────────┤
+    # │       status       │          step (0)          │
+    # ├────────────────────┼────────────────────────────┤
+    # │      timestamp     │'2018-11-04T11:37:03.324824'│
+    # ╘════════════════════╧════════════════════════════╛
+
+Asynchronously log the summary of lots of training metrics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A common usage is you want to continuously store the training metrics,
+but only upload averaged statistics. A pattern figured out by @jachiam
+is the following: ``store_metrics()``, ``peak_stored_metrics()``, and
+``log_metrics_summary()``
+
+.. code-block:: python
+
+    # You log lots of metrics during training.
+    for i in range(100):
+        logger.store_metrics(metrics={'some_val/smooth': 10}, some=20, timestep=i)
+    # you can peak what's inside the cache and print out a table like this: 
+    logger.peek_stored_metrics(len=4)
+    # outputs ~>
+    #      some      |   timestep    |some_val/smooth
+    # ━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━
+    #       20       |       0       |      10
+    #       20       |       1       |      10
+    #       20       |       2       |      10
+    #       20       |       3       |      10
+
+    # The metrics are stored in-memory. Now we need to actually log the summaries:
+    logger.log_metrics_summary(silent=True)
+    # outputs ~> . (data is now logged to the server)
+
+Table of Contents
+-----------------
+
+-  logging ``matplotlib.pyplot`` figures on an headless server
+-  [documentation under construction]
+
+How to Develop
+--------------
+
+First clone repo, install dev dependencies, and install the module under
+evaluation mode.
+
+.. code-block:: bash
+
+    git clone https://github.com/episodeyang/ml_logger.git
+    cd ml_logger && cd ml_logger && pip install -r requirements-dev.txt
+    pip install -e .
+
+Testing local-mode (without a server)
+-------------------------------------
+
+You should be inside ml\_logger/ml\_logger folder
+
+.. code-block:: bash
+
+    pwd # ~> ml_logger/ml_logger
+    make test
+
+Testing with a server (local server)
+------------------------------------
+
+To test with a live server, first run (in a separate console)
+
+::
+
+    python -m ml_logger.server --log-dir /tmp/ml-logger-debug
+
+or do:
+
+.. code-block:: bash
+
+    make start-test-server
+
+Then run this test script with the option:
+
+.. code-block:: bash
+
+    python -m pytest tests --capture=no --log-dir http://0.0.0.0:8081
+
+or do
+
+.. code-block:: bash
+
+    make test-with-server
+
+--------------
+
+Logging Matplotlib pyplots
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Configuring The Experiment Folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -135,7 +250,7 @@ weights to your code-block repository.
 .. code-block:: python
 
     # save a module
-    logger.log_module(FastCNN=cnn)
+    logger.save_module(FastCNN=cnn)
 
     # load a module
     state_dict, = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
@@ -196,6 +311,30 @@ in this file, so each key/value argument you pass into the
     )
     logger.log_parameters(Args=Args)
 
+How to launch the Vis App
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**This requires node.js and yarn dev environment** at the moment. We
+will streamline this process without these requirements soon.
+
+0. download this repository
+1. go to ``ml-vis-app`` folder
+2. Install the dev dependencies
+
+   1. install node: `Installation <https://nodejs.org/en/download/>`__
+   2. install yarn:
+      `Installation <https://yarnpkg.com/lang/en/docs/install/#mac-stable>`__
+   3. install the dependencies of this visualization app:
+
+      1. ``yarn install``
+
+3. in that folder, run ``yarn``.
+
+**The IP address of the server is currently hard code-blockd
+`here <https://github.com/episodeyang/ml_logger/blob/master/ml-vis-app/src/App.js#L11>`__.**
+To use this with your own instrumentation server, over-write this line.
+I'm planning on making this configuration more accessible.
+
 Full Logging API
 ----------------
 
@@ -255,7 +394,7 @@ In your project files, do:
 
     for epoch in range(10):
         logger.log(step=epoch, D_loss=0.2, G_loss=0.1, mutual_information=0.01)
-        logger.log_keyvalue(epoch, 'some string key', 0.0012)
+        logger.log_key_value(epoch, 'some string key', 0.0012)
         # when the step index updates, logger flushes all of the key-value pairs to file system/logging server
         
     logger.flush()

@@ -126,7 +126,7 @@ class LoggingServer:
             except FileNotFoundError as e:
                 return None
         elif dtype == 'read_pkl':
-            from ml_logger.helpers import load_from_pickle
+            from .helpers import load_from_pickle
             abs_path = os.path.join(self.data_dir, key)
             try:
                 return list(load_from_pickle(abs_path))
