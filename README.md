@@ -22,20 +22,120 @@ use the same logging code in all of they projects, so that it is easy to get sta
 someone else's baseline.
 
 
-## Usage
+## Getting Started!
 
 To **install** `ml_logger`, do:
 ```bash
 pip install ml-logger
 ```
+Now you can rock!
+```python
+from ml_logger import logger
+logger.configure('/tmp/ml-logger-debug')
+# ~> logging data to /tmp/ml-logger-debug
+```
+Log key/value pairs, and metrics:
+```python
+for i in range(1):
+    logger.log(metrics={'some_val/smooth': 10, 'status': f"step ({i})"}, reward=20, timestep=i)
+    ### flush the data, otherwise the value would be overwritten with new values in the next iteration.
+    logger.flush()
+# outputs ~>
+# ╒════════════════════╤════════════════════════════╕
+# │       reward       │             20             │
+# ├────────────────────┼────────────────────────────┤
+# │      timestep      │             0              │
+# ├────────────────────┼────────────────────────────┤
+# │  some val/smooth   │             10             │
+# ├────────────────────┼────────────────────────────┤
+# │       status       │          step (0)          │
+# ├────────────────────┼────────────────────────────┤
+# │      timestamp     │'2018-11-04T11:37:03.324824'│
+# ╘════════════════════╧════════════════════════════╛
+```
 
-You don't have to kick start a server to use this logger. To save
+### Logging to a Server
 
-**Skip this if you just want to log locally.** To kickstart a logging server (Instrument Server), run
+**Skip this if you just want to log locally.** When training in parallel, you want to kickstart an logging server (Instrument Server). To do so, run:
 ```bash
 python -m ml_logger.server
 ```
-It is the easiest if you setup a long-lived instrument server with a public ip for yourself or the entire lab.
+Use ssh tunnel if you are running on a managed cluster (with SLURM for instance).
+
+### Asynchronously log the summary of LOTs of training metrics
+
+A common scenario is you only want to upload averaged statistics of your metrics. A pattern
+that @jachiam uses is the following: `store_metrics()`, `peak_stored_metrics()`, and `log_metrics_summary()`
+
+```python
+# You log lots of metrics during training.
+for i in range(100):
+    logger.store_metrics(metrics={'some_val/smooth': 10}, some=20, timestep=i)
+# you can peak what's inside the cache and print out a table like this: 
+logger.peek_stored_metrics(len=4)
+# outputs ~>
+#      some      |   timestep    |some_val/smooth
+# ━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━
+#       20       |       0       |      10
+#       20       |       1       |      10
+#       20       |       2       |      10
+#       20       |       3       |      10
+
+# The metrics are stored in-memory. Now we need to actually log the summaries:
+logger.log_metrics_summary(silent=True)
+# outputs ~> . (data is now logged to the server)
+```
+
+## Table of Contents
+
+- logging `matplotlib.pyplot` figures on an headless server
+- [documentation under construction]
+
+## How to Develop
+
+First clone repo, install dev dependencies, and install the module under evaluation mode.
+```bash
+git clone https://github.com/episodeyang/ml_logger.git
+cd ml_logger && cd ml_logger && pip install -r requirements-dev.txt
+pip install -e .
+```
+## Testing local-mode (without a server)
+
+You should be inside ml_logger/ml_logger folder
+```bash
+pwd # ~> ml_logger/ml_logger
+make test
+```
+
+## Testing with a server (You need to do both for an PR)
+
+To test with a live server, first run (in a separate console)
+```
+python -m ml_logger.server --log-dir /tmp/ml-logger-debug
+```
+or do:
+```bash
+make start-test-server
+```
+
+Then run this test script with the option:
+```bash
+python -m pytest tests --capture=no --log-dir http://0.0.0.0:8081
+```
+or do
+```bash
+make test-with-server
+```
+
+Your PR should have both of these two tests working. ToDo: add CI to this repo.
+
+### To Publish
+
+You need `twine`, `rst-lint` etc, which are included in the `requirements-dev.txt` file.
+
+---
+
+### Logging Matplotlib pyplots
 
 ### Configuring The Experiment Folder
 

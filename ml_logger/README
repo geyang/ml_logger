@@ -22,8 +22,8 @@ Why did we built this, you might ask? Because we want to make it easy
 for people in ML to use the same logging code-block in all of they projects,
 so that it is easy to get started with someone else's baseline.
 
-Usage (Simple)
---------------
+Getting Started!
+----------------
 
 To **install** ``ml_logger``, do:
 
@@ -31,17 +31,7 @@ To **install** ``ml_logger``, do:
 
     pip install ml-logger
 
-You don't have to kick start a server to use this logger. To save
-
-**Skip this if you just want to log locally.** To kickstart a logging
-server (Instrument Server), run
-
-.. code-block:: bash
-
-    python -m ml_logger.server
-
-People usually setup a long-lived instrument server with a public ip for
-yourself or the entire lab.
+Now you can rock!
 
 .. code-block:: python
 
@@ -49,8 +39,7 @@ yourself or the entire lab.
     logger.configure('/tmp/ml-logger-debug')
     # ~> logging data to /tmp/ml-logger-debug
 
-We can log individual keys
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Log key/value pairs, and metrics:
 
 .. code-block:: python
 
@@ -71,12 +60,26 @@ We can log individual keys
     # │      timestamp     │'2018-11-04T11:37:03.324824'│
     # ╘════════════════════╧════════════════════════════╛
 
-Asynchronously log the summary of lots of training metrics
+Logging to a Server
+~~~~~~~~~~~~~~~~~~~
+
+**Skip this if you just want to log locally.** When training in
+parallel, you want to kickstart an logging server (Instrument Server).
+To do so, run:
+
+.. code-block:: bash
+
+    python -m ml_logger.server
+
+Use ssh tunnel if you are running on a managed cluster (with SLURM for
+instance).
+
+Asynchronously log the summary of LOTs of training metrics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A common usage is you want to continuously store the training metrics,
-but only upload averaged statistics. A pattern figured out by @jachiam
-is the following: ``store_metrics()``, ``peak_stored_metrics()``, and
+A common scenario is you only want to upload averaged statistics of your
+metrics. A pattern that @jachiam uses is the following:
+``store_metrics()``, ``peak_stored_metrics()``, and
 ``log_metrics_summary()``
 
 .. code-block:: python
@@ -126,8 +129,8 @@ You should be inside ml\_logger/ml\_logger folder
     pwd # ~> ml_logger/ml_logger
     make test
 
-Testing with a server (local server)
-------------------------------------
+Testing with a server (You need to do both for an PR)
+-----------------------------------------------------
 
 To test with a live server, first run (in a separate console)
 
@@ -152,6 +155,15 @@ or do
 .. code-block:: bash
 
     make test-with-server
+
+Your PR should have both of these two tests working. ToDo: add CI to
+this repo.
+
+To Publish
+~~~~~~~~~~
+
+You need ``twine``, ``rst-lint`` etc, which are included in the
+``requirements-dev.txt`` file.
 
 --------------
 

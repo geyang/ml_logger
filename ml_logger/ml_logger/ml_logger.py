@@ -12,7 +12,7 @@ from .log_client import LogClient
 from .helpers.print_utils import PrintHelper
 from .caches.key_value_cache import KeyValueCache
 from .caches.summary_cache import SummaryCache
-from ml_logger.helpers.color_helpers import Color
+from .helpers.color_helpers import Color
 
 
 def metrify(data):
