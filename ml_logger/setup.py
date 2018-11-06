@@ -23,8 +23,7 @@ setup(name="ml_logger",
       packages=[
           "ml_logger",
           "ml_logger.caches",
-          "ml_logger.helpers",
-          "ml_dash",
+          "ml_logger.helpers",  # ml_dash is now in a different package
           "vis_server"],
       install_requires=[
           "typing",
