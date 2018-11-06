@@ -26,7 +26,7 @@ for i in range(1):
 for i in range(100):
     logger.store_metrics(metrics={'some_val/smooth': 10}, some=20, timestep=i)
 
-logger.peek_stored_metrics()
+logger.peek_stored_metrics(len=4)
 # outputs ~>
 #      some      |   timestep    |some_val/smooth
 # ━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━
@@ -34,7 +34,6 @@ logger.peek_stored_metrics()
 #       20       |       1       |      10
 #       20       |       2       |      10
 #       20       |       3       |      10
-#       20       |       4       |      10
 
 ### The metrics are stored in-memory. Now we need to actually log the summaries:
 logger.log_metrics_summary(silent=True)

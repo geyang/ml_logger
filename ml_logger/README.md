@@ -129,6 +129,10 @@ make test-with-server
 
 Your PR should have both of these two tests working. ToDo: add CI to this repo.
 
+### To Publish
+
+You need `twine`, `rst-lint` etc, which are included in the `requirements-dev.txt` file.
+
 ---
 
 ### Logging Matplotlib pyplots
