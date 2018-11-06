@@ -24,7 +24,8 @@ make test-with-server
 import pytest
 from time import sleep
 from os.path import join as pathJoin
-from ml_logger import logger, Color, percent, metrify
+from ml_logger import logger, Color, metrify
+from ml_logger.helpers.color_helpers import percent
 from tests.conftest import LOCAL_TEST_DIR
 
 
@@ -37,7 +38,7 @@ def log_dir(request):
 def setup(log_dir):
     logger.configure(log_dir, prefix='main_test_script')
     logger.remove('')
-    logger.print('hey')
+    logger.log_line('hey')
     sleep(1.0)
 
     print(f"logging to {pathJoin(logger.log_directory, logger.prefix)}")
@@ -180,12 +181,12 @@ class FakeModule:
 
 @pytest.fixture
 def test_module(setup):
-    logger.log_module(Test=FakeModule, step=0, )
+    logger.save_module(FakeModule, "modules/test_module.pkl")
     sleep(1.0)
 
 
 def test_load_module(setup, test_module):
-    result, = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
+    result, = logger.load_pkl(f"modules/test_module.pkl")
     import numpy as np
     assert (result['var_1'] == np.ones([100, 2])).all(), "should be the same as test data"
 

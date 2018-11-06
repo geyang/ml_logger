@@ -1,0 +1,7 @@
+restructuredtext-lint
+pygments
+twine
+numpy
+matplotlib
+tensorflow
+torch

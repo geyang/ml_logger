@@ -1,110 +1,18 @@
-from io import BytesIO
-
 import os
-from datetime import datetime
-
-from typing import Union, Callable, Any
-from collections import OrderedDict, deque, Sequence
-from numbers import Number
-from itertools import zip_longest
-
-from ml_logger.full_duplex import Duplex
-from ml_logger.log_client import LogClient
-from termcolor import colored as c
 import numpy as np
+from collections import OrderedDict, Sequence
+from datetime import datetime
+from io import BytesIO
+from numbers import Number
+from typing import Union, Any
 
-
-class Stream:
-    def __init__(self, len=100):
-        self.d = deque(maxlen=len)
-
-    def append(self, d):
-        self.d.append(d)
-
-    @property
-    def latest(self):
-        return self.d[-1]
-
-    @property
-    def mean(self):
-        try:
-            return np.mean(self.d)
-        except ValueError:
-            return None
-
-    @property
-    def max(self):
-        try:
-            return np.max(self.d)
-        except ValueError:
-            return None
-
-    @property
-    def min(self):
-        try:
-            return np.min(self.d)
-        except ValueError:
-            return None
-
-
-class Color:
-    # noinspection PyInitNewSignature
-    def __init__(self, value, color=None, formatter: Union[Callable[[Any], Any], None] = lambda v: v):
-        self.value = value
-        self.color = color
-        self.formatter = formatter
-
-    def __str__(self):
-        return str(self.formatter(self.value)) if callable(self.formatter) else str(self.value)
-
-    def __len__(self):
-        return len(str(self.value))
-
-    def __format__(self, format_spec):
-        if self.color in [None, 'default']:
-            return self.formatter(self.value).__format__(format_spec)
-        else:
-            return c(self.formatter(self.value).__format__(format_spec), self.color)
-
-
-def percent(v):
-    return '{:.02%}'.format(round(v * 100))
-
-
-def ms(v):
-    return '{:.1f}ms'.format(v * 1000)
-
-
-def sec(v):
-    return '{:.3f}s'.format(v)
-
-
-def default(value, *args, **kwargs):
-    return Color(value, 'default', *args, **kwargs)
-
-
-def red(value, *args, **kwargs):
-    return Color(value, 'red', *args, **kwargs)
-
-
-def green(value, *args, **kwargs):
-    return Color(value, 'green', *args, **kwargs)
-
-
-def gray(value, *args, **kwargs):
-    return Color(value, 'gray', *args, **kwargs)
-
-
-def grey(value, *args, **kwargs):
-    return Color(value, 'gray', *args, **kwargs)
-
-
-def yellow(value, *args, **kwargs):
-    return Color(value, 'yellow', *args, **kwargs)
-
-
-def brown(value, *args, **kwargs):
-    return Color(value, 'brown', *args, **kwargs)
+from .helpers.default_set import DefaultSet
+from .full_duplex import Duplex
+from .log_client import LogClient
+from .helpers.print_utils import PrintHelper
+from .caches.key_value_cache import KeyValueCache
+from .caches.summary_cache import SummaryCache
+from ml_logger.helpers.color_helpers import Color
 
 
 def metrify(data):
@@ -134,6 +42,7 @@ def metrify(data):
         return str(data)
 
 
+# noinspection PyPep8Naming
 class ML_Logger:
     logger = None
     log_directory = None
@@ -171,11 +80,11 @@ class ML_Logger:
         import subprocess
         try:
             cmd = f'cd "{os.path.realpath(diff_directory)}" && git add . && git --no-pager diff HEAD'
-            if not silent: self.print(cmd)
+            if not silent: self.log_line(cmd)
             p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
             self.log_text(p.decode('utf-8').strip(), diff_filename, silent=silent)
         except subprocess.CalledProcessError as e:
-            self.print("not storing the git diff due to {}".format(e))
+            self.log_line("not storing the git diff due to {}".format(e))
 
     @property
     def __current_branch__(self):
@@ -231,31 +140,44 @@ class ML_Logger:
             p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
             return p.decode('utf-8').strip()
         except subprocess.CalledProcessError as e:
-            self.print(f"can not get obtain hostname via `{cmd}` due to exception: {e}")
+            self.log_line(f"can not get obtain hostname via `{cmd}` due to exception: {e}")
             return None
 
+    prefix = ""
+    print_buffer = ""  # is okay b/c strings are immutable in python
+
     # noinspection PyInitNewSignature
-    def __init__(self, log_directory: str = None, prefix="", buffer_size=2048, max_workers=5):
-        """
-        :param log_directory: Overloaded to use either
-            - file://some_abs_dir
-            - http://19.2.34.3:8081
-            - /tmp/some_dir
-        :param prefix: The directory relative to those above
-            - prefix: causal_infogan => /tmp/some_dir/causal_infogan
-            - prefix: "" => /tmp/some_dir
+    def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=5,
+                 summary_cache_opts: dict = None):
+        """ Configuration function for the logger.
+
+        | `log_directory` is overloaded to use either
+        | 1. file://some_abs_dir
+        | 2. http://19.2.34.3:8081
+        | 3. /tmp/some_dir
+        |
+        | `prefix` is the log directory relative to the root folder. Absolute path are resolved against the root.
+        | 1. prefix="causal_infogan" => logs to "/tmp/some_dir/causal_infogan"
+        | 2. prefix="" => logs to "/tmp/some_dir"
+
+        :param log_directory: the server host and port number
+        :param prefix: the prefix path
+        :param buffer_size: The string buffer size for the print buffer.
+        :param max_workers: the number of request-session workers for the async http requests.
         """
         # self.summary_writer = tf.summary.FileWriter(log_directory)
         self.step = None
         self.duplex = None
         self.timestamp = None
-        self.data = OrderedDict()
-        self.flush()
         self.print_buffer_size = buffer_size
-        self.do_not_print_list = set()
-        assert not os.path.isabs(prefix), "prefix can not start with `/`"
-        self.prefix = prefix
+        self.key_value_cache = KeyValueCache()
+        self.summary_cache = SummaryCache(**(summary_cache_opts or {}))
+        self.do_not_print = DefaultSet("__timestamp")
+        if prefix is not None:
+            assert not os.path.isabs(prefix), "prefix can not start with `/` because it is relative to `log_directory`."
+            self.prefix = prefix
 
+        self.print_helper = PrintHelper()
         # todo: add https support
         if log_directory:
             self.logger = LogClient(url=log_directory, max_workers=max_workers)
@@ -292,13 +214,12 @@ class ML_Logger:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # self.summary_writer.close()
         # todo: wait for logger to finish upload in async mode.
         self.flush()
 
     def remove(self, path):
         """
-        removes by path
+        removes files and folders by path
 
         :param path:
         :return:
@@ -307,6 +228,7 @@ class ML_Logger:
         self.logger._delete(abs_path)
 
     def log_params(self, path="parameters.pkl", **kwargs):
+        from termcolor import colored as c
         key_width = 30
         value_width = 20
 
@@ -332,7 +254,7 @@ class ML_Logger:
 
         # todo: add logging hook
         # todo: add yml support
-        self.print('\n'.join(table))
+        self.log_line('\n'.join(table))
         self.log_data(path=path, data=_kwargs)
 
     def log_data(self, data, path=None, overwrite=False):
@@ -345,137 +267,149 @@ class ML_Logger:
         :return: None
         """
         path = path or "data.pkl"
-        abs_path = os.path.join(self.prefix or "", path)
+        abs_path = os.path.join(self.prefix, path)
+        kwargs = {"key": abs_path, "data": data}
         if overwrite:
-            self.logger.log(key=abs_path, data=data, overwrite=overwrite)
-        else:
-            self.logger.log(key=abs_path, data=data)
+            kwargs['overwrite'] = overwrite
+        self.logger.log(**kwargs)
 
-    def log_keyvalue(self, key: str, value: Any, step: Union[int, Color] = None, silent=False) -> None:
-        if self.step != step and step is not None:
-            self.flush()
-            self.step = step
+    def log_metrics(self, metrics=None, silent=None, cache: KeyValueCache = None, flush=None, **_key_values) -> None:
+        """
 
-        self.timestamp = np.datetime64(datetime.now())
-
+        :param metrics: (mapping) key/values of metrics to be logged. Overwrites previous value if exist.
+        :param silent: adds the keys being logged to the silent list, do not print out in table when flushing.
+        :param cache: optional KeyValueCache object to be passed in
+        :param flush:
+        :param _key_values:
+        :return:
+        """
+        cache = cache or self.key_value_cache
+        timestamp = np.datetime64(datetime.now())
+        metrics = metrics.copy() if metrics else {}
+        if _key_values:
+            metrics.update(_key_values)
         if silent:
-            self.do_not_print_list.update([key])
+            self.do_not_print.update(metrics.keys())
+        metrics.update({"__timestamp": timestamp})
+        cache.update(metrics)
+        if flush:
+            self.flush_metrics(cache=cache)
 
-        if step is None and self.step is None and key in self.data:
-            self.flush()
+    def log_key_value(self, key: str, value: Any, silent=False, cache=None) -> None:
+        cache = cache or self.key_value_cache
+        timestamp = np.datetime64(datetime.now())
+        if silent:
+            self.do_not_print.add(key)
+        cache.update({key: value, "__timestamp": timestamp})
 
-        if key in self.data:
-            if type(self.data) is list:
-                self.data[key].append(value.value if type(value) is Color else value)
-            else:
-                self.data[key] = [self.data[key]] + [value.value if type(value) is Color else value]
-        else:
-            self.data[key] = value.value if type(value) is Color else value
+    def store_metrics(self, metrics=None, silent=None, cache: SummaryCache = None, **key_values):
+        """
+        Store the metric data (with the default summary cache) for making the summary later.
+        This allows the logging/saving of training metrics asynchronously from the logging.
 
-    def log(self, *dicts, step: Union[int, Color] = None, silent=False, **kwargs) -> None:
+        :param * metrics: a mapping of metrics. Will be destructured and appended
+                               to the data store one key/value at a time,
+        :param silent: bool flag for silencing the keys stored in this call.
+        :param cache:
+        :param ** key_values: key/value arguments, each being a metric key / metric value pair.
+        :return: None
+        """
+        cache = cache or self.summary_cache
+        if metrics:
+            key_values.update(metrics)
+        if silent:
+            self.do_not_print.update(key_values.keys())
+        cache.store(metrics, **key_values)
+
+    def peek_stored_metrics(self, *keys, len=5, print_only=True):
+        _ = self.summary_cache.peek(*keys, len=len)
+        output = self.print_helper.format_row_table(_, do_not_print_list=self.do_not_print)
+        (print if print_only else self.log_line)(output)
+
+    def log_metrics_summary(self, key_values: dict = None, cache: SummaryCache = None, key_modes: dict = None,
+                            silent=False, flush: bool = True, **_key_modes) -> None:
+        """
+        logs the statistical properties of the stored metrics, and clears the `summary_cache` if under `tiled` mode,
+        and keeps the data otherwise (under `rolling` mode).
+
+        :param key_values: extra key (and values) to log together with summary such as `timestep`, `epoch`, etc.
+        :param cache: (dict) An optional cache object from which the summary is made.
+        :param key_modes: (dict) a dictionary for the key and the statistic modes to be returned.
+        :param flush: (bool) flush the key_value cache if trueful.
+        :param _key_modes: (**) key value pairs, as a short hand for the key_modes dictionary.
+        :return: None
+        """
+        cache = cache or self.summary_cache
+        summary = cache.summarize(key_modes=key_modes, **_key_modes)
+        if key_values:
+            summary.update(key_values)
+        self.log_metrics(metrics=summary, silent=silent, flush=flush)
+
+    def log(self, *args, metrics=None, silent=False, sep=" ", end="\n", flush=None,
+            **_key_values) -> None:
         """
         log dictionaries of data, key=value pairs at step == step.
 
-        :param step: the global step, be it the global timesteps or the epoch step
-        :param dicts: a dictionary or a list of dictionaries of key/value pairs, allowing more flexible key name with '/' etc.
-        :param silent: Bool, log but do not print. To keep the standard out silent.
-        :param kwargs: key/value arguments.
+        logs *argss as line and kwargs as key / value pairs
+
+        :param args: (str) strings or objects to be printed.
+        :param metrics: (dict) a dictionary of key/value pairs to be saved in the key_value_cache
+        :param sep: (str) separator between the strings in *args
+        :param end: (str) string to use for the end of line. Default to "\n"
+        :param silent: (boolean) whether to also print to stdout or just log to file
+        :param flush: (boolean) whether to flush the text logs
+        :param kwargs: key/value arguments
         :return:
         """
-        if self.step != step and step is not None:
+        if args:  # do NOT print the '\n' if args is empty in call. Different from the signature of the print function.
+            self.log_line(*args, sep=sep, end=end, flush=False)
+        if metrics:
+            _key_values.update(metrics)
+        self.log_metrics(metrics=_key_values, silent=silent)
+        if flush:
             self.flush()
-            self.step = step
 
-        self.timestamp = np.datetime64(datetime.now())
+    metric_filename = "metrics.pkl"
+    log_filename = "outputs.log"
 
-        data_dict = {}
-        for d in dicts:
-            data_dict.update(d)
-        data_dict.update(kwargs)
+    def flush_metrics(self, cache=None, filename=None):
+        key_values = (cache or self.key_value_cache).pop_all()
+        filename = filename or self.metric_filename
+        output = self.print_helper.format_tabular(key_values, self.do_not_print)
+        self.log_text(output, silent=False)  # not buffered
+        self.logger.log(key=os.path.join(self.prefix, filename), data=key_values)
+        self.do_not_print.reset()
 
-        if silent:
-            self.do_not_print_list.update(data_dict.keys())
+    def flush(self):
+        self.flush_metrics()
+        self.flush_print_buffer()
 
-        # todo: add logging hook
-        for key, v in data_dict.items():
-            if key in self.data:
-                if type(self.data) is list:
-                    self.data[key].append(_v)
-                else:
-                    self.data[key] = [self.data[key], v.value if type(v) is Color else v]
-            else:
-                self.data[key] = v.value if type(v) is Color else v
+    def upload_file(self, file_path: str = None, target_folder: str = "files") -> None:
+        """
+        uploads a file (through a binary byte string) to a target_folder. Default
+        target is "files"
 
-    @staticmethod
-    def _tabular(data, fmt=".3f", do_not_print_list=tuple(), min_key_width=20, min_value_width=20):
-        keys = [k for k in data.keys() if k not in do_not_print_list]
-        if len(keys) > 0:
-            max_key_len = max([min_key_width] + [len(k) for k in keys])
-            max_value_len = max([min_value_width] + [len(str(data[k])) for k in keys])
-            output = None
-            for k in keys:
-                v = f"{data[k]:{fmt}}"
-                if output is None:
-                    output = "╒" + "═" * max_key_len + "╤" + "═" * max_value_len + "╕\n"
-                else:
-                    output += "├" + "─" * max_key_len + "┼" + "─" * max_value_len + "┤\n"
-                if k not in do_not_print_list:
-                    k = k.replace('_', " ")
-                    v = "NA" if v is None else v  # for NoneTypes which doesn't have __format__ method
-                    output += f"│{k:^{max_key_len}}│{v:^{max_value_len}}│\n"
-            output += "╘" + "═" * max_key_len + "╧" + "═" * max_value_len + "╛\n"
-            return output
-
-    @staticmethod
-    def _row_table(data, fmt=".3f", do_not_print_list=tuple(), min_column_width=5):
-        """applies to metrics keys with multiple values"""
-        keys = [k for k in data.keys() if k not in do_not_print_list]
-        output = ""
-        if len(keys) > 0:
-            values = [values if type(values) is list else [values] for values in data.values()]
-            max_key_width = max([min_column_width] + [len(k) for k in keys])
-            max_value_len = max([min_column_width] + [len(f"{v:{fmt}}") for d in values for v in d])
-            max_width = max(max_key_width, max_value_len)
-            output += '|'.join([f"{key.replace('-', ' '):^{max_width}}" for key in keys]) + "\n"
-            output += "┼".join(["─" * max_width] * len(keys)) + "\n"
-            for row in zip_longest(*values):
-                output += '|'.join([f"{value:^{max_width}{fmt}}" for value in row]) + "\n"
-            return output
-
-    def flush(self, file_name="metrics.pkl", fmt=".3f"):
-        if self.data:
-            try:
-                output = self._tabular(self.data, fmt, self.do_not_print_list)
-            except Exception as e:
-                output = self._row_table(self.data, fmt, self.do_not_print_list)
-            self.print(output)
-            self.logger.log(key=os.path.join(self.prefix or "", file_name or "metrics.pkl"),
-                            data=dict(_step=self.step, _timestamp=str(self.timestamp), **self.data))
-            self.data.clear()
-            self.do_not_print_list.clear()
-
-        self.print_flush()
-
-    def log_file(self, file_path, namespace='files', silent=True):
-        # todo: make it possible to log multiple files
-        # todo: log dir
+        :param file_path: the path to the file to be uploaded
+        :param target_folder: the target folder for the file, preserving the filename of the file.
+        :return: None
+        """
         from pathlib import Path
-        content = Path(file_path).read_text()
+        bytes = Path(file_path).read_bytes()
         basename = os.path.basename(file_path)
-        self.log_text(content, filename=os.path.join(namespace, basename), silent=silent)
+        self.logger.log_buffer(key=os.path.join(target_folder, basename), buf=bytes)
 
-    def log_dir(self, dir_path, namespace='', excludes=tuple(), silent=True):
-        """log a directory"""
+    def upload_dir(self, dir_path, target_folder='', excludes=tuple(), gzip=True, unzip=False):
+        """log a directory, or upload an entire directory."""
 
     def log_images(self, key, stack, ncol=5, nrows=2, namespace="image", fstring="{:04d}.png"):
-        """note: might makesense to push the operation to the server instead.
+        """note: might make sense to push the operation to the server instead.
         logs a stack of images from a tensor object. Could also be part of the server code.
 
         update: client-side makes more sense, less data to send.
         """
         pass
 
-    def log_image(self, image, key, namespace="images", format="png"):
+    def log_image(self, image, key):
         """
         DONE: IMPROVE API. I'm not a big fan of this particular api.
         Logs an image via the summary writer.
@@ -486,29 +420,21 @@ class ML_Logger:
         for the file name (key). as a result, we generate the numerated filename for the user.
 
         value: numpy object Size(w, h, 3)
-
         """
-        if format:
-            key += "." + format
-
-        filename = os.path.join(self.prefix or "", namespace, key)
+        filename = os.path.join(self.prefix, key)
         self.logger.send_image(key=filename, data=image)
 
-    def log_video(self, frame_stack, key, namespace='videos', format=None, fps=20, macro_block_size=None,
-                  **imageio_kwargs):
+    def log_video(self, frame_stack, key, format=None, fps=20, **imageio_kwargs):
         """
         Let's do the compression here. Video frames are first written to a temporary file
         and the file containing the compressed data is sent over as a file buffer.
-        
+
         Save a stack of images to
 
-        :param frame_stack:
-        :param key:
-        :param namespace:
-        :param fmt:
-        :param ext:
-        :param step:
-        :param imageio_kwargs:
+        :param frame_stack: the stack of video frames
+        :param key: the file key to which the video is logged.
+        :param format: Supports 'mp4', 'gif', 'apng' etc.
+        :param imageio_kwargs: (map) optional keyword arguments for `imageio.mimsave`.
         :return:
         """
         if format:
@@ -524,7 +450,7 @@ class ML_Logger:
                 format = "mp4"
                 key += "." + format
 
-        filename = os.path.join(self.prefix or "", namespace, key)
+        filename = os.path.join(self.prefix, key)
 
         import tempfile, imageio
         with tempfile.NamedTemporaryFile(suffix=f'.{format}') as ntp:
@@ -536,29 +462,28 @@ class ML_Logger:
             ntp.seek(0)
             self.logger.log_buffer(key=filename, buf=ntp.read())
 
-    def log_pyplot(self, key="plot", fig=None, format=None, namespace="plots", **kwargs):
+    def log_pyplot(self, path="plot.png", fig=None, format=None, **kwargs):
         """
-        does not handle pdf and svg file formats. A big annoying.
+        Now also handles pdf and svg file formats!
 
         ref: see this link https://stackoverflow.com/a/8598881/1560241
 
-        :param key:
+        :param path:
         :param fig:
-        :param namespace:
-        :param fmt:
-        :param step:
+        :param format:
+        :param kwargs:
         :return:
         """
         # can not simplify the logic, because we can't pass the filename to pyplot. A buffer is passed in instead.
         if format:  # so allow key with dots in it: metric_plot.text.plot + ".png". Because user intention is clear
-            key += "." + format
+            path += "." + format
         else:
-            _, format = os.path.splitext(key)
+            _, format = os.path.splitext(path)
             if format:
                 format = format[1:]  # to get rid of the "." at the begining of '.svg'.
             else:
                 format = "png"
-                key += "." + format
+                path += "." + format
 
         if fig is None:
             from matplotlib import pyplot as plt
@@ -568,51 +493,35 @@ class ML_Logger:
         fig.savefig(buf, format=format, **kwargs)
         buf.seek(0)
 
-        path = os.path.join(self.prefix or "", namespace, key)
+        path = os.path.join(self.prefix, path)
         self.logger.log_buffer(path, buf.read())
-        return key
+        return path
 
     def savefig(self, key, fig=None, format=None, **kwargs):
-        """
-        This one overrides the namespace default of log_pyplot.
-        This way, the key behave exactly the same way pyplot.savefig behaves.
+        """ This method emulates `matplotlib.pyplot.savefig` method. Requires key string for the file name. """
+        self.log_pyplot(path=key, fig=fig, format=format, **kwargs)
 
-        default plotting file name is plot.png under the current directory
-
-
-        """
-        self.log_pyplot(key=key, fig=fig, format=format, namespace="", **kwargs)
-
-    def log_module(self, namespace="modules", fmt="04d", step=None, **kwargs):
+    def save_module(self, module, path="weights.pkl"):
         """
         log torch module
 
         todo: log tensorflow modules.
 
-        :param fmt: 03d, 0.2f etc. The formatting string for the step key.
-        :param step:
-        :param namespace:
-        :param kwargs:
+        :param module: the PyTorch module to be saved.
+        :param path: filename to which we save the module.
         :return:
         """
-        if self.step != step and step is not None:
-            self.flush()
-            self.step = step
+        # todo: this is torch-specific code. figure out a better way.
+        ps = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
+        self.log_data(path=path, data=ps, overwrite=True)
 
-        for var_name, module in kwargs.items():
-            # todo: this is torch-specific code. figure out a better way.
-            ps = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
-            # we use the number first file names to help organize modules by epoch.
-            path = os.path.join(namespace, f'{var_name}.pkl' if self.step is None else f'{step:{fmt}}_{var_name}.pkl')
-            self.log_data(path=path, data=ps)
-
-    def save_variables(self, variables, path="variables.pkl", namespace="checkpoints", keys=None):
+    def save_variables(self, variables, path="variables.pkl", keys=None):
         """
         save tensorflow variables in a dictionary
 
         :param variables: A Tuple (Array) of TensorFlow Variables.
         :param path: default: 'variables.pkl', filepath to the pkl file, with which we save the variable values.
-        :param namespace: A folder name for the saved variable. Default to `checkpoints` to keep things organized.
+        :param namespace: A folder name for the saved variable. Default to `./checkpoints` to keep things organized.
         :param keys: None or Array(size=len(variables)). When is an array the length has to be the same as that of
         the list of variables. This parameter allows you to overwrite the key we use to save the variables.
 
@@ -628,7 +537,7 @@ class ML_Logger:
         sess = tf.get_default_session()
         vals = sess.run(variables)
         weight_dict = {k.split(":")[0]: v for k, v in zip(keys, vals)}
-        logger.log_data(weight_dict, os.path.join(namespace, path))
+        logger.log_data(weight_dict, path, overwrite=True)
 
     def load_variables(self, path, variables=None):
         """
@@ -713,31 +622,44 @@ class ML_Logger:
     def log_json(self):
         raise NotImplementedError
 
-    def print(self, *args, sep=' ', end='\n', silent=False, flush=False):
+    def log_line(self, *args, sep=' ', end='\n', flush=True, file=None):
+        """
+        this is similar to the print function. It logs *args with a default EOL postfix in the end.
+
+        :param args:
+        :param sep:
+        :param end:
+        :param flush:
+        :param file:
+        :return:
+        """
         text = sep.join([str(a) for a in args]) + end
-        try:
-            self.print_buffer += text
-        except:
-            self.print_buffer = text
-        if not silent:
-            print(*args, sep=sep, end=end)
-        if flush or len(self.print_buffer) > self.print_buffer_size:
-            self.print_flush()
+        self.print_buffer += text
+        if flush or file or len(self.print_buffer) > self.print_buffer_size:
+            self.flush_print_buffer(file=file)
 
-    def print_flush(self):
-        try:
-            text = self.print_buffer
-        except:
-            text = ""
+    def flush_print_buffer(self, file=None):
+        if self.print_buffer:
+            self.log_text(self.print_buffer, filename=file, silent=False)
         self.print_buffer = ""
-        if text:
-            self.log_text(text, silent=True)
 
-    def log_text(self, text, filename="text.log", silent=False):
-        # todo: consider adding step to this
-        if not silent:
-            print(text)
-        self.logger.log_text(key=os.path.join(self.prefix or "", filename), text=text)
+    def log_text(self, text: str = None, filename=None, silent=True):
+        """
+        logging and printing a string object.
+
+        This does not log to the buffer. It calls the low-level log_text method right away
+        without buffering.
+
+        :param text:
+        :param filename:
+        :param silent:
+        :return:
+        """
+        filename = filename or self.log_filename
+        if text is not None:
+            self.logger.log_text(key=os.path.join(self.prefix, filename), text=text)
+            if not silent:
+                print(text, end="")
 
 
 logger = ML_Logger()

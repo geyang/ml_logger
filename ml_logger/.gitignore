@@ -1,0 +1,8 @@
+.pytest_cache/
+**/*.whl
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
