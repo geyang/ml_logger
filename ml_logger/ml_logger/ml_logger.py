@@ -95,34 +95,20 @@ class ML_Logger:
                 run_info = dict(dashboard=ML_DASH.format(host=host, prefix=self.prefix))
                 self.log_params(run=run_info)
 
-            # self.log_caller()
+            # self.log_caller() # we changed it so that log_caller(fn) takes in a caller function
             # self.log_revision()
 
     configure = __init__
 
-    def log_caller(self, context=5):
+    def log_caller(self, fn):
         """
         logs information of the caller's stack (module, filename etc)
         :return:
         """
-        import inspect
-        caller_info = None
-        for frame, filename, lineno, func_name, code_context, index in inspect.stack(context=context):
-            module = inspect.getmodule(frame)
-            if module.__name__ != "ml_logger.ml_logger":
-                outer_frame, *_ = inspect.getouterframes(frame, 1)[0]
-                if not caller_info:
-                    caller_info = dict(name=func_name, context="".join(code_context), filename=filename, line=lineno)
-                else:
-                    try:
-                        from textwrap import dedent
-                        caller = frame.f_locals[caller_info['name']]
-                        caller_info['doc'] = dedent(caller.__doc__)
-                        break
-                    except Exception as e:
-                        self.log_line(e)
-
-        self.log_params(caller_info=caller_info)
+        from inspect import getmembers
+        _ = dict(getmembers(fn))
+        info = dict(name=_['__name__'], doc=['__doc__'], module=_['__module__'], file=_['__globals__']['__file__'])
+        self.log_params(fn=info)
 
     def log_revision(self, silent_diff=True):
         rev = dict(hash=logger.__head__, branch=logger.__current_branch__)
@@ -137,7 +123,7 @@ class ML_Logger:
 
         :return: float (seconds/miliseconds)
         """
-        new_tic = self.now
+        new_tic = self.now()
         try:
             dt = new_tic - self._tic
             self._tic = new_tic
@@ -146,11 +132,30 @@ class ML_Logger:
             self._tic = new_tic
             return None
 
-    @property
     def now(self, fmt=None):
+        """
+        This is not idempotent--each call returns a new value. So it has to be a method
+
+        returns a datetime object if no format string is specified.
+        Otherwise returns a formated string.
+
+        Each call returns the current time.
+
+        :param fmt: formating string, i.e. "%Y-%m-%d-%H-%M-%S-%f"
+        :return: OneOf[datetime, string]
+        """
         from datetime import datetime
         now = datetime.now()
         return now.strftime(fmt) if fmt else now
+
+    def stem(self, path):
+        """
+        returns the stem of the filename in the path.
+
+        :param path: "learning-to-learn/experiments/run.py"
+        :return: "run"
+        """
+        return os.path.splitext(os.path.basename(path))[0]
 
     def diff(self, diff_directory=".", diff_filename="index.diff", silent=False):
         """
@@ -326,7 +331,7 @@ class ML_Logger:
         :return:
         """
         cache = cache or self.key_value_cache
-        timestamp = np.datetime64(datetime.now())
+        timestamp = np.datetime64(self.now())
         metrics = metrics.copy() if metrics else {}
         if _key_values:
             metrics.update(_key_values)
@@ -339,7 +344,7 @@ class ML_Logger:
 
     def log_key_value(self, key: str, value: Any, silent=False, cache=None) -> None:
         cache = cache or self.key_value_cache
-        timestamp = np.datetime64(datetime.now())
+        timestamp = np.datetime64(self.now())
         if silent:
             self.do_not_print.add(key)
         cache.update({key: value, "__timestamp": timestamp})
