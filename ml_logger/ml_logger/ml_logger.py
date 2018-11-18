@@ -42,11 +42,94 @@ def metrify(data):
         return str(data)
 
 
+ML_DASH = "http://{host}:3000/experiments/ins-runs/{prefix}"
+
+
 # noinspection PyPep8Naming
 class ML_Logger:
     logger = None
     log_directory = None
 
+    prefix = ""
+    print_buffer = ""  # is okay b/c strings are immutable in python
+
+    # noinspection PyInitNewSignature
+    def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=5,
+                 summary_cache_opts: dict = None):
+        """ Configuration function for the logger.
+
+        | `log_directory` is overloaded to use either
+        | 1. file://some_abs_dir
+        | 2. http://19.2.34.3:8081
+        | 3. /tmp/some_dir
+        |
+        | `prefix` is the log directory relative to the root folder. Absolute path are resolved against the root.
+        | 1. prefix="causal_infogan" => logs to "/tmp/some_dir/causal_infogan"
+        | 2. prefix="" => logs to "/tmp/some_dir"
+
+        :param log_directory: the server host and port number
+        :param prefix: the prefix path
+        :param buffer_size: The string buffer size for the print buffer.
+        :param max_workers: the number of request-session workers for the async http requests.
+        """
+        # self.summary_writer = tf.summary.FileWriter(log_directory)
+        self.step = None
+        self.duplex = None
+        self.timestamp = None
+        self.print_buffer_size = buffer_size
+        self.key_value_cache = KeyValueCache()
+        self.summary_cache = SummaryCache(**(summary_cache_opts or {}))
+        self.do_not_print = DefaultSet("__timestamp")
+        if prefix is not None:
+            assert not os.path.isabs(prefix), "prefix can not start with `/` because it is relative to `log_directory`."
+            self.prefix = prefix
+
+        self.print_helper = PrintHelper()
+        # todo: add https support
+        if log_directory:
+            self.logger = LogClient(url=log_directory, max_workers=max_workers)
+            self.log_directory = log_directory
+            # register experiment
+            if log_directory.startswith("http://"):
+                host, port = log_directory[7:].split(":")
+                run_info = dict(dashboard=ML_DASH.format(host=host, prefix=self.prefix))
+                self.log_params(run=run_info)
+
+            # self.log_caller()
+            # self.log_revision()
+
+    configure = __init__
+
+    def log_caller(self, context=5):
+        """
+        logs information of the caller's stack (module, filename etc)
+        :return:
+        """
+        import inspect
+        caller_info = None
+        for frame, filename, lineno, func_name, code_context, index in inspect.stack(context=context):
+            module = inspect.getmodule(frame)
+            if module.__name__ != "ml_logger.ml_logger":
+                outer_frame, *_ = inspect.getouterframes(frame, 1)[0]
+                if not caller_info:
+                    caller_info = dict(name=func_name, context="".join(code_context), filename=filename, line=lineno)
+                else:
+                    try:
+                        from textwrap import dedent
+                        caller = frame.f_locals[caller_info['name']]
+                        caller_info['doc'] = dedent(caller.__doc__)
+                        break
+                    except Exception as e:
+                        self.log_line(e)
+
+        self.log_params(caller_info=caller_info)
+
+    def log_revision(self, silent_diff=True):
+        rev = dict(hash=logger.__head__, branch=logger.__current_branch__)
+        self.log_params(revision=rev)
+        self.diff(silent=silent_diff)
+
+    # timing functions
     def split(self):
         """
         returns a datetime object. You can get integer seconds and miliseconds (both int) from it.
@@ -143,48 +226,6 @@ class ML_Logger:
             self.log_line(f"can not get obtain hostname via `{cmd}` due to exception: {e}")
             return None
 
-    prefix = ""
-    print_buffer = ""  # is okay b/c strings are immutable in python
-
-    # noinspection PyInitNewSignature
-    def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=5,
-                 summary_cache_opts: dict = None):
-        """ Configuration function for the logger.
-
-        | `log_directory` is overloaded to use either
-        | 1. file://some_abs_dir
-        | 2. http://19.2.34.3:8081
-        | 3. /tmp/some_dir
-        |
-        | `prefix` is the log directory relative to the root folder. Absolute path are resolved against the root.
-        | 1. prefix="causal_infogan" => logs to "/tmp/some_dir/causal_infogan"
-        | 2. prefix="" => logs to "/tmp/some_dir"
-
-        :param log_directory: the server host and port number
-        :param prefix: the prefix path
-        :param buffer_size: The string buffer size for the print buffer.
-        :param max_workers: the number of request-session workers for the async http requests.
-        """
-        # self.summary_writer = tf.summary.FileWriter(log_directory)
-        self.step = None
-        self.duplex = None
-        self.timestamp = None
-        self.print_buffer_size = buffer_size
-        self.key_value_cache = KeyValueCache()
-        self.summary_cache = SummaryCache(**(summary_cache_opts or {}))
-        self.do_not_print = DefaultSet("__timestamp")
-        if prefix is not None:
-            assert not os.path.isabs(prefix), "prefix can not start with `/` because it is relative to `log_directory`."
-            self.prefix = prefix
-
-        self.print_helper = PrintHelper()
-        # todo: add https support
-        if log_directory:
-            self.logger = LogClient(url=log_directory, max_workers=max_workers)
-            self.log_directory = log_directory
-
-    configure = __init__
-
     def ping(self, status='running', interval=None):
         """
         pings the instrumentation server to stay alive. Gets a control signal in return.
@@ -229,7 +270,7 @@ class ML_Logger:
 
     def log_params(self, path="parameters.pkl", **kwargs):
         from termcolor import colored as c
-        key_width = 30
+        key_width = 20
         value_width = 20
 
         _kwargs = {}
@@ -250,11 +291,12 @@ class ML_Logger:
                 _kwargs[title] = _param_dict
 
         if "n" in locals():
-            table.append('═' * (key_width) + ('═' if n == 0 else '╧') + '═' * (value_width))
+            table.append('═' * key_width + '╧' + '═' * value_width)
 
         # todo: add logging hook
         # todo: add yml support
-        self.log_line('\n'.join(table))
+        if table:
+            self.log_line(*table, sep="\n")
         self.log_data(path=path, data=_kwargs)
 
     def log_data(self, data, path=None, overwrite=False):
