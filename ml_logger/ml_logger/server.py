@@ -111,15 +111,39 @@ class LoggingServer:
         return sanic.response.text('ok')
 
     def load(self, key, dtype):
+        """
+        when key starts with a single slash as in "/debug/some-run", the leading slash is removed
+        and the remaining path is pathJoin'ed with the data_dir of the server.
+
+        So if you want to access absolute path of the filesystem that the logging server is in,
+        you should append two leadning slashes. This way, when the leanding slash is removed,
+        the remaining path is still an absolute value and joining with the data_dir would post
+        no effect.
+
+        "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
+
+        Modes:
+            "read": returns the binary string.
+            "read_text": returns the file's content as plain-text
+            "read_pkl": reads the content of a pickle file
+            "read_np": reads the content of numpy file.
+
+        Note: We might want to do the hydration of the pickle and numpy files on the client-side.
+        This way we only send the serilized data over-the-wire.
+
+        :param key: a path string
+        :param dtype: (str), one of "read", "read_text", "read_pickle", "read_np"
+        :return: None, or a tuple of each one of the data chunck logged into the file.
+        """
+        key = key[1:] if key.startswith("/") else key
+        abs_path = os.path.join(self.data_dir, key)
         if dtype == 'read':
-            abs_path = os.path.join(self.data_dir, key)
             try:
                 with open(abs_path, 'rb') as f:
                     return f.decode('utf-8')
             except FileNotFoundError as e:
                 return None
         elif dtype == 'read_text':
-            abs_path = os.path.join(self.data_dir, key)
             try:
                 with open(abs_path, 'r') as f:
                     return f.decode('utf-8')
@@ -127,14 +151,12 @@ class LoggingServer:
                 return None
         elif dtype == 'read_pkl':
             from .helpers import load_from_pickle
-            abs_path = os.path.join(self.data_dir, key)
             try:
                 return list(load_from_pickle(abs_path))
             except FileNotFoundError as e:
                 return None
         elif dtype == 'read_np':
             import numpy
-            abs_path = os.path.join(self.data_dir, key)
             try:
                 return numpy.load(abs_path)
             except FileNotFoundError as e:

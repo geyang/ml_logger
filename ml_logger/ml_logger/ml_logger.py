@@ -55,7 +55,7 @@ class ML_Logger:
 
     # noinspection PyInitNewSignature
     def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=5,
-                 summary_cache_opts: dict = None):
+                 summary_cache_opts: dict = None, register_experiment=True):
         """ Configuration function for the logger.
 
         | `log_directory` is overloaded to use either
@@ -89,9 +89,12 @@ class ML_Logger:
         if log_directory:
             self.logger = LogClient(url=log_directory, max_workers=max_workers)
             self.log_directory = log_directory
-            # register experiment
-            if log_directory.startswith("http://"):
-                host, port = log_directory[7:].split(":")
+            # now register the experiment
+            if register_experiment:
+                if log_directory.startswith("http://"):
+                    host, port = log_directory[7:].split(":")
+                else:
+                    host = "localhost"
                 run_info = dict(dashboard=ML_DASH.format(host=host, prefix=self.prefix))
                 self.log_params(run=run_info)
 
@@ -103,11 +106,19 @@ class ML_Logger:
     def log_caller(self, fn):
         """
         logs information of the caller's stack (module, filename etc)
+
+            info = dict(
+                        name=_['__name__'],
+                        doc=_['__doc__'],
+                        module=_['__module__'],
+                        file=_['__globals__']['__file__']
+                        )
+
         :return:
         """
         from inspect import getmembers
         _ = dict(getmembers(fn))
-        info = dict(name=_['__name__'], doc=['__doc__'], module=_['__module__'], file=_['__globals__']['__file__'])
+        info = dict(name=_['__name__'], doc=_['__doc__'], module=_['__module__'], file=_['__globals__']['__file__'])
         self.log_params(fn=info)
 
     def log_revision(self, silent_diff=True):
@@ -623,8 +634,18 @@ class ML_Logger:
     def load_file(self, key):
         """ return the binary stream, most versatile.
 
-        :param key:
-        :return:
+        when key starts with a single slash as in "/debug/some-run", the leading slash is removed
+        and the remaining path is pathJoin'ed with the data_dir of the server.
+
+        So if you want to access absolute path of the filesystem that the logging server is in,
+        you should append two leadning slashes. This way, when the leanding slash is removed,
+        the remaining path is still an absolute value and joining with the data_dir would post
+        no effect.
+
+        "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
+
+        :param key: a path string
+        :return: a tuple of each one of the data chunck logged into the file.
         """
         return self.logger.read(os.path.join(self.prefix, key))
 
@@ -632,16 +653,36 @@ class ML_Logger:
         """
         load a pkl file (as a tuple)
 
-        :param key:
-        :return:
+        when key starts with a single slash as in "/debug/some-run", the leading slash is removed
+        and the remaining path is pathJoin'ed with the data_dir of the server.
+
+        So if you want to access absolute path of the filesystem that the logging server is in,
+        you should append two leadning slashes. This way, when the leanding slash is removed,
+        the remaining path is still an absolute value and joining with the data_dir would post
+        no effect.
+
+        "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
+
+        :param key: a path string
+        :return: a tuple of each one of the data chunck logged into the file.
         """
         return self.logger.read_pkl(os.path.join(self.prefix, key))
 
     def load_np(self, key):
         """ load a np file
 
-        :param key:
-        :return:
+        when key starts with a single slash as in "/debug/some-run", the leading slash is removed
+        and the remaining path is pathJoin'ed with the data_dir of the server.
+
+        So if you want to access absolute path of the filesystem that the logging server is in,
+        you should append two leadning slashes. This way, when the leanding slash is removed,
+        the remaining path is still an absolute value and joining with the data_dir would post
+        no effect.
+
+        "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
+
+        :param key: a path string
+        :return: a tuple of each one of the data chunck logged into the file.
         """
         return self.logger.read_np(os.path.join(self.prefix, key))
 
