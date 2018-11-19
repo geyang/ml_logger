@@ -263,7 +263,8 @@ class LoggingServer:
 class Params:
     data_dir = Proto("/tmp/logging-server", help="The directory for saving the logs")
     port = Proto(8081, help="port for the logging server")
-    host = Proto("0.0.0.0", help="IP address for running the server")
+    host = Proto("127.0.0.1", help="IP address for running the server. Default only allows localhost from making "
+                                   "requests. If you want to allow all ip, set this to '0.0.0.0'.")
     debug = BoolFlag(False, help='boolean flag for printing out debug traces')
 
 

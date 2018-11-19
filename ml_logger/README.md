@@ -58,9 +58,21 @@ for i in range(1):
 
 **Skip this if you just want to log locally.** When training in parallel, you want to kickstart an logging server (Instrument Server). To do so, run:
 ```bash
-python -m ml_logger.server
+python -m ml_logger.server --log-dir /home/yourname/runs --host 0.0.0.0 --port 8081
 ```
-Use ssh tunnel if you are running on a managed cluster (with SLURM for instance).
+Use ssh tunnel if you are running on a managed cluster.
+
+### Allowing Non-local Requests
+
+The default `host` is set to `127.0.0.1`. This would prevent external requests from being accepted. To allow requests from a non-localhost client, set `host` to `0.0.0.0`. 
+
+### Full Readme on the Server
+
+`ml-logger` uses `params-proto` to declaratively define the cli interface. To view the help document, you can simply type
+
+```bash
+python -m ml_logger.server --help
+```
 
 ### Asynchronously log the summary of LOTs of training metrics
 
