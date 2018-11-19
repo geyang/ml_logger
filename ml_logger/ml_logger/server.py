@@ -49,14 +49,14 @@ class LoggingServer:
 
     configure = __init__
 
-    def serve(self, port):
+    def serve(self, host, port):
         self.app = sanic.Sanic()
         self.app.add_route(self.log_handler, '/', methods=['POST'])
         self.app.add_route(self.read_handler, '/', methods=['GET'])
         self.app.add_route(self.ping_handler, '/ping', methods=['POST'])
         self.app.add_route(self.remove_handler, '/', methods=['DELETE'])
         # todo: need a file serving url
-        self.app.run(port=port, debug=Params.debug)
+        self.app.run(host=host, port=port, debug=Params.debug)
 
     def ping_handler(self, req):
         if not req.json:
@@ -263,6 +263,7 @@ class LoggingServer:
 class Params:
     data_dir = Proto("/tmp/logging-server", help="The directory for saving the logs")
     port = Proto(8081, help="port for the logging server")
+    host = Proto("0.0.0.0", help="IP address for running the server")
     debug = BoolFlag(False, help='boolean flag for printing out debug traces')
 
 
@@ -272,4 +273,4 @@ if __name__ == '__main__':
     v = pkg_resources.get_distribution("ml_logger").version
     print('running ml_logger.server version {}'.format(v))
     server = LoggingServer(data_dir=Params.data_dir)
-    server.serve(port=Params.port)
+    server.serve(host=Params.host, port=Params.port)
