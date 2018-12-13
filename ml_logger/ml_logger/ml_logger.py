@@ -53,6 +53,8 @@ class ML_Logger:
     prefix = ""
     print_buffer = ""  # is okay b/c strings are immutable in python
 
+    summary_cache: SummaryCache
+
     # noinspection PyInitNewSignature
     def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=5,
                  summary_cache_opts: dict = None, register_experiment=True):
@@ -86,45 +88,46 @@ class ML_Logger:
 
         self.print_helper = PrintHelper()
         # todo: add https support
-        if log_directory:
-            self.logger = LogClient(url=log_directory, max_workers=max_workers)
-            self.log_directory = log_directory
-            # now register the experiment
-            if register_experiment:
-                if log_directory.startswith("http://"):
-                    host, port = log_directory[7:].split(":")
-                else:
-                    host = "localhost"
-                run_info = dict(dashboard=ML_DASH.format(host=host, prefix=self.prefix))
-                self.log_params(run=run_info)
+        log_directory = log_directory or os.getcwd()
+        self.logger = LogClient(url=log_directory, max_workers=max_workers)
+        self.log_directory = log_directory
+        # now register the experiment
+        if register_experiment:
+            self.log_params(run=self.run_info())
 
-            # self.log_caller() # we changed it so that log_caller(fn) takes in a caller function
-            # self.log_revision()
+        # self.log_caller() # we changed it so that log_caller(fn) takes in a caller function
+        # self.log_revision()
 
     configure = __init__
 
-    def log_caller(self, fn):
+    def run_info(self):
+        if self.log_directory.startswith("http://"):
+            host, port = self.log_directory[7:].split(":")
+            run_info = dict(dashboard=ML_DASH.format(host=host, prefix=self.prefix))
+        else:
+            run_info = dict(log_directory=self.log_directory)
+        return run_info
+
+    @staticmethod
+    def fn_info(fn):
         """
         logs information of the caller's stack (module, filename etc)
 
-            info = dict(
-                        name=_['__name__'],
-                        doc=_['__doc__'],
-                        module=_['__module__'],
-                        file=_['__globals__']['__file__']
-                        )
-
-        :return:
+        :param fn:
+        :return: info = dict(
+                            name=_['__name__'],
+                            doc=_['__doc__'],
+                            module=_['__module__'],
+                            file=_['__globals__']['__file__']
+                            )
         """
         from inspect import getmembers
         _ = dict(getmembers(fn))
         info = dict(name=_['__name__'], doc=_['__doc__'], module=_['__module__'], file=_['__globals__']['__file__'])
-        self.log_params(fn=info)
+        return info
 
-    def log_revision(self, silent_diff=True):
-        rev = dict(hash=logger.__head__, branch=logger.__current_branch__)
-        self.log_params(revision=rev)
-        self.diff(silent=silent_diff)
+    def rev_info(self):
+        return dict(hash=self.__head__, branch=self.__current_branch__)
 
     # timing functions
     def split(self):
@@ -229,7 +232,7 @@ class ML_Logger:
             return None
 
     def diff_file(self, path, silent=False):
-        raise NotImplemented
+        raise NotImplementedError
 
     @property
     def hostname(self):
@@ -285,6 +288,29 @@ class ML_Logger:
         self.logger._delete(abs_path)
 
     def log_params(self, path="parameters.pkl", **kwargs):
+        """
+        Log namespaced parameters in a list.
+
+        Examples:
+        
+            ::
+                logger.log_params(some_namespace=dict(layer=10, learning_rate=0.0001))
+            
+            generates a table that looks like:
+
+            ::
+                ══════════════════════════════════════════
+                   some_namespace
+                ────────────────────┬─────────────────────
+                       layer        │ 10
+                   learning_rate    │ 0.0001
+                ════════════════════╧═════════════════════
+
+        :param path: the file to which we save these parameters
+        :param kwargs: list of key/value pairs, each key representing the name of the namespace,
+                       and the namespace itself.
+        :return: None
+        """
         from termcolor import colored as c
         key_width = 20
         value_width = 20
@@ -292,9 +318,9 @@ class ML_Logger:
         _kwargs = {}
         table = []
         for n, (title, section_data) in enumerate(kwargs.items()):
-            table.append('═' * (key_width) + ('═' if n == 0 else '╧') + '═' * (value_width))
+            table.append('═' * (key_width) + ('═' if n == 0 else '╧') + '═' * (value_width + 1))
             table.append(c('{:^{}}'.format(title, key_width), 'yellow') + "")
-            table.append('─' * (key_width) + "┬" + '─' * (value_width))
+            table.append('─' * (key_width) + "┬" + '─' * (value_width + 1))
             if not hasattr(section_data, 'items'):
                 table.append(section_data)
                 _kwargs[title] = metrify(section_data)
@@ -303,11 +329,11 @@ class ML_Logger:
                 for key, value in section_data.items():
                     _param_dict[key] = metrify(value.v if type(value) is Color else value)
                     value_string = str(value)
-                    table.append('{:^{}}'.format(key, key_width) + "│" + '{:<{}}'.format(value_string, value_width))
+                    table.append('{:^{}}'.format(key, key_width) + "│ " + '{:<{}}'.format(value_string, value_width))
                 _kwargs[title] = _param_dict
 
         if "n" in locals():
-            table.append('═' * key_width + '╧' + '═' * value_width)
+            table.append('═' * (key_width) + '╧' + '═' * (value_width + 1))
 
         # todo: add logging hook
         # todo: add yml support
@@ -384,21 +410,37 @@ class ML_Logger:
         output = self.print_helper.format_row_table(_, do_not_print_list=self.do_not_print)
         (print if print_only else self.log_line)(output)
 
-    def log_metrics_summary(self, key_values: dict = None, cache: SummaryCache = None, key_modes: dict = None,
-                            silent=False, flush: bool = True, **_key_modes) -> None:
+    def log_metrics_summary(self, key_values: dict = None, cache: SummaryCache = None, key_stats: dict = None,
+                            default_stats=None, silent=False, flush: bool = True, **_key_modes) -> None:
         """
         logs the statistical properties of the stored metrics, and clears the `summary_cache` if under `tiled` mode,
         and keeps the data otherwise (under `rolling` mode).
 
+        To enable explicit mode without specifying *only_keys, set
+        `get_only` to True
+
+        Modes for the Statistics:
+        =========================
+
+        key_mode would be one of:
+          - mean:
+          - min_max:
+          - std_dev:
+          - quantile:
+          - histogram(bins=10):
+
+
         :param key_values: extra key (and values) to log together with summary such as `timestep`, `epoch`, etc.
         :param cache: (dict) An optional cache object from which the summary is made.
-        :param key_modes: (dict) a dictionary for the key and the statistic modes to be returned.
+        :param key_stats: (dict) a dictionary for the key and the statistic modes to be returned.
+        :param default_stats: (one of ['mean', 'min_max', 'std_dev', 'quantile', 'histogram'])
+        :param silent: (bool) a flag to turn the printing On/Off
         :param flush: (bool) flush the key_value cache if trueful.
         :param _key_modes: (**) key value pairs, as a short hand for the key_modes dictionary.
         :return: None
         """
         cache = cache or self.summary_cache
-        summary = cache.summarize(key_modes=key_modes, **_key_modes)
+        summary = cache.summarize(key_stats=key_stats, default_stats=default_stats, **_key_modes)
         if key_values:
             summary.update(key_values)
         self.log_metrics(metrics=summary, silent=silent, flush=flush)
@@ -458,24 +500,38 @@ class ML_Logger:
 
     def upload_dir(self, dir_path, target_folder='', excludes=tuple(), gzip=True, unzip=False):
         """log a directory, or upload an entire directory."""
+        raise NotImplementedError
 
-    def log_images(self, key, stack, ncol=5, nrows=2, namespace="image", fstring="{:04d}.png"):
-        """note: might make sense to push the operation to the server instead.
-        logs a stack of images from a tensor object. Could also be part of the server code.
-
-        update: client-side makes more sense, less data to send.
+    def log_images(self, stack, key, n_rows=None, n_cols=None):
         """
-        pass
+        log_images in a composite on a grid. Images input as a 4-D stack.
+
+        fixit: greyscale image?
+
+        :param stack: Size(n, w, h, c)
+        :param key: the filename for the composite image.
+        :param n_rows: number of rows
+        :param n_cols: number of columns
+        :param namespace:
+        :param fstring:
+        :return:
+        """
+        assert np.issubdtype(stack.dtype, np.uint8), "the image type need to be unsigned 8-bit RGB."
+        n, w, h, *c = stack.shape
+        composite = np.zeros([h * n_rows, w * n_cols, *c], dtype='uint8')
+        for i in range(n_rows):
+            for j in range(n_cols):
+                k = i * n_rows + j
+                if k >= n:
+                    break
+                composite[i * h: i * h + h, j * w: j * w + w] = stack[k]
+        self.log_image(composite, key)
 
     def log_image(self, image, key):
         """
-        DONE: IMPROVE API. I'm not a big fan of this particular api.
         Logs an image via the summary writer.
         TODO: add support for PIL images etc.
         reference: https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
-
-        Because the image keys are passed in as variable keys, it is not as easy to use a string literal
-        for the file name (key). as a result, we generate the numerated filename for the user.
 
         value: numpy object Size(w, h, 3)
         """
@@ -750,4 +806,4 @@ class ML_Logger:
                 print(text, end="")
 
 
-logger = ML_Logger()
+logger = ML_Logger(register_experiment=False)

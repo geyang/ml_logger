@@ -41,11 +41,16 @@ ALLOWED_TYPES = (np.uint8,)  # ONLY uint8 is supported.
 
 
 class LoggingServer:
-    def __init__(self, data_dir):
+    silent = None
+
+    def __init__(self, data_dir, silent=False):
         assert os.path.isabs(data_dir)
         self.data_dir = data_dir
         os.makedirs(data_dir, exist_ok=True)
-        print('logging data to {}'.format(data_dir))
+
+        self.silent = silent
+        if not silent:
+            print('logging data to {}'.format(data_dir))
 
     configure = __init__
 

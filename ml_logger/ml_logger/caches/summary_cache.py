@@ -21,7 +21,8 @@ class SummaryCache:
             self.data = defaultdict(list)
         else:
             raise KeyError(f'mode `{mode}` is not supported. Allowed modes: {AVERAGE_MODES}.')
-        self.default_states = default_stats
+
+        self.default_stats = default_stats
 
     def __bool__(self):
         """returns True if any of the values is non-empty."""
@@ -48,7 +49,7 @@ class SummaryCache:
             keys.append(k)
         return keys
 
-    def summarize(self, force_clear=None, key_modes=None, **_key_modes):
+    def summarize(self, force_clear=None, key_stats=None, **_key_stats):
         """
         | summarizes the statistics, and clears the data store if
         |     1. `force_clear` is set to True
@@ -60,11 +61,11 @@ class SummaryCache:
         | of all metric fields are returns when calling this method.
         |
         :param force_clear: (bool) forces clear the data store
-        :param key_modes: (dict) a dictionary for the key and the statistic modes to be returned.
-        :param _key_modes: (**) key value pairs, as a short hand for the key_modes dictionary.
+        :param key_stats: (dict) a dictionary for the key and the statistic modes to be returned.
+        :param _key_stats: (**) key value pairs, as a short hand for the key_modes dictionary.
         :return: dictionary of the keys and the statistics requested.
         """
-        _ = self.get_stats(key_modes=key_modes, **_key_modes)
+        _ = self.get_stats(key_stats=key_stats, **_key_stats)
         if force_clear or self.mode == "tiled":
             self.clear()
         return _
@@ -84,7 +85,7 @@ class SummaryCache:
         return {k: self.data[k][:len] for k in (keys or self.data.keys()) if self.data[k] != []}
 
     # note: is idempotent
-    def get_stats(self, *only_keys, explicit=None, key_modes=None, **_key_modes):
+    def get_stats(self, *only_keys, explicit=None, key_stats=None, default_stats=None, **_key_stats):
         """
         | Returns the metrics as a dictionary containing key / value pairs
         | of the statistics of the metrics.
@@ -115,39 +116,40 @@ class SummaryCache:
         |
         :param * only_keys: list of key strings to return explicitly
         :param explicit: boolean flag, when true only keys explicitly specified would be returned
-        :param key_modes: a dictionary for the key and the statistic modes to be returned.
-        :param ** _key_modes: key value pairs, as a short hand for the key_modes dictionary.
+        :param key_stats: a dictionary for the key and the statistic modes to be returned.
+        :param default_stats: the default stats mode for all metrics
+        :param ** _key_stats: key value pairs, as a short hand for the key_modes dictionary.
         :return: dictionary of the keys and the statistics requested.
         """
         explicit = explicit or len(only_keys) > 0
-        key_modes = key_modes or dict()
-        key_modes.update(_key_modes)
+        key_stats = key_stats or dict()
+        key_stats.update(_key_stats)
         metrics = dict()
-        keys = {*only_keys, *key_modes.keys()} if explicit else self.data.keys()
+        keys = {*only_keys, *key_stats.keys()} if explicit else self.data.keys()
         for k in keys:
-            mode = key_modes.get(k, self.default_states)
+            stats_type = key_stats.get(k, default_stats or self.default_stats)
             if k not in self.data:
                 continue
             else:
                 d = np.array(self.data[k])
-                if mode.startswith("mean"):
-                    metrics[k + "/mean"] = d.mean(axis=0)
-                elif mode.startswith("min_max"):
-                    metrics[k + "/min"] = d.min(axis=0)
-                    metrics[k + "/max"] = d.max(axis=0)
-                    metrics[k + "/mean"] = d.mean(axis=0)
-                elif mode.startswith("std_dev"):
-                    metrics[k + "/stddev"] = np.std(d, axis=0)
-                    metrics[k + "/mean"] = d.mean(axis=0)
-                    mode = stats.mode(d, axis=0)[0][0]
+                if stats_type.startswith("mean"):
+                    metrics[k + "/mean"] = d.mean(axis=None)
+                elif stats_type.startswith("min_max"):
+                    metrics[k + "/min"] = d.min(axis=None)
+                    metrics[k + "/max"] = d.max(axis=None)
+                    metrics[k + "/mean"] = d.mean(axis=None)
+                elif stats_type.startswith("std_dev"):
+                    metrics[k + "/stddev"] = np.std(d, axis=None)
+                    metrics[k + "/mean"] = d.mean(axis=None)
+                    mode = stats.mode(d, axis=None)[0][0]
                     metrics[k + "/mode"] = mode
-                elif mode.startswith("quantile"):
-                    metrics[k + "/0"] = np.percentile(d, 0, axis=0)
-                    metrics[k + "/25"] = np.percentile(d, 25, axis=0)
-                    metrics[k + "/mean"] = np.percentile(d, 50, axis=0)
-                    metrics[k + "/75"] = np.percentile(d, 75, axis=0)
-                    metrics[k + "/100"] = np.percentile(d, 100, axis=0)
-                elif mode.startswith("histogram"):
+                elif stats_type.startswith("quantile"):
+                    metrics[k + "/0"] = np.percentile(d, 0, axis=None)
+                    metrics[k + "/25"] = np.percentile(d, 25, axis=None)
+                    metrics[k + "/mean"] = np.percentile(d, 50, axis=None)
+                    metrics[k + "/75"] = np.percentile(d, 75, axis=None)
+                    metrics[k + "/100"] = np.percentile(d, 100, axis=None)
+                elif stats_type.startswith("histogram"):
                     # note: need make bin number configurable
                     metrics[k + "/hist"], metrics[k + "/divs"] = np.histogram(d.flatten(), bins=10)
         return metrics

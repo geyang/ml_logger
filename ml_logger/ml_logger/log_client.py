@@ -11,9 +11,9 @@ class LogClient:
 
     def __init__(self, url: str = None, max_workers=None):
         if url.startswith("file://"):
-            self.local_server = LoggingServer(data_dir=url[6:])
+            self.local_server = LoggingServer(data_dir=url[6:], silent=True)
         elif os.path.isabs(url):
-            self.local_server = LoggingServer(data_dir=url)
+            self.local_server = LoggingServer(data_dir=url, silent=True)
         elif url.startswith('http://'):
             self.url = url
             self.ping_url = os.path.join(url, "ping")
