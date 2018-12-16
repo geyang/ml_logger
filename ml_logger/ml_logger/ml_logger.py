@@ -89,6 +89,7 @@ class ML_Logger:
         self.print_helper = PrintHelper()
         # todo: add https support
         log_directory = log_directory or os.getcwd()
+        # do not re-init logger unless necessary.
         self.logger = LogClient(url=log_directory, max_workers=max_workers)
         self.log_directory = log_directory
         # now register the experiment
@@ -521,10 +522,10 @@ class ML_Logger:
         composite = np.zeros([h * n_rows, w * n_cols, *c], dtype='uint8')
         for i in range(n_rows):
             for j in range(n_cols):
-                k = i * n_rows + j
+                k = i * n_cols + j
                 if k >= n:
                     break
-                composite[i * h: i * h + h, j * w: j * w + w] = stack[k]
+                composite[i * h: i * h + h, j * w: j * w + w, :] = stack[k]
         self.log_image(composite, key)
 
     def log_image(self, image, key):

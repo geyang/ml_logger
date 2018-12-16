@@ -1,43 +1,11 @@
-from datetime import datetime
 import os
-# todo: switch to dill instead
-import dill
-from ruamel.yaml import YAML, StringIO
-from collections import namedtuple
-
-from params_proto import cli_parse, Proto, BoolFlag
-
-import sanic
-
-from ml_logger.serdes import deserialize, serialize
+from datetime import datetime
 import numpy as np
-from typing import NamedTuple, Any
-
-
-class LogOptions(NamedTuple):
-    overwrite: bool = None
-    write_mode: str = None
-
-
-class LogEntry(NamedTuple):
-    key: str
-    data: Any
-    type: str
-    options: LogOptions = None
-
-
-LoadEntry = namedtuple("LoadEntry", ['key', 'type'])
-RemoveEntry = namedtuple("RemoveEntry", ['key'])
-
-
-class PingData(NamedTuple):
-    exp_key: str
-    status: Any
-    burn: bool = False
-
-
-Signal = namedtuple("Signal", ['exp_key', 'signal'])
-ALLOWED_TYPES = (np.uint8,)  # ONLY uint8 is supported.
+import dill  # done: switch to dill instead
+from ruamel.yaml import YAML, StringIO
+from params_proto import cli_parse, Proto, BoolFlag
+from ml_logger.serdes import deserialize, serialize
+from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData
 
 
 class LoggingServer:
@@ -55,6 +23,7 @@ class LoggingServer:
     configure = __init__
 
     def serve(self, host, port):
+        import sanic
         self.app = sanic.Sanic()
         self.app.add_route(self.log_handler, '/', methods=['POST'])
         self.app.add_route(self.read_handler, '/', methods=['GET'])
@@ -64,6 +33,7 @@ class LoggingServer:
         self.app.run(host=host, port=port, debug=Params.debug)
 
     def ping_handler(self, req):
+        import sanic
         if not req.json:
             msg = f'request json is empty: {req.text}'
             print(msg)
@@ -84,6 +54,7 @@ class LoggingServer:
         return serialize(res)
 
     def read_handler(self, req):
+        import sanic
         if not req.json:
             msg = f'request json is empty: {req.text}'
             print(msg)
@@ -95,6 +66,7 @@ class LoggingServer:
         return sanic.response.text(data)
 
     def remove_handler(self, req):
+        import sanic
         if not req.json:
             msg = f'request json is empty: {req.text}'
             print(msg)
@@ -105,6 +77,7 @@ class LoggingServer:
         return sanic.response.text('ok')
 
     def log_handler(self, req):
+        import sanic
         if not req.json:
             print(f'request json is empty: {req.text}')
             return sanic.response.text("Reuqest json is empty")

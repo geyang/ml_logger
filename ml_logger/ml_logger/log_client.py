@@ -2,12 +2,13 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from requests_futures.sessions import FuturesSession
 from ml_logger.serdes import serialize, deserialize
-from ml_logger.server import LogEntry, LoadEntry, PingData, LoggingServer, ALLOWED_TYPES, Signal, LogOptions, \
-    RemoveEntry
+from ml_logger.server import LoggingServer
+from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData
 
 
 class LogClient:
     local_server = None
+    session = None
 
     def __init__(self, url: str = None, max_workers=None):
         if url.startswith("file://"):
@@ -17,13 +18,12 @@ class LogClient:
         elif url.startswith('http://'):
             self.url = url
             self.ping_url = os.path.join(url, "ping")
+            self.session = FuturesSession(ThreadPoolExecutor(max_workers=max_workers) if max_workers else None)
         else:
             # todo: add https://, and s3://
             raise TypeError('log url need to begin with `/`, `file://` or `http://`.')
-        if max_workers:
-            self.session = FuturesSession(ThreadPoolExecutor(max_workers=max_workers))
-        else:
-            self.session = FuturesSession()
+
+    configure = __init__
 
     def _get(self, key, dtype):
         if self.local_server:
