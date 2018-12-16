@@ -617,17 +617,27 @@ class ML_Logger:
 
     def save_module(self, module, path="weights.pkl"):
         """
-        log torch module
-
-        todo: log tensorflow modules.
+        Save torch module. Overwrites existing file.
 
         :param module: the PyTorch module to be saved.
         :param path: filename to which we save the module.
-        :return:
+        :return: None
         """
-        # todo: this is torch-specific code. figure out a better way.
-        ps = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
-        self.log_data(path=path, data=ps, overwrite=True)
+        data = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
+        self.log_data(data=data, path=path, overwrite=True)
+
+    def save_modules(self, path="modules.pkl", modules=None, **_modules):
+        """
+        Save torch modules in a dictionary. Overwrites existing file.
+
+        :param path: filename to be saved.
+        :param modules: a dictionary of modules
+        :return: None
+        """
+        _moudles.update(modules or {})
+        data = {name: {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
+                for name, module in _modules.items()}
+        self.log_data(data=data, path=path, overwrite=True)
 
     def save_variables(self, variables, path="variables.pkl", keys=None):
         """
