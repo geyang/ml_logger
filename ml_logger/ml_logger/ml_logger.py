@@ -631,10 +631,11 @@ class ML_Logger:
         Save torch modules in a dictionary. Overwrites existing file.
 
         :param path: filename to be saved.
-        :param modules: a dictionary of modules
+        :param modules: dictionary/namespace for the modules.
+        :param _modules: key/value pairs for different modules to be saved
         :return: None
         """
-        _moudles.update(modules or {})
+        _modules.update(modules or {})
         data = {name: {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
                 for name, module in _modules.items()}
         self.log_data(data=data, path=path, overwrite=True)
@@ -653,7 +654,6 @@ class ML_Logger:
         tensor (from the variable itself).
         :return: None
         """
-        import os
         if keys is None:
             keys = [v.name for v in variables]
         assert len(keys) == len(variables), 'the keys and the variables have to be the same length.'
