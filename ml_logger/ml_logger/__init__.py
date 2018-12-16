@@ -1,4 +1,4 @@
-from ml_logger.struts import LogEntry, ALLOWED_TYPES
+from .struts import ALLOWED_TYPES
 from .log_client import LogClient
 from .helpers.print_utils import PrintHelper
 from .caches.summary_cache import SummaryCache

@@ -1,8 +1,6 @@
 from collections import namedtuple
 from typing import NamedTuple, Any
 
-import numpy as np
-
 
 class LogOptions(NamedTuple):
     overwrite: bool = None
@@ -27,4 +25,7 @@ class PingData(NamedTuple):
 
 
 Signal = namedtuple("Signal", ['exp_key', 'signal'])
+
+import numpy as np
+
 ALLOWED_TYPES = (np.uint8,)  # ONLY uint8 is supported.
