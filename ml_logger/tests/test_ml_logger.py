@@ -183,6 +183,7 @@ class FakeModule:
 def test_module(setup):
     logger.save_module(FakeModule, "modules/test_module.pkl")
     sleep(1.0)
+    logger.save_modules(fake=FakeModule, fake_2=FakeModule, path="modules/test_modules.pkl")
 
 
 def test_load_module(setup, test_module):
