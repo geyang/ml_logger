@@ -517,7 +517,7 @@ class ML_Logger:
         :return:
         """
         assert np.issubdtype(stack.dtype, np.uint8), "the image type need to be unsigned 8-bit RGB."
-        n, w, h, *c = stack.shape
+        n, h, w, *c = stack.shape
         composite = np.zeros([h * n_rows, w * n_cols, *c], dtype='uint8')
         for i in range(n_rows):
             for j in range(n_cols):
