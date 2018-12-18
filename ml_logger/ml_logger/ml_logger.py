@@ -407,7 +407,7 @@ class ML_Logger:
 
     def peek_stored_metrics(self, *keys, len=5, print_only=True):
         _ = self.summary_cache.peek(*keys, len=len)
-        output = self.print_helper.format_row_table(_, do_not_print_list=self.do_not_print)
+        output = self.print_helper.format_row_table(_, max_rows=len, do_not_print_list=self.do_not_print)
         (print if print_only else self.log_line)(output)
 
     def log_metrics_summary(self, key_values: dict = None, cache: SummaryCache = None, key_stats: dict = None,

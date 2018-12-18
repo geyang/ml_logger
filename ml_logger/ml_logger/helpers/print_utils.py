@@ -48,7 +48,7 @@ class PrintHelper:
             output += "╘" + "═" * max_key_len + "╧" + "═" * max_value_len + "╛\n"
             return output
 
-    def format_row_table(self, data, max_rows=5, do_not_print_list=tuple(), min_column_width=5):
+    def format_row_table(self, data, max_rows=None, do_not_print_list=tuple(), min_column_width=5):
         """applies to metrics keys with multiple values"""
         keys = [k for k in data.keys() if k not in do_not_print_list]
         output = ""
