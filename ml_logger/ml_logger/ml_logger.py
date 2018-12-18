@@ -518,7 +518,8 @@ class ML_Logger:
         """
         assert np.issubdtype(stack.dtype, np.uint8), "the image type need to be unsigned 8-bit RGB."
         n, h, w, *c = stack.shape
-        composite = np.zeros([h * n_rows, w * n_cols, *c], dtype='uint8')
+        # todo: add color background -- need to decide on which library to use.
+        composite = np.ones([h * n_rows, w * n_cols, *c], dtype='uint8')
         for i in range(n_rows):
             for j in range(n_cols):
                 k = i * n_cols + j
