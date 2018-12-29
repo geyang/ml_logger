@@ -481,6 +481,7 @@ class ML_Logger:
         self.do_not_print.reset()
 
     def flush(self):
+        self.log_metrics_summary(flush=False)
         self.flush_metrics()
         self.flush_print_buffer()
 
@@ -701,6 +702,8 @@ class ML_Logger:
     def load_file(self, key):
         """ return the binary stream, most versatile.
 
+        todo: check handling of line-separated files
+
         when key starts with a single slash as in "/debug/some-run", the leading slash is removed
         and the remaining path is pathJoin'ed with the data_dir of the server.
 
@@ -715,6 +718,26 @@ class ML_Logger:
         :return: a tuple of each one of the data chunck logged into the file.
         """
         return self.logger.read(os.path.join(self.prefix, key))
+
+    def load_text(self, key):
+        """ return the text content of the file (in a single chunk)
+
+        todo: check handling of line-separated files
+
+        when key starts with a single slash as in "/debug/some-run", the leading slash is removed
+        and the remaining path is pathJoin'ed with the data_dir of the server.
+
+        So if you want to access absolute path of the filesystem that the logging server is in,
+        you should append two leadning slashes. This way, when the leanding slash is removed,
+        the remaining path is still an absolute value and joining with the data_dir would post
+        no effect.
+
+        "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
+
+        :param key: a path string
+        :return: a tuple of each one of the data chunck logged into the file.
+        """
+        return self.logger.read_text(os.path.join(self.prefix, key))
 
     def load_pkl(self, key):
         """
@@ -815,6 +838,29 @@ class ML_Logger:
             self.logger.log_text(key=os.path.join(self.prefix, filename), text=text)
             if not silent:
                 print(text, end="")
+
+    def glob(self, query, wd=None, recursive=True, start=None, stop=None):
+        """
+        Globs files under the work directory (`wd`). Note that `wd` affects the file paths
+        being returned. The default is the current logging prefix. Use absolute path (with
+        a leanding slash (`/`) to escape the logging prefix. Use two leanding slashes for
+        the absolute path in the host for the logging server.
+
+        :param query:
+        :param wd: defaults to the current prefix. When trueful values are given, uses:
+            > wd = os.path.join(self.prefix, wd)
+
+            if you want root of the logging server instance, use abs path headed by `/`.
+            If you want root of the server file system, double slash: `//home/directory-name-blah`.
+
+        :param recursive:
+        :param start:
+        :param stop:
+        :return:
+        """
+        return self.logger.glob(query,
+                                wd=os.path.join(self.prefix, wd or ""),
+                                recursive=recursive, start=start, stop=stop)
 
 
 logger = ML_Logger(register_experiment=False)

@@ -18,6 +18,14 @@ LoadEntry = namedtuple("LoadEntry", ['key', 'type'])
 RemoveEntry = namedtuple("RemoveEntry", ['key'])
 
 
+class GlobEntry(NamedTuple):
+    query: str
+    wd: Any = None
+    recursive: bool = True
+    start: Any = None
+    stop: Any = None
+
+
 class PingData(NamedTuple):
     exp_key: str
     status: Any

@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from requests_futures.sessions import FuturesSession
 from ml_logger.serdes import serialize, deserialize
 from ml_logger.server import LoggingServer
-from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData
+from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
 
 
 class LogClient:
@@ -18,6 +18,7 @@ class LogClient:
         elif url.startswith('http://'):
             self.url = url
             self.ping_url = os.path.join(url, "ping")
+            self.glob_url = os.path.join(url, "glob")
             self.session = FuturesSession(ThreadPoolExecutor(max_workers=max_workers) if max_workers else None)
         else:
             # todo: add https://, and s3://
@@ -32,16 +33,25 @@ class LogClient:
             json = LoadEntry(key, dtype)._asdict()
             # note: reading stuff from the server is always synchronous via the result call.
             res = self.session.get(self.url, json=json).result()
-            result = deserialize(res.text)
-            return result
+            # todo: better error handling.
+            return deserialize(res.text)
 
-    def _post(self, key, data, dtype, options: LogOptions = None):
+    def _log(self, key, data, dtype, options: LogOptions = None):
         if self.local_server:
             self.local_server.log(key, data, dtype, options)
         else:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
             json = LogEntry(key, serialize(data), dtype, options)._asdict()
             self.session.post(self.url, json=json)
+
+    def _glob(self, query, **kwargs):
+        if self.local_server:
+            return self.local_server.glob(query, **kwargs)
+        else:
+            # todo: make the json serialization more robust. Not priority b/c this' client-side.
+            json = GlobEntry(query, **kwargs)._asdict()
+            res = self.session.post(self.glob_url, json=json).result()
+            return res.json()
 
     def _delete(self, key):
         if self.local_server:
@@ -69,11 +79,14 @@ class LogClient:
     def send_signal(self, exp_key, signal=None):
         options = LogOptions(overwrite=True)
         channel = os.path.join(exp_key, "__signal.pkl")
-        self._post(channel, signal, dtype="log", options=options)
+        self._log(channel, signal, dtype="log", options=options)
 
     # Reads binary data
     def read(self, key):
         return self._get(key, dtype="read")
+
+    def read_text(self, key):
+        return self._get(key, dtype="read_text")
 
     # Reads binary data
     def read_pkl(self, key):
@@ -84,17 +97,20 @@ class LogClient:
 
     # appends data
     def log(self, key, data, **options):
-        self._post(key, data, dtype="log", options=LogOptions(**options))
+        self._log(key, data, dtype="log", options=LogOptions(**options))
 
     # appends text
     def log_text(self, key, text):
-        self._post(key, text, dtype="text")
+        self._log(key, text, dtype="text")
 
     # sends out images
     def send_image(self, key, data):
         assert data.dtype in ALLOWED_TYPES, "image data must be one of {}".format(ALLOWED_TYPES)
-        self._post(key, data, dtype="image")
+        self._log(key, data, dtype="image")
 
     # appends text
     def log_buffer(self, key, buf):
-        self._post(key, buf, dtype="byte")
+        self._log(key, buf, dtype="byte")
+
+    def glob(self, query, **kwargs):
+        return self._glob(query, **kwargs)

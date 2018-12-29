@@ -39,9 +39,16 @@ def setup(log_dir):
     logger.configure(log_dir, prefix='main_test_script')
     logger.remove('')
     logger.log_line('hey')
-    sleep(1.0)
+    logger.log_data(dict(test=True), "test-data/dict.pkl")
 
     print(f"logging to {pathJoin(logger.log_directory, logger.prefix)}")
+
+
+def test_glob(setup):
+    kwargs = dict(query="*.pkl", wd="test-data")
+    print(f'globbing {kwargs["query"]} under {kwargs["wd"]}')
+    file_paths = logger.glob(**kwargs)
+    print(f"globbed file paths: {[file_paths]}")
 
 
 def test_load_pkl(setup):

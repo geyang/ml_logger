@@ -5,7 +5,7 @@ import dill  # done: switch to dill instead
 from ruamel.yaml import YAML, StringIO
 from params_proto import cli_parse, Proto, BoolFlag
 from ml_logger.serdes import deserialize, serialize
-from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData
+from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
 
 
 class LoggingServer:
@@ -28,11 +28,12 @@ class LoggingServer:
         self.app.add_route(self.log_handler, '/', methods=['POST'])
         self.app.add_route(self.read_handler, '/', methods=['GET'])
         self.app.add_route(self.ping_handler, '/ping', methods=['POST'])
+        self.app.add_route(self.glob_handler, '/glob', methods=['POST'])
         self.app.add_route(self.remove_handler, '/', methods=['DELETE'])
         # todo: need a file serving url
         self.app.run(host=host, port=port, debug=Params.debug)
 
-    def ping_handler(self, req):
+    async def ping_handler(self, req):
         import sanic
         if not req.json:
             msg = f'request json is empty: {req.text}'
@@ -53,7 +54,26 @@ class LoggingServer:
             self.remove(signal_path)
         return serialize(res)
 
-    def read_handler(self, req):
+    async def glob_handler(self, req):
+        import sanic
+        if not req.json:
+            msg = f'request json is empty: {req.text}'
+            print(msg)
+            return sanic.response.text(msg)
+
+        glob_entry = GlobEntry(**req.json)
+        print("globbing: work directory {} query: {} is_recursive: {} start: {}, stop: {}".format(
+            glob_entry.wd, glob_entry.query, glob_entry.recursive, glob_entry.start, glob_entry.stop))
+        try:
+            file_paths = self.glob(query=glob_entry.query, wd=glob_entry.wd,
+                                   recursive=glob_entry.recursive,
+                                   start=glob_entry.start, stop=glob_entry.stop, )
+            return sanic.response.json(file_paths, status=200)
+        # note: do we need this? sanic doesn't already do this?
+        except FileNotFoundError as e:
+            return sanic.response.text(e, status=404)
+
+    async def read_handler(self, req):
         import sanic
         if not req.json:
             msg = f'request json is empty: {req.text}'
@@ -65,7 +85,7 @@ class LoggingServer:
         data = serialize(res)
         return sanic.response.text(data)
 
-    def remove_handler(self, req):
+    async def remove_handler(self, req):
         import sanic
         if not req.json:
             msg = f'request json is empty: {req.text}'
@@ -76,7 +96,7 @@ class LoggingServer:
         self.remove(remove_entry.key)
         return sanic.response.text('ok')
 
-    def log_handler(self, req):
+    async def log_handler(self, req):
         import sanic
         if not req.json:
             print(f'request json is empty: {req.text}')
@@ -87,6 +107,27 @@ class LoggingServer:
         options = log_entry.options if log_entry.options is None else LogOptions(*log_entry.options)
         self.log(log_entry.key, data, log_entry.type, options)
         return sanic.response.text('ok')
+
+    def glob(self, query, wd, recursive, start, stop):
+        """
+        Glob under the work directory. (so that the wd is not included in the file paths that are returned.)
+
+        :param query:
+        :param wd: we remove the leading slash so that //home/directory allows you to access absolute path of the server host environment. single leanding slash accesses w.r.t. the data_dir.
+        :param recursive:
+        :param start:
+        :param stop:
+        :return:
+        """
+
+        from glob import iglob
+        from itertools import islice
+
+        from ml_logger.helpers.file_helpers import CwdContext
+        wd = wd[1:] if wd and wd.startswith("/") else wd
+        with CwdContext(os.path.join(self.data_dir, wd or "")):
+            file_paths = list(islice(iglob(query, recursive=recursive), start, stop))
+            return file_paths
 
     def load(self, key, dtype):
         """
@@ -118,7 +159,7 @@ class LoggingServer:
         if dtype == 'read':
             try:
                 with open(abs_path, 'rb') as f:
-                    return f.decode('utf-8')
+                    return f.read()
             except FileNotFoundError as e:
                 return None
         elif dtype == 'read_text':
