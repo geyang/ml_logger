@@ -98,6 +98,7 @@ class ML_Logger:
         # self.log_caller() # we changed it so that log_caller(fn) takes in a caller function
         # self.log_revision()
 
+    # todo: change prefix to current work directory instead. That is a lot more appropriate.
     configure = __init__
 
     def run_info(self):
@@ -858,9 +859,8 @@ class ML_Logger:
         :param stop:
         :return:
         """
-        return self.logger.glob(query,
-                                wd=os.path.join(self.prefix, wd or ""),
-                                recursive=recursive, start=start, stop=stop)
+        wd = os.path.join(self.prefix, wd or "")
+        return self.logger.glob(query, wd=wd, recursive=recursive, start=start, stop=stop)
 
 
 logger = ML_Logger(register_experiment=False)
