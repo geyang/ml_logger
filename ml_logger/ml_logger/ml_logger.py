@@ -1,4 +1,6 @@
 import os
+from contextlib import contextmanager
+
 import numpy as np
 from collections import Sequence
 from io import BytesIO
@@ -44,6 +46,16 @@ def metrify(data):
 ML_DASH = "http://{host}:3000/experiments/ins-runs/{prefix}"
 
 
+@contextmanager
+def _PrefixContext(logger, new_prefix):
+    old_prefix = logger.prefix
+    logger.prefix = new_prefix
+    try:
+        yield
+    finally:
+        logger.prefix = old_prefix
+
+
 # noinspection PyPep8Naming
 class ML_Logger:
     logger = None
@@ -53,6 +65,14 @@ class ML_Logger:
     print_buffer = ""  # is okay b/c strings are immutable in python
 
     summary_cache: SummaryCache
+
+    def PrefixContext(self, *prefices):
+        """
+        Returns a context in which the prefix of the logger is set to `prefix`
+        :param prefix: the new prefix
+        :return: context object
+        """
+        return _PrefixContext(self, os.path.join(*prefices))
 
     # noinspection PyInitNewSignature
     def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=5,

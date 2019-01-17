@@ -40,5 +40,5 @@ setup(name="ml_logger",
           'sanic',
           'sanic-cors',
           'dill',
-          'ruamel.yaml']
+          'ruamel.yaml<0.15.0']
       )

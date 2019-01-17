@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 import numpy as np
 import dill  # done: switch to dill instead
-from ruamel.yaml import YAML, StringIO
 from params_proto import cli_parse, Proto, BoolFlag
 from ml_logger.serdes import deserialize, serialize
 from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
@@ -240,6 +239,9 @@ class LoggingServer:
                 with open(abs_path, write_mode + "+") as f:
                     f.write(data)
         elif dtype.startswith("yaml"):
+            from ruamel.yaml import YAML, StringIO
+            raise NotImplementedError('Under Construction.')
+
             yaml = YAML()
             yaml.explict_start = True
             stream = StringIO()
