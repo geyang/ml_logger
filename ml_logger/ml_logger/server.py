@@ -239,11 +239,15 @@ class LoggingServer:
                 with open(abs_path, write_mode + "+") as f:
                     f.write(data)
         elif dtype.startswith("yaml"):
-            from ruamel.yaml import YAML, StringIO
-            raise NotImplementedError('Under Construction.')
+            import ruamel.yaml
+            if ruamel.yaml.version_info < (0, 15):
+                yaml = ruamel.yaml
+                StringIO = ruamel.yaml.StringIO
+            else:
+                from ruamel.yaml import YAML, StringIO
+                yaml = YAML()
+                yaml.explict_start = True
 
-            yaml = YAML()
-            yaml.explict_start = True
             stream = StringIO()
             yaml.dump(data, stream)
             output = stream.getvalue()
@@ -251,7 +255,7 @@ class LoggingServer:
             try:
                 with open(abs_path, write_mode + "+") as f:
                     if options.write_mode == 'key':
-                        d = yaml.load('\n'.join(f))
+                        d = yaml.safe_load('\n'.join(f))
                         if d is not None:
                             d.update(output)
                             output = d
@@ -260,7 +264,7 @@ class LoggingServer:
                 os.makedirs(os.path.dirname(abs_path))
                 with open(abs_path, write_mode + "+") as f:
                     if options.write_mode == 'key':
-                        d = yaml.load('\n'.join(f))
+                        d = yaml.safe_load('\n'.join(f))
                         if d is not None:
                             d.update(output)
                             output = d
