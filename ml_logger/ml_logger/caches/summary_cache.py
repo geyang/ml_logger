@@ -146,11 +146,11 @@ class SummaryCache:
                     mode = stats.mode(d)[0][0]
                     metrics[k + "/mode"] = mode
                 elif stats_type.startswith("quantile"):
-                    metrics[k + "/0"] = d.percentile(0)
-                    metrics[k + "/25"] = d.percentile(25)
-                    metrics[k + "/mean"] = d.percentile(50)
-                    metrics[k + "/75"] = d.percentile(75)
-                    metrics[k + "/100"] = d.percentile(100)
+                    metrics[k + "/0"] = np.percentile(d, 0)
+                    metrics[k + "/25"] = np.percentile(d, 25)
+                    metrics[k + "/mean"] = np.percentile(d, 50)
+                    metrics[k + "/75"] = np.percentile(d, 75)
+                    metrics[k + "/100"] = np.percentile(d, 100)
                 elif stats_type.startswith("histogram"):
                     # note: need make bin number configurable
                     metrics[k + "/hist"], metrics[k + "/divs"] = np.histogram(d, bins=10)
