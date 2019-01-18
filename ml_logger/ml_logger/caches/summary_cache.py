@@ -131,25 +131,27 @@ class SummaryCache:
             if k not in self.data:
                 continue
             else:
-                d = np.array(self.data[k])
+                # this converts the None to np.nan that can be properly handled.
+                d = np.array(self.data[k], dtype=np.float).flatten()
+                d = d[~np.isnan(d)]
                 if stats_type.startswith("mean"):
-                    metrics[k + "/mean"] = d.mean(axis=None)
+                    metrics[k + "/mean"] = d.mean()
                 elif stats_type.startswith("min_max"):
-                    metrics[k + "/min"] = d.min(axis=None)
-                    metrics[k + "/max"] = d.max(axis=None)
-                    metrics[k + "/mean"] = d.mean(axis=None)
+                    metrics[k + "/min"] = d.min()
+                    metrics[k + "/max"] = d.max()
+                    metrics[k + "/mean"] = d.mean(0)
                 elif stats_type.startswith("std_dev"):
-                    metrics[k + "/stddev"] = np.std(d, axis=None)
-                    metrics[k + "/mean"] = d.mean(axis=None)
-                    mode = stats.mode(d, axis=None)[0][0]
+                    metrics[k + "/stddev"] = d.std()
+                    metrics[k + "/mean"] = d.mean()
+                    mode = stats.mode(d)[0][0]
                     metrics[k + "/mode"] = mode
                 elif stats_type.startswith("quantile"):
-                    metrics[k + "/0"] = np.percentile(d, 0, axis=None)
-                    metrics[k + "/25"] = np.percentile(d, 25, axis=None)
-                    metrics[k + "/mean"] = np.percentile(d, 50, axis=None)
-                    metrics[k + "/75"] = np.percentile(d, 75, axis=None)
-                    metrics[k + "/100"] = np.percentile(d, 100, axis=None)
+                    metrics[k + "/0"] = d.percentile(0)
+                    metrics[k + "/25"] = d.percentile(25)
+                    metrics[k + "/mean"] = d.percentile(50)
+                    metrics[k + "/75"] = d.percentile(75)
+                    metrics[k + "/100"] = d.percentile(100)
                 elif stats_type.startswith("histogram"):
                     # note: need make bin number configurable
-                    metrics[k + "/hist"], metrics[k + "/divs"] = np.histogram(d.flatten(), bins=10)
+                    metrics[k + "/hist"], metrics[k + "/divs"] = np.histogram(d, bins=10)
         return metrics
