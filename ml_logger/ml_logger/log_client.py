@@ -103,6 +103,10 @@ class LogClient:
     def log_text(self, key, text):
         self._log(key, text, dtype="text")
 
+    # appends yaml
+    def log_yaml(self, key, data):
+        self._log(key, data, dtype="yaml")
+
     # sends out images
     def send_image(self, key, data):
         assert data.dtype in ALLOWED_TYPES, "image data must be one of {}".format(ALLOWED_TYPES)

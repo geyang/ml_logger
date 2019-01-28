@@ -524,7 +524,7 @@ class ML_Logger:
         """log a directory, or upload an entire directory."""
         raise NotImplementedError
 
-    def log_images(self, stack, key, n_rows=None, n_cols=None):
+    def log_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None):
         """
         log_images in a composite on a grid. Images input as a 4-D stack.
 
@@ -536,9 +536,34 @@ class ML_Logger:
         :param n_cols: number of columns
         :param namespace:
         :param fstring:
+        :param cmap: OneOf[str, matplotlib.cm.ColorMap]
+        :param normalize: OneOf[None, 'indivisual', 'row', 'column', 'grid']. Only 'grid' and
+                          'individual' are implemented.
         :return:
         """
-        assert np.issubdtype(stack.dtype, np.uint8), "the image type need to be unsigned 8-bit RGB."
+        stack = stack if hasattr(stack, 'dtype') else np.array(stack)
+        if np.issubdtype(stack.dtype, np.uint8):
+            pass
+        elif len(stack.shape) == 3:
+            from matplotlib import cm
+            map_fn = cm.get_cmap(cmap or 'Greys')
+            # todo: this needs to happen for each individual image
+            if normalize is None:
+                pass
+            elif normalize == 'individual':
+                r = stack.max(axis=1) - stack.min(axis=1)
+                stack = (stack - stack.min(axis=1)[:, :, None]) / np.select([r != 0], [r], 1)[:, :, None]
+            elif normalize == 'grid':
+                stack = (stack - stack.min()) / (stack.max() - stack.min() or 1)
+            stack = (map_fn(stack) * 255).astype(np.uint8)
+        elif len(stack.shape) == 4:
+            assert cmap is None, "color map is not used for rgb(a) images."
+            stack = (stack * 255).astype(np.uint8)
+        else:
+            raise RuntimeError(f"{stack.shape} is not supported. `len(shape)` should be 3 "
+                               f"for gray scale  and 4 for RGB(A).")
+
+        assert np.issubdtype(stack.dtype, np.uint8), "the image type need to be unsigned 8-bit."
         n, h, w, *c = stack.shape
         # todo: add color background -- need to decide on which library to use.
         composite = np.ones([h * n_rows, w * n_cols, *c], dtype='uint8')
@@ -547,7 +572,8 @@ class ML_Logger:
                 k = i * n_cols + j
                 if k >= n:
                     break
-                composite[i * h: i * h + h, j * w: j * w + w, :] = stack[k]
+                # todo: remove last index
+                composite[i * h: i * h + h, j * w: j * w + w] = stack[k]
         self.log_image(composite, key)
 
     def log_image(self, image, key):
