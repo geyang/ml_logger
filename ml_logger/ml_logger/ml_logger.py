@@ -537,11 +537,14 @@ class ML_Logger:
         :param namespace:
         :param fstring:
         :param cmap: OneOf[str, matplotlib.cm.ColorMap]
-        :param normalize: OneOf[None, 'indivisual', 'row', 'column', 'grid']. Only 'grid' and
+        :param normalize: defaul None. OneOf[None, 'indivisual', 'row', 'column', 'grid']. Only 'grid' and
                           'individual' are implemented.
         :return:
         """
         stack = stack if hasattr(stack, 'dtype') else np.array(stack)
+
+        n_cols = n_cols or len(stack)
+
         if np.issubdtype(stack.dtype, np.uint8):
             pass
         elif len(stack.shape) == 3:
@@ -574,9 +577,10 @@ class ML_Logger:
                     break
                 # todo: remove last index
                 composite[i * h: i * h + h, j * w: j * w + w] = stack[k]
-        self.log_image(composite, key)
 
-    def log_image(self, image, key):
+        self.logger.send_image(key=os.path.join(self.prefix, key), data=composite)
+
+    def log_image(self, image, key, cmap=None, normalize=None):
         """
         Logs an image via the summary writer.
         TODO: add support for PIL images etc.
@@ -584,8 +588,7 @@ class ML_Logger:
 
         value: numpy object Size(w, h, 3)
         """
-        filename = os.path.join(self.prefix, key)
-        self.logger.send_image(key=filename, data=image)
+        self.log_images([image], key, n_rows=1, n_cols=1, cmap=cmap, normalize=normalize)
 
     def log_video(self, frame_stack, key, format=None, fps=20, **imageio_kwargs):
         """
