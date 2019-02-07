@@ -14,7 +14,7 @@ from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, Rem
 def _SyncContext(logger):
     old_session = logger.session
     if logger.sync_pool is None:
-        logger.set_sessions(True, logger.max_workers)
+        logger.set_session(True, logger.max_workers)
         logger.sync_pool = logger.session
     try:
         yield
@@ -27,7 +27,7 @@ def _AsyncContext(logger):
     old_session = logger.session
     logger.set_sessions(True, logger.max_workers)
     if logger.async_pool is None:
-        logger.set_sessions(True, logger.max_workers)
+        logger.set_session(True, logger.max_workers)
         logger.async_pool = logger.session
     try:
         yield
@@ -38,6 +38,7 @@ def _AsyncContext(logger):
 class LogClient:
     local_server = None
     session = None
+    max_workers = None
     # note: used by the context switchers. They do not take parameters, so
     #  only sync/async key is needed to differentiate
     sync_pool = None
@@ -70,7 +71,6 @@ class LogClient:
             self.url = url
             self.ping_url = os.path.join(url, "ping")
             self.glob_url = os.path.join(url, "glob")
-            self.max_workers = max_workers
             self.set_session(asynchronous, max_workers)
         else:
             # todo: add https://, and s3://
@@ -79,6 +79,7 @@ class LogClient:
     configure = __init__
 
     def set_session(self, asynchronous, max_workers):
+        self.max_workers = 10 if max_workers is None else max_workers
         if asynchronous is True:
             self.session = FuturesSession(ThreadPoolExecutor(max_workers=max_workers))
         elif asynchronous is False:

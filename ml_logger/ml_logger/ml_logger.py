@@ -69,6 +69,7 @@ class ML_Logger:
 
     summary_cache: SummaryCache
 
+    ### Context Helpers
     def PrefixContext(self, *praefixa):
         """
         Returns a context in which the prefix of the logger is set to `prefix`
@@ -162,6 +163,42 @@ class ML_Logger:
                   ):
         """
         Configure an existing logger with updated configurations.
+
+        # LogClient Behavior
+
+        The logger.client would be re-constructed if
+
+            - log_directory is changed
+            - max_workers is not None
+            - asynchronous is not None
+
+        Because the http LogClient contains http thread pools, one shouldn't call this
+        configure function in a loop. Instead, use the logger.(A)syncContext() contexts.
+        That context caches the pool so that you don't create new thread pools again and
+        again.
+
+        # Cache Behavior
+
+        Both key-value cache and the summary cache would be cleared if summary_cache_opts
+        is set to not None. A new summary cache would be created, whereas the old
+        key-value cache would be cleared.
+
+        # Print Buffer Behavior
+        If configure is called with a buffer_size not None, the old print buffer would
+        be cleared.
+
+        todo: I'm considering also clearing this buffer also when summary-cache is
+          updated.
+              The use-case of changing print_buffer_size is pretty small. Should probaly
+          just deprecate this.
+
+        # Registering New Experiment
+
+        This is a convinient default for new users. It prints out a dashboard link to
+        the dashboard url.
+
+        todo: the table at the moment seems a bit verbose. I'm considering making this
+          just a single line print.
 
         :param log_directory:
         :param prefix:
