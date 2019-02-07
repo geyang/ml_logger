@@ -78,7 +78,7 @@ class ML_Logger:
         """
         return _PrefixContext(self, os.path.join(*praefixa))
 
-    def SyncContext(self):
+    def SyncContext(self, clean=False):
         """
         Returns a context in which the logger logs synchronously. The new
         synchronous request pool is cached on the logging client, so this
@@ -88,11 +88,13 @@ class ML_Logger:
         The context object can only be used once b/c it is create through
         generator using the @contextmanager decorator.
 
+        :param clean: boolean flag for removing the thead pool after __exit__.
+            used to enforce single-use SyncContexts.
         :return: context object
         """
-        return self.client.SyncContext()
+        return self.client.SyncContext(clean=clean)
 
-    def AsyncContext(self):
+    def AsyncContext(self, clean=False):
         """
         Returns a context in which the logger logs [a]synchronously. The new
         asynchronous request pool is cached on the logging client, so this
@@ -102,13 +104,15 @@ class ML_Logger:
         The context object can only be used once b/c it is create through
         generator using the @contextmanager decorator.
 
+        :param clean: boolean flag for removing the thead pool after __exit__.
+            used to enforce single-use AsyncContexts.
         :return: context object
         """
-        return self.client.AsyncContext()
+        return self.client.AsyncContext(clean=clean)
 
     # noinspection PyInitNewSignature
     def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=None,
-                 asynchronous=True, summary_cache_opts: dict = None):
+                 asynchronous=None, summary_cache_opts: dict = None):
         """ logger constructor.
 
         Assumes that you are starting from scratch.
@@ -124,6 +128,7 @@ class ML_Logger:
 
         :param log_directory: the server host and port number
         :param prefix: the prefix path
+        :param asynchronous: When this is not None, we create a http thread pool.
         :param buffer_size: The string buffer size for the print buffer.
         :param max_workers: the number of request-session workers for the async http requests.
         """
@@ -154,11 +159,11 @@ class ML_Logger:
 
     def configure(self,
                   log_directory: str = None,
+                  asynchronous=None,
+                  max_workers=None,
                   prefix=None,
                   buffer_size=None,
                   summary_cache_opts: dict = None,
-                  asynchronous=None,
-                  max_workers=None,
                   register_experiment=True
                   ):
         """
@@ -230,12 +235,14 @@ class ML_Logger:
             #       To quickly switch back and forth between synchronous and asynchronous calls,
             #   use the `SyncContext` and `AsyncContext` instead.
             cprint('creating new logging client...', 'yellow', end=' ')
-            self.client = LogClient(url=self.log_directory, asynchronous=asynchronous, max_workers=max_workers)
+            self.log_directory = log_directory
+            self.client.__init__(url=self.log_directory, asynchronous=asynchronous, max_workers=max_workers)
             cprint('✓ done', 'green')
 
         # now register the experiment
         if register_experiment:
-            self.log_params(run=self.run_info())
+            with logger.SyncContext(clean=True):  # single use SyncContext
+                self.log_params(run=self.run_info())
 
     def run_info(self):
         if self.log_directory.startswith("http://"):

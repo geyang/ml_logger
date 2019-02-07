@@ -11,11 +11,16 @@ from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, Rem
 
 # noinspection PyPep8Naming
 @contextmanager
-def _SyncContext(logger):
+def _SyncContext(logger, clean=False):
     old_session = logger.session
-    if logger.sync_pool is None:
-        logger.set_session(True, logger.max_workers)
-        logger.sync_pool = logger.session
+    if isinstance(old_session, SyncRequests):
+        logger.sync_pool = old_session
+    if logger.sync_pool:
+        logger.session = logger.sync_pool
+    else:
+        logger.set_session(False, logger.max_workers)
+        if not clean:
+            logger.sync_pool = logger.session
     try:
         yield
     finally:
@@ -23,12 +28,16 @@ def _SyncContext(logger):
 
 
 @contextmanager
-def _AsyncContext(logger):
+def _AsyncContext(logger, clean=False):
     old_session = logger.session
-    logger.set_sessions(True, logger.max_workers)
-    if logger.async_pool is None:
+    if isinstance(old_session, FuturesSession):
+        logger.async_pool = old_session
+    if logger.async_pool:
+        logger.session = logger.async_pool
+    else:
         logger.set_session(True, logger.max_workers)
-        logger.async_pool = logger.session
+        if not clean:
+            logger.async_pool = logger.session
     try:
         yield
     finally:
@@ -44,13 +53,6 @@ class LogClient:
     sync_pool = None
     async_pool = None
 
-    # with logger.SyncContext():
-    #   logger.configure("/tmp/some-stuff", "some prefix")
-    #   # should work.
-    # with logger.SyncContext():
-    #   logger.configure("http://escherpad.com/tmp/some-stuff", "some prefix")
-    #   # should work.
-
     def __init__(self, url: str = None, asynchronous=None, max_workers=None):
         """
         When max_workers is 0, the HTTP requests are synchronous. This allows one to make
@@ -61,17 +63,26 @@ class LogClient:
         threads are started before forking the subprocesses.
 
         :param url:
+        :param asynchronous: If this is not None, we create a request pool. This way
+            we can use the (A)SyncContext call right after construction.
         :param max_workers:
         """
+        if asynchronous is not None:
+            self.set_session(asynchronous, max_workers)
+
         if url.startswith("file://"):
             self.local_server = LoggingServer(data_dir=url[6:], silent=True)
         elif os.path.isabs(url):
             self.local_server = LoggingServer(data_dir=url, silent=True)
         elif url.startswith('http://'):
+            self.local_server = None  # remove local server to use sessions.
             self.url = url
             self.ping_url = os.path.join(url, "ping")
             self.glob_url = os.path.join(url, "glob")
-            self.set_session(asynchronous, max_workers)
+            # when setting sessions the first time, default to use Asynchronous Session.
+            if self.session is None:
+                asynchronous = True if asynchronous is None else asynchronous
+                self.set_session(asynchronous, max_workers)
         else:
             # todo: add https://, and s3://
             raise TypeError('log url need to begin with `/`, `file://` or `http://`.')
@@ -81,9 +92,9 @@ class LogClient:
     def set_session(self, asynchronous, max_workers):
         self.max_workers = 10 if max_workers is None else max_workers
         if asynchronous is True:
-            self.session = FuturesSession(ThreadPoolExecutor(max_workers=max_workers))
+            self.session = FuturesSession(ThreadPoolExecutor(max_workers=self.max_workers))
         elif asynchronous is False:
-            self.session = SyncRequests(max_workers=max_workers)
+            self.session = SyncRequests(max_workers=self.max_workers)
 
     # noinspection PyPep8Naming
     def SyncContext(self, **kwargs):
