@@ -237,9 +237,9 @@ def test_ping(setup):
     signals = logger.ping('alive', 0.2)
     print(f"signals => {signals}")
 
-    logger.logger.send_signal(logger.prefix, signal="stop")
+    logger.client.send_signal(logger.prefix, signal="stop")
     sleep(0.25)
-    logger.logger.send_signal(logger.prefix, signal="pause")
+    logger.client.send_signal(logger.prefix, signal="pause")
     sleep(0.15)
 
     for i in range(4):

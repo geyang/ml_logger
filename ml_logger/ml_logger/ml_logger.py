@@ -7,6 +7,8 @@ from io import BytesIO
 from numbers import Number
 from typing import Any
 
+from termcolor import cprint
+
 from .helpers.default_set import DefaultSet
 from .full_duplex import Duplex
 from .log_client import LogClient
@@ -58,26 +60,57 @@ def _PrefixContext(logger, new_prefix):
 
 # noinspection PyPep8Naming
 class ML_Logger:
-    logger = None
+    client = None
     log_directory = None
 
-    prefix = ""
-    print_buffer = ""  # is okay b/c strings are immutable in python
+    prefix = ""  # is okay b/c strings are immutable in python
+    print_buffer = None  # move initialization to init.
+    print_buffer_size = 2048
 
     summary_cache: SummaryCache
 
-    def PrefixContext(self, *prefices):
+    def PrefixContext(self, *praefixa):
         """
         Returns a context in which the prefix of the logger is set to `prefix`
-        :param prefix: the new prefix
+        :param praefixa: the new prefix
         :return: context object
         """
-        return _PrefixContext(self, os.path.join(*prefices))
+        return _PrefixContext(self, os.path.join(*praefixa))
+
+    def SyncContext(self):
+        """
+        Returns a context in which the logger logs synchronously. The new
+        synchronous request pool is cached on the logging client, so this
+        context can happen repetitively without creating a run-away number
+        of parallel threads.
+
+        The context object can only be used once b/c it is create through
+        generator using the @contextmanager decorator.
+
+        :return: context object
+        """
+        return self.client.SyncContext()
+
+    def AsyncContext(self):
+        """
+        Returns a context in which the logger logs [a]synchronously. The new
+        asynchronous request pool is cached on the logging client, so this
+        context can happen repetitively without creating a run-away number
+        of parallel threads.
+
+        The context object can only be used once b/c it is create through
+        generator using the @contextmanager decorator.
+
+        :return: context object
+        """
+        return self.client.AsyncContext()
 
     # noinspection PyInitNewSignature
-    def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=5,
-                 summary_cache_opts: dict = None, register_experiment=True):
-        """ Configuration function for the logger.
+    def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=None,
+                 asynchronous=True, summary_cache_opts: dict = None):
+        """ logger constructor.
+
+        Assumes that you are starting from scratch.
 
         | `log_directory` is overloaded to use either
         | 1. file://some_abs_dir
@@ -97,29 +130,75 @@ class ML_Logger:
         self.step = None
         self.duplex = None
         self.timestamp = None
+
+        self.do_not_print = DefaultSet("__timestamp")
+        self.print_helper = PrintHelper()
+
+        # init print buffer
         self.print_buffer_size = buffer_size
+        self.print_buffer = ""
+
+        # initialize caches
         self.key_value_cache = KeyValueCache()
         self.summary_cache = SummaryCache(**(summary_cache_opts or {}))
-        self.do_not_print = DefaultSet("__timestamp")
+
+        # todo: add https support
+        self.log_directory = log_directory or os.getcwd()
         if prefix is not None:
             assert not os.path.isabs(prefix), "prefix can not start with `/` because it is relative to `log_directory`."
             self.prefix = prefix
 
-        self.print_helper = PrintHelper()
-        # todo: add https support
+        # logger client contains thread pools, should not be re-created lightly.
+        self.client = LogClient(url=self.log_directory, asynchronous=asynchronous, max_workers=max_workers)
+
+    def configure(self,
+                  log_directory: str = None,
+                  prefix=None,
+                  buffer_size=None,
+                  summary_cache_opts: dict = None,
+                  asynchronous=None,
+                  max_workers=None,
+                  register_experiment=True
+                  ):
+        """
+        Configure an existing logger with updated configurations.
+
+        :param log_directory:
+        :param prefix:
+        :param buffer_size:
+        :param summary_cache_opts:
+        :param asynchronous:
+        :param max_workers:
+        :param register_experiment:
+        :return:
+        """
+
+        # path logic
         log_directory = log_directory or os.getcwd()
-        # do not re-init logger unless necessary.
-        self.logger = LogClient(url=log_directory, max_workers=max_workers)
-        self.log_directory = log_directory
+        if prefix is not None:
+            assert not os.path.isabs(prefix), "prefix can not start with `/` because it is relative to `log_directory`."
+            self.prefix = prefix
+
+        if buffer_size is not None:
+            self.print_buffer_size = buffer_size
+            self.print_buffer = ""
+
+        if summary_cache_opts is not None:
+            self.key_value_cache.clear()
+            self.summary_cache = SummaryCache(**(summary_cache_opts or {}))
+
+        if asynchronous is not None or max_workers is not None or log_directory != self.log_directory:
+            # note: logger.configure shouldn't be called too often, so it is okay to assume
+            #   that we can discard the old logClient.
+            #       To quickly switch back and forth between synchronous and asynchronous calls,
+            #   use the `SyncContext` and `AsyncContext` instead.
+            cprint('creating new logging client...', 'yellow', end=' ')
+            self.client = LogClient(url=self.log_directory, asynchronous=asynchronous, max_workers=max_workers)
+            cprint('✓ done', 'green')
+
         # now register the experiment
         if register_experiment:
             self.log_params(run=self.run_info())
-
-        # self.log_caller() # we changed it so that log_caller(fn) takes in a caller function
-        # self.log_revision()
-
-    # todo: change prefix to current work directory instead. That is a lot more appropriate.
-    configure = __init__
 
     def run_info(self):
         if self.log_directory.startswith("http://"):
@@ -278,9 +357,9 @@ class ML_Logger:
             def thunk(*statuses):
                 nonlocal self
                 if len(statuses) > 0:
-                    return self.logger.ping(self.prefix, statuses[-1])
+                    return self.client.ping(self.prefix, statuses[-1])
                 else:
-                    return self.logger.ping(self.prefix, "running")
+                    return self.client.ping(self.prefix, "running")
 
             self.duplex = Duplex(thunk, interval or 120)  # default interval is two minutes
             self.duplex.start()
@@ -306,7 +385,7 @@ class ML_Logger:
         :return:
         """
         abs_path = os.path.join(self.prefix, path)
-        self.logger._delete(abs_path)
+        self.client._delete(abs_path)
 
     def log_params(self, path="parameters.pkl", **kwargs):
         """
@@ -376,7 +455,7 @@ class ML_Logger:
         kwargs = {"key": abs_path, "data": data}
         if overwrite:
             kwargs['overwrite'] = overwrite
-        self.logger.log(**kwargs)
+        self.client.log(**kwargs)
 
     def log_metrics(self, metrics=None, silent=None, cache: KeyValueCache = None, flush=None, **_key_values) -> None:
         """
@@ -498,7 +577,7 @@ class ML_Logger:
         filename = filename or self.metric_filename
         output = self.print_helper.format_tabular(key_values, self.do_not_print)
         self.log_text(output, silent=False)  # not buffered
-        self.logger.log(key=os.path.join(self.prefix, filename), data=key_values)
+        self.client.log(key=os.path.join(self.prefix, filename), data=key_values)
         self.do_not_print.reset()
 
     def flush(self):
@@ -518,7 +597,7 @@ class ML_Logger:
         from pathlib import Path
         bytes = Path(file_path).read_bytes()
         basename = os.path.basename(file_path)
-        self.logger.log_buffer(key=os.path.join(target_folder, basename), buf=bytes)
+        self.client.log_buffer(key=os.path.join(target_folder, basename), buf=bytes)
 
     def upload_dir(self, dir_path, target_folder='', excludes=tuple(), gzip=True, unzip=False):
         """log a directory, or upload an entire directory."""
@@ -578,7 +657,7 @@ class ML_Logger:
                 # todo: remove last index
                 composite[i * h: i * h + h, j * w: j * w + w] = stack[k]
 
-        self.logger.send_image(key=os.path.join(self.prefix, key), data=composite)
+        self.client.send_image(key=os.path.join(self.prefix, key), data=composite)
 
     def log_image(self, image, key, cmap=None, normalize=None):
         """
@@ -625,7 +704,7 @@ class ML_Logger:
                 imageio.plugins.ffmpeg.download()
                 imageio.mimsave(ntp.name, frame_stack, format=format, fps=fps, **imageio_kwargs)
             ntp.seek(0)
-            self.logger.log_buffer(key=filename, buf=ntp.read())
+            self.client.log_buffer(key=filename, buf=ntp.read())
 
     def log_pyplot(self, path="plot.png", fig=None, format=None, **kwargs):
         """
@@ -659,7 +738,7 @@ class ML_Logger:
         buf.seek(0)
 
         path = os.path.join(self.prefix, path)
-        self.logger.log_buffer(path, buf.read())
+        self.client.log_buffer(path, buf.read())
         return path
 
     def savefig(self, key, fig=None, format=None, **kwargs):
@@ -766,7 +845,7 @@ class ML_Logger:
         :param key: a path string
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        return self.logger.read(os.path.join(self.prefix, key))
+        return self.client.read(os.path.join(self.prefix, key))
 
     def load_text(self, key):
         """ return the text content of the file (in a single chunk)
@@ -786,7 +865,7 @@ class ML_Logger:
         :param key: a path string
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        return self.logger.read_text(os.path.join(self.prefix, key))
+        return self.client.read_text(os.path.join(self.prefix, key))
 
     def load_pkl(self, key):
         """
@@ -805,7 +884,7 @@ class ML_Logger:
         :param key: a path string
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        return self.logger.read_pkl(os.path.join(self.prefix, key))
+        return self.client.read_pkl(os.path.join(self.prefix, key))
 
     def load_np(self, key):
         """ load a np file
@@ -823,7 +902,7 @@ class ML_Logger:
         :param key: a path string
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        return self.logger.read_np(os.path.join(self.prefix, key))
+        return self.client.read_np(os.path.join(self.prefix, key))
 
     @staticmethod
     def plt2data(fig):
@@ -884,7 +963,7 @@ class ML_Logger:
         """
         filename = filename or self.log_filename
         if text is not None:
-            self.logger.log_text(key=os.path.join(self.prefix, filename), text=text)
+            self.client.log_text(key=os.path.join(self.prefix, filename), text=text)
             if not silent:
                 print(text, end="")
 
@@ -908,7 +987,7 @@ class ML_Logger:
         :return:
         """
         wd = os.path.join(self.prefix, wd or "")
-        return self.logger.glob(query, wd=wd, recursive=recursive, start=start, stop=stop)
+        return self.client.glob(query, wd=wd, recursive=recursive, start=start, stop=stop)
 
 
-logger = ML_Logger(register_experiment=False)
+logger = ML_Logger()

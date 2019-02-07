@@ -1,16 +1,67 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+
+from ml_logger.requests import SyncRequests
 from requests_futures.sessions import FuturesSession
 from ml_logger.serdes import serialize, deserialize
 from ml_logger.server import LoggingServer
 from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
 
 
+# noinspection PyPep8Naming
+@contextmanager
+def _SyncContext(logger):
+    old_session = logger.session
+    if logger.sync_pool is None:
+        logger.set_sessions(True, logger.max_workers)
+        logger.sync_pool = logger.session
+    try:
+        yield
+    finally:
+        logger.session = old_session
+
+
+@contextmanager
+def _AsyncContext(logger):
+    old_session = logger.session
+    logger.set_sessions(True, logger.max_workers)
+    if logger.async_pool is None:
+        logger.set_sessions(True, logger.max_workers)
+        logger.async_pool = logger.session
+    try:
+        yield
+    finally:
+        logger.session = old_session
+
+
 class LogClient:
     local_server = None
     session = None
+    # note: used by the context switchers. They do not take parameters, so
+    #  only sync/async key is needed to differentiate
+    sync_pool = None
+    async_pool = None
 
-    def __init__(self, url: str = None, max_workers=None):
+    # with logger.SyncContext():
+    #   logger.configure("/tmp/some-stuff", "some prefix")
+    #   # should work.
+    # with logger.SyncContext():
+    #   logger.configure("http://escherpad.com/tmp/some-stuff", "some prefix")
+    #   # should work.
+
+    def __init__(self, url: str = None, asynchronous=None, max_workers=None):
+        """
+        When max_workers is 0, the HTTP requests are synchronous. This allows one to make
+        synchronous requests procedurally.
+
+        This is also useful when some logging have to happen before forking subprocesses.
+        Mujoco-py for example, would have trouble with forked processes if multiple
+        threads are started before forking the subprocesses.
+
+        :param url:
+        :param max_workers:
+        """
         if url.startswith("file://"):
             self.local_server = LoggingServer(data_dir=url[6:], silent=True)
         elif os.path.isabs(url):
@@ -19,12 +70,37 @@ class LogClient:
             self.url = url
             self.ping_url = os.path.join(url, "ping")
             self.glob_url = os.path.join(url, "glob")
-            self.session = FuturesSession(ThreadPoolExecutor(max_workers=max_workers) if max_workers else None)
+            self.max_workers = max_workers
+            self.set_session(asynchronous, max_workers)
         else:
             # todo: add https://, and s3://
             raise TypeError('log url need to begin with `/`, `file://` or `http://`.')
 
     configure = __init__
+
+    def set_session(self, asynchronous, max_workers):
+        if asynchronous is True:
+            self.session = FuturesSession(ThreadPoolExecutor(max_workers=max_workers))
+        elif asynchronous is False:
+            self.session = SyncRequests(max_workers=max_workers)
+
+    # noinspection PyPep8Naming
+    def SyncContext(self, **kwargs):
+        """
+        Returns a context in which the logger logs synchronously.
+
+        :return: context object
+        """
+        return _SyncContext(self, **kwargs)
+
+    # noinspection PyPep8Naming
+    def AsyncContext(self, **kwargs):
+        """
+        Returns a context in which the logger logs asynchronously.
+
+        :return: context object
+        """
+        return _AsyncContext(self, **kwargs)
 
     def _get(self, key, dtype):
         if self.local_server:

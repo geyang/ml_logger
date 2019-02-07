@@ -17,3 +17,6 @@ class KeyValueCache:
         _ = self.data.copy()
         self.data.clear()
         return _
+
+    def clear(self):
+        self.data.clear()
