@@ -21,7 +21,7 @@ class LoggingServer:
 
     configure = __init__
 
-    def serve(self, host, port):
+    def serve(self, host, port, workers):
         import sanic
         self.app = sanic.Sanic()
         self.app.add_route(self.log_handler, '/', methods=['POST'])
@@ -30,7 +30,7 @@ class LoggingServer:
         self.app.add_route(self.glob_handler, '/glob', methods=['POST'])
         self.app.add_route(self.remove_handler, '/', methods=['DELETE'])
         # todo: need a file serving url
-        self.app.run(host=host, port=port, debug=Params.debug)
+        self.app.run(host=host, port=port, workers=workers, debug=Params.debug)
 
     async def ping_handler(self, req):
         import sanic
@@ -293,6 +293,7 @@ class Params:
     port = Proto(8081, help="port for the logging server")
     host = Proto("127.0.0.1", help="IP address for running the server. Default only allows localhost from making "
                                    "requests. If you want to allow all ip, set this to '0.0.0.0'.")
+    n_workers = Proto(1, help="Number of workers to run in parallel")
     debug = BoolFlag(False, help='boolean flag for printing out debug traces')
 
 
@@ -302,4 +303,4 @@ if __name__ == '__main__':
     v = pkg_resources.get_distribution("ml_logger").version
     print('running ml_logger.server version {}'.format(v))
     server = LoggingServer(data_dir=Params.data_dir)
-    server.serve(host=Params.host, port=Params.port)
+    server.serve(host=Params.host, port=Params.port, workers=Params.n_workers)
