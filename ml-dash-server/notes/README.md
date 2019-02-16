@@ -14,10 +14,13 @@
 - [x] finish schema v0 
 - [ ] add routing, start with user, expand to projects
     > main project, fork project etc.
-- [ ] finish relay tutorial
+- [x] finish relay tutorial
+- [ ] list files under current context
+- [ ] navigate to child context
+- [ ] 
+- [ ] make file explorer 
 - [ ] setting up flow
 - [ ] add mutation (for files)
 - [ ] view queries in grahiQL
 - [ ] make chart container
 - [ ] copy experiment data
-- [ ] make file explorer 
