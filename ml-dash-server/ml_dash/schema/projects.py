@@ -10,9 +10,16 @@ class Project(ObjectType):
         interfaces = relay.Node,
 
     name = String(description='name of the project')
+    _path = String(description='internal path on the server')
 
     # description = String(description='string serialized data')
     # experiments = List(lambda: schema.Experiments)
+
+    experiments = relay.ConnectionField(lambda: schema.experiments.ExperimentConnection)
+
+    def resolve_experiments(self, info, **kwargs):
+        return schema.experiments.find_experiments(self._path)
+
     directories = relay.ConnectionField(lambda: schema.directories.DirectoryConnection)
     files = relay.ConnectionField(lambda: schema.files.FileConnection)
 
@@ -28,12 +35,12 @@ class Project(ObjectType):
         return [schema.Directory(id=join(self.id, _), name=_)
                 for _ in listdir(root_dir) if isfile(join(root_dir, _))]
 
-    def resolve_experiments(self, info, **kargs):
-        from ml_dash.config import Args
-        root_dir = join(Args.logdir, self.id[1:])
-
-        return [schema.Directory(id=join(self.id, _), name=_)
-                for _ in listdir(root_dir) if isfile(join(root_dir, _))]
+    # def resolve_experiments(self, info, **kargs):
+    #     from ml_dash.config import Args
+    #     root_dir = join(Args.logdir, self.id[1:])
+    #
+    #     return [schema.Directory(id=join(self.id, _), name=_)
+    #             for _ in listdir(root_dir) if isfile(join(root_dir, _))]
 
     @classmethod
     def get_node(cls, info, id):
@@ -49,10 +56,11 @@ def get_projects(username):
     import os
     from ml_dash.config import Args
     user_root = join(Args.logdir, username)
-    return [Project(name=_, id=join('/', username, _)) for _ in os.listdir(user_root)]
+    return [Project(name=_, id=join('/', username, _), _path=join(user_root, _))
+            for _ in os.listdir(user_root)]
 
 
 def get_project(id):
-    raise NotImplementedError('Not yet fully implemented')
-    # path = join(Args.logdir, id[1:])
-    return Project(id=id, name=split(id[1:])[1])
+    from ml_dash.config import Args
+    path = join(Args.logdir, id[1:])
+    return Project(id=id, name=split(id[1:])[1], _path=path)

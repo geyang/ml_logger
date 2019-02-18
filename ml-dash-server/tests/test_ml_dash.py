@@ -16,6 +16,7 @@ def test_schema():
                   edges {
                     node {
                         name
+                        experiments(first:10){ edges { node { name parameters {value keys flat raw} } } }
                         directories(first:10){
                             edges {
                                 node {

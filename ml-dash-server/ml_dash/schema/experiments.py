@@ -1,5 +1,5 @@
 from os import listdir
-from os.path import isfile, join, split, basename, dirname
+from os.path import isfile, join, split, basename, dirname, realpath
 
 from graphene import ObjectType, relay, String, Field
 from ml_dash import schema
@@ -12,9 +12,9 @@ class Experiment(ObjectType):
         interfaces = relay.Node,
 
     name = String(description='name of the directory')
-    parameters = Field(lambda: files.parameters.Parameter, )
+    parameters = Field(lambda: files.parameters.Parameters, )
 
-    def resolve_parameters(self):
+    def resolve_parameters(self, info):
         return files.parameters.get_parameters(self.parameters)
 
     # description = String(description='string serialized data')
@@ -52,9 +52,11 @@ def get_directory(id):
 
 
 def find_experiments(cwd, **kwargs):
+    from ml_dash.config import Args
+    cwd = realpath(join(Args.logdir, cwd[1:]))
     parameter_files = find_files(cwd, "**/parameters.pkl", **kwargs)
     return [
         # note: not sure about the name.
-        Experiment(id="/" + dirname(p), name=basename(dirname(p)), parameters=p, )
+        Experiment(id="/" + join(cwd, p['dir']), name=basename(p['dir']), parameters=join(cwd, p['path']), )
         for p in parameter_files
     ]

@@ -1,6 +1,6 @@
 from glob import iglob
 from os import stat
-from os.path import basename, join
+from os.path import basename, join, realpath, dirname
 
 from ml_dash.file_handlers import cwdContext
 
@@ -12,8 +12,9 @@ def file_stat(file_path):
     return dict(
         name=basename(file_path),
         path=file_path,
-        mtime=stat_res.st_mtime,
-        ctime=stat_res.st_ctime,
+        dir=dirname(file_path),
+        time_modified=stat_res.st_mtime,
+        time_created=stat_res.st_ctime,
         # type=ft,
         size=sz,
     )
@@ -21,8 +22,41 @@ def file_stat(file_path):
 
 def find_files(cwd, query, start=None, stop=None):
     from itertools import islice
-    from ml_dash.config import Args
-    with cwdContext(join(Args.logdir, cwd[1:])):
+    with cwdContext(cwd):
         file_paths = list(islice(iglob(query, recursive=True), start or 0, stop or 200))
-        files = map(file_stat, file_paths)
+        files = [file_stat(_) for _ in file_paths]
         return files
+
+
+def read_records(path, k=200):
+    from ml_logger.helpers import load_pickle_as_dataframe
+    df = load_pickle_as_dataframe(path, k)
+    return df.to_json(orient="records")
+
+
+def read_log(path, k=200):
+    from ml_logger.helpers import load_pickle_as_dataframe
+    df = load_pickle_as_dataframe(path, k)
+    return df.to_json(orient="records")
+
+
+def read_json(path):
+    from ml_logger.helpers import load_from_pickle
+    data = [_ for _ in load_from_pickle(path)]
+    return data
+
+
+def read_text(path, start, stop):
+    from itertools import islice
+    with open(path, 'r') as f:
+        text = ''.join([l for l in islice(f, start, stop)])
+    return text
+
+
+def read_binary():
+    raise NotImplementedError()
+    # todo: check the file handling here. Does this use correct
+    #  mimeType for text files?
+    # res = await response.file(path)
+    # if as_attachment:
+    #     res.headers['Content-Disposition'] = 'attachment'

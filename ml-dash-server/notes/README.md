@@ -10,10 +10,10 @@
 
 ## ToDos
 
-- [ ] list experiments under project
-- [ ] list directory under experiment
-- [ ] list files under experiment
-- [ ] list files under current context
+- [x] list experiments under project
+- [x] list directory under experiment
+- [x] list files under experiment
+- [x] list files under current context
     1. client side
     2. server side
 - [ ] make the sample experiment 500MB large.
