@@ -34,7 +34,7 @@ publish: convert-rst
 	make wheel
 	twine upload dist/*
 start: # dev start: use sanic to bootstrap.
-	source activate playground && python -m sanic ml_dash.app --host=0.0.0.0 --port=8081 --workers=4
+	source activate playground && python -m ml_dash.main --host=0.0.0.0 --port=8081 --workers=4 --logdir="tests/runs"
 
 # older scripts
 #test:

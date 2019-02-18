@@ -1,9 +1,11 @@
 from os import path
 from setuptools import setup, find_packages
 
-with open(path.join(path.abspath(path.dirname(__file__)), 'README'), encoding='utf-8') as f:
+cwd = path.dirname(__file__)
+with open(path.join(cwd, 'README'), encoding='utf-8') as f:
     long_description = f.read()
-with open(path.join(path.abspath(path.dirname(__file__)), 'VERSION'), encoding='utf-8') as f:
+
+with open(path.join(cwd, 'VERSION'), encoding='utf-8') as f:
     version = f.read()
 
 setup(name="ml-dash",
@@ -16,9 +18,9 @@ setup(name="ml-dash",
       license=None,
       keywords=["ml_logger",
                 "ml-logger",
-                "ml_dash",
-                "ml-dash",
                 "ml dash",
+                "ml-dash",
+                "ml_dash"
                 "dashboard",
                 "machine learning",
                 "vis_server",

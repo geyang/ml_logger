@@ -2,7 +2,6 @@ from ml_dash.data import setup
 from ml_dash.schema import schema
 from sanic_graphql import GraphQLView
 
-from . import config
 from .file_events import file_events, setup_watch_queue
 from .file_handlers import get_path, remove_path, batch_get_path
 
@@ -38,17 +37,25 @@ app.listener('before_server_start')(setup_watch_queue)
 
 # app.add_task(start_watcher)
 
-def run(logdir=None, **kwargs):
-    import os
-    config.ServerArgs.update(**kwargs)
-    if logdir:
-        config.Args.logdir = os.path.realpath(logdir)
 
-    assert os.path.isabs(config.Args.logdir), "the processed log_dir has to start with '/'."
+def run(logdir=None, **kwargs):
+    from . import config
+    from termcolor import cprint
+
+    if logdir:
+        config.Args.logdir = logdir
+
+    cprint("launched server with config:", "green")
+    cprint("Args:", 'yellow')
+    print(vars(config.Args))
+    cprint("Sanic Server Args:", 'yellow')
+    print(vars(config.ServerArgs))
+
+    config.ServerArgs.update(**kwargs)
     app.run(**vars(config.ServerArgs))
 
 
 if __name__ == "__main__":
     # see: https://sanic.readthedocs.io/en/latest/sanic/deploying.html
-    # app.run(host='0.0.0.0', port=1337, workers=4)
+    # call this as `python -m ml_logger.main`
     run()

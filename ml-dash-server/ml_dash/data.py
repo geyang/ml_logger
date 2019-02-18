@@ -46,7 +46,7 @@ def setup():
 
 
 def get_user(username, ):
-    from .schema import User
+    from ml_dash.schema import User
 
     user = User(**data['Users'][0])
     return user
