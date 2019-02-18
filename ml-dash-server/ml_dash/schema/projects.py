@@ -19,11 +19,19 @@ class Project(ObjectType):
     def resolve_directories(self, info, **kwargs):
         from ml_dash.config import Args
         root_dir = join(Args.logdir, self.id[1:])
-        return [schema.Directory(id=join(self.id, _), name=_) for _ in listdir(root_dir) if not isfile(join(root_dir, _))]
+        return [schema.Directory(id=join(self.id, _), name=_)
+                for _ in listdir(root_dir) if not isfile(join(root_dir, _))]
 
     def resolve_files(self, info, **kwargs):
         from ml_dash.config import Args
         root_dir = join(Args.logdir, self.id[1:])
+        return [schema.Directory(id=join(self.id, _), name=_)
+                for _ in listdir(root_dir) if isfile(join(root_dir, _))]
+
+    def resolve_experiments(self, info, **kargs):
+        from ml_dash.config import Args
+        root_dir = join(Args.logdir, self.id[1:])
+
         return [schema.Directory(id=join(self.id, _), name=_)
                 for _ in listdir(root_dir) if isfile(join(root_dir, _))]
 

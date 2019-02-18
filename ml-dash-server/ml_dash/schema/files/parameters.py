@@ -1,10 +1,9 @@
-from os import listdir
-from os.path import join, isfile, split
-from graphene import ObjectType, relay, String, List
+from os.path import split
+from graphene import ObjectType, relay, String
 from ml_dash import schema
 
 
-class File(ObjectType):
+class Parameter(ObjectType):
     class Meta:
         interfaces = relay.Node,
 
@@ -15,14 +14,14 @@ class File(ObjectType):
 
     @classmethod
     def get_node(cls, info, id):
-        return get_file(id)
+        return get_parameters(id)
 
 
-class FileConnection(relay.Connection):
+class ParameterConnection(relay.Connection):
     class Meta:
-        node = File
+        node = Parameter
 
 
-def get_file(id):
+def get_parameters(id):
     # path = os.path.join(Args.logdir, id[1:])
-    return File(id=id, name=split(id[1:])[1])
+    return Parameter(id=id, name=split(id[1:])[1])

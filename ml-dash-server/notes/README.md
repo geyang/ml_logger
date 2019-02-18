@@ -10,13 +10,6 @@
 
 ## ToDos
 
-- [x] get user by username
-- [x] add test?
-- [x] list projects under user
-- [x] add id to project
-- [x] list directories under project
-- [ ] list directory under directory
-- [ ] list files under directory
 - [ ] list experiments under project
 - [ ] list directory under experiment
 - [ ] list files under experiment
@@ -47,3 +40,10 @@
 - [x] break routes down
 - [x] Add home page
 - [x] add link to your own username
+- [x] get user by username
+- [x] add test?
+- [x] list projects under user
+- [x] add id to project
+- [x] list directories under project
+- [x] list directory under directory
+- [x] list files under directory

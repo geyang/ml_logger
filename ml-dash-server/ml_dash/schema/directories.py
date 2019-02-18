@@ -10,10 +10,15 @@ class Directory(ObjectType):
         interfaces = relay.Node,
 
     name = String(description='name of the directory')
+    __path = String(description='internal path on the server')
 
     # description = String(description='string serialized data')
     # experiments = List(lambda: schema.Experiments)
     # children = List(lambda: schema.DirectoryAndFiles)
+    experiments = relay.ConnectionField(lambda: schema.experiments.ExperimentConnection)
+
+    def resolve_experiments(self, info, **kwargs):
+        return schema.experiments.find_experiments(self.__path)
 
     directories = relay.ConnectionField(lambda: schema.directories.DirectoryConnection)
     files = relay.ConnectionField(lambda: schema.files.FileConnection)
@@ -42,4 +47,5 @@ class DirectoryConnection(relay.Connection):
 
 def get_directory(id):
     # path = os.path.join(Args.logdir, id[1:])
-    return Directory(id=id, name=split(id[1:])[1])
+    from ml_dash.config import Args
+    return Directory(id=id, name=split(id[1:])[1], __path=join(Args.logdir, id[1:]))

@@ -33,7 +33,7 @@ from contextlib import contextmanager
 
 
 @contextmanager
-def cwd(path):
+def cwdContext(path):
     owd = os.getcwd()
     os.chdir(path)
     try:
@@ -91,7 +91,7 @@ async def get_path(request, file_path=""):
 
     if os.path.isdir(path):
         from itertools import islice
-        with cwd(path):
+        with cwdContext(path):
             print(os.getcwd(), query, is_recursive)
             file_paths = list(islice(iglob(query, recursive=is_recursive), start or 0, stop or 200))
             files = map(file_stat, file_paths)
@@ -115,7 +115,8 @@ async def get_path(request, file_path=""):
                 text = ''.join([l for l in islice(f, start, stop)])
             res = response.text(text, status=200)
         else:
-            # todo: check the file handling here. Does this use correct mimeType for text files?
+            # todo: check the file handling here. Does this use correct
+            #  mimeType for text files?
             res = await response.file(path)
             if as_attachment:
                 res.headers['Content-Disposition'] = 'attachment'

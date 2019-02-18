@@ -16,3 +16,4 @@ def bind_args(fn):
     :return: bound_fn
     """
     return lambda _, info, *args, **kwargs: fn(*args, **kwargs)
+
