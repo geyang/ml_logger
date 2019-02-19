@@ -17,3 +17,8 @@ yarn start
 ```
 
 This should start a dev server serving the client at port 3001. GraphQueries are pointed to 8081.
+
+### Generating Sample Experiments
+
+run [../ml-dash-server/tests/ create_experiments.py](../server/tests/create_experiments.py), which 
+would generate experiment records inside a `./runs` folder.

@@ -9,6 +9,8 @@ test-logs
 
 # User-specific stuff:
 .idea
+runs
+
 
 ## File-based project format:
 *.iws

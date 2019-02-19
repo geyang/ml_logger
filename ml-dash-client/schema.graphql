@@ -3,11 +3,66 @@ schema {
   mutation: Mutation
 }
 
+type Directory implements Node {
+  id: ID!
+  name: String
+  Path: String
+  experiments(before: String, after: String, first: Int, last: Int): ExperimentConnection
+  directories(before: String, after: String, first: Int, last: Int): DirectoryConnection
+  files(before: String, after: String, first: Int, last: Int): FileConnection
+}
+
+type DirectoryConnection {
+  pageInfo: PageInfo!
+  edges: [DirectoryEdge]!
+}
+
+type DirectoryEdge {
+  node: Directory
+  cursor: String!
+}
+
+type Experiment implements Node {
+  id: ID!
+  name: String
+  parameters: Parameters
+  metrics: Metrics
+  directories(before: String, after: String, first: Int, last: Int): DirectoryConnection
+  files(before: String, after: String, first: Int, last: Int): FileConnection
+}
+
+type ExperimentConnection {
+  pageInfo: PageInfo!
+  edges: [ExperimentEdge]!
+}
+
+type ExperimentEdge {
+  node: Experiment
+  cursor: String!
+}
+
 type Faction implements Node {
   id: ID!
   name: String
   ships(before: String, after: String, first: Int, last: Int): ShipConnection
 }
+
+type File implements Node {
+  id: ID!
+  name: String
+}
+
+type FileConnection {
+  pageInfo: PageInfo!
+  edges: [FileEdge]!
+}
+
+type FileEdge {
+  node: File
+  cursor: String!
+}
+
+scalar GenericScalar
 
 input IntroduceShipInput {
   shipName: String!
@@ -16,9 +71,15 @@ input IntroduceShipInput {
 }
 
 type IntroduceShipPayload {
-  ship: Ship
-  faction: Faction
+  ship(id: ID!): Ship
+  faction(id: ID!): Faction
   clientMutationId: String
+}
+
+type Metrics implements Node {
+  id: ID!
+  keys: [String]
+  value(keys: [String]): GenericScalar
 }
 
 type Mutation {
@@ -36,23 +97,62 @@ type PageInfo {
   endCursor: String
 }
 
+type Parameters implements Node {
+  id: ID!
+  Path: String
+  keys: [String]
+  value: GenericScalar
+  raw: GenericScalar
+  flat: GenericScalar
+}
+
 type Project implements Node {
   id: ID!
   name: String
-  description: String
-  projects: [Project]
+  experiments(before: String, after: String, first: Int, last: Int): ExperimentConnection
+  directories(before: String, after: String, first: Int, last: Int): DirectoryConnection
+  files(before: String, after: String, first: Int, last: Int): FileConnection
+}
+
+type ProjectConnection {
+  pageInfo: PageInfo!
+  edges: [ProjectEdge]!
+}
+
+type ProjectEdge {
+  node: Project
+  cursor: String!
 }
 
 type Query {
-  user: User
-  users: [User]
-  team: Team
-  teams: [Team]
-  project: Project
-  projects: [Project]
-  rebels: Faction
-  empire: Faction
   node(id: ID!): Node
+  users: [User]
+  user(username: String): User
+  projects(id: ID!): [Project]
+  project(id: ID!): Project
+  metrics(id: ID): Metrics
+  series(prefix: String, metricsFiles: [String], window: Float, xKey: String, yKey: String, label: String): Series
+}
+
+type Series implements Node {
+  id: ID!
+  path: String
+  prefix: String
+  metricsFiles: [ID]
+  Df: GenericScalar
+  Dfs: GenericScalar
+  window: Float
+  label: String
+  xKey: String
+  yKey: String
+  yKeys: [String]
+  xData: [GenericScalar]
+  yData: [GenericScalar]
+  y25: [GenericScalar]
+  y75: [GenericScalar]
+  y0: [GenericScalar]
+  y100: [GenericScalar]
+  yStddev: [GenericScalar]
 }
 
 type Ship implements Node {
@@ -70,18 +170,9 @@ type ShipEdge {
   cursor: String!
 }
 
-type Team implements Node {
-  id: ID!
-  name: String
-  description: String
-  users: [User]
-  projects: [Project]
-}
-
 type User implements Node {
   id: ID!
   username: String
   name: String
-  projects: [Project]
-  teams: [Team]
+  projects(before: String, after: String, first: Int, last: Int): ProjectConnection
 }

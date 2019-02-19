@@ -4,6 +4,9 @@
   "private": true,
   "dependencies": {
     "babel-plugin-transform-export-extensions": "^6.22.0",
+    "farce": "^0.2.7",
+    "found": "^0.3.20",
+    "found-relay": "^0.4.0-alpha.4",
     "react": "^16.7.0",
     "react-dom": "^16.7.0",
     "react-relay": "^2.0.0",
@@ -12,11 +15,14 @@
   },
   "scripts": {
     "start": "PORT=3001 react-scripts start",
+    "start-backend": "source activate playground && python -m ml_dash.main --logdir='../runs' --workers 4 --port=8081",
+    "create-example-experiments": "source activate playground && cd ../ && python ml-dash-server/tests/create_experiments.py",
+    "generate-schema": "source activate playground && python scripts/generate_schema.py",
+    "relay": "relay-compiler --src ./src --schema ./schema.graphql --extensions js jsx",
+    "refresh": "yarn generate-schema && yarn relay",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "generate-schema": "source activate playground && python scripts/generate_schema.py",
-    "relay": "relay-compiler --src ./src --schema ./schema.graphql --extensions js jsx"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": "react-app"

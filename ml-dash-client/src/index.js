@@ -1,13 +1,28 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
+import {BrowserProtocol, queryMiddleware} from 'farce';
+import {createFarceRouter, createRender, makeRouteConfig, Route,} from 'found';
+import {Resolver} from 'found-relay';
+import {modernEnvironment} from "./data";
+import App, {query} from './pages/App';
+import FrontPage from './pages/FrontPage';
 
+const Router = createFarceRouter({
+  historyProtocol: new BrowserProtocol(),
+  historyMiddlewares: [queryMiddleware],
+  routeConfig: makeRouteConfig(
+      <Route path="/">
+        <Route Component={FrontPage}/>
+        <Route path=":username?/:project?/:path*" query={query} Component={App}
+               prepareVariables={(params) => params}/>
+      </Route>
+  ),
 
-ReactDOM.render(<App/>, document.getElementById('root'));
+  render: createRender({}),
+});
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: http://bit.ly/CRA-PWA
-serviceWorker.unregister();
+ReactDOM.render(
+    <Router resolver={new Resolver(modernEnvironment)}/>,
+    document.getElementById('root'),
+);
+
