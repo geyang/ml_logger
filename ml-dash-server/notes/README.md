@@ -10,12 +10,11 @@
 
 ## ToDos
 
-- [x] fix id to be absolute w.r.t `Args.logdir`
-    > right now it is the server absolute path. 
-    
-    Now all uses `join(Args.logdir, self.id)`. We could replace this with a helper function.
+do these after the frontend is working
+- [ ] actually return aggregated metric series
+- [ ] add rolling average window
 
-- [ ] add metric query to root query.
+not working on.
 - [ ] unify `project`, `directory`, and `experiment` with the same master type
 - [ ] make the sample experiment 500MB large.
 - [ ] navigate to child context
@@ -57,3 +56,9 @@
 - [x] metric files
 - [x] metric file keys
 - [x] metric file value query with keys
+- [x] fix id to be absolute w.r.t `Args.logdir`
+    > right now it is the server absolute path. 
+    
+    Now all uses `join(Args.logdir, self.id)`. We could replace this with a helper function.
+- [x] add metric query to root query.
+- [x] support queries with multiple metric files

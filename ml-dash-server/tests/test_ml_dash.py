@@ -3,6 +3,55 @@ from ml_dash.schema import schema
 from tests import show
 
 
+def test_series():
+    from ml_dash.config import Args
+    Args.logdir = "../../runs"
+    client = Client(schema)
+    query = """
+        query AppQuery {
+            series(
+                prefix:"/episodeyang/playground", 
+                xKey: "__timestamp"
+                yKey: "sine"
+                metricsFiles:["experiment_00/metrics.pkl", "experiment_01/metrics.pkl", "experiment_02/metrics.pkl"]
+            ) { 
+                id
+                xKey
+                yKey
+                xData
+                yData
+            }
+        }
+    """
+    r = client.execute(query, variables=dict(username="episodeyang"))
+    if 'errors' in r:
+        raise RuntimeError(r['errors'])
+    else:
+        print(">>")
+        show(r['data'])
+
+
+def test_metric():
+    from ml_dash.config import Args
+    Args.logdir = "../../runs"
+    client = Client(schema)
+    query = """
+        query AppQuery {
+            metrics(id:"TWV0cmljczovZXBpc29kZXlhbmcvcGxheWdyb3VuZC9leHBlcmltZW50XzAzL21ldHJpY3MucGts") { 
+                id
+                keys
+                value (keys: ["__timestamp", "sine"])
+            }
+        }
+    """
+    r = client.execute(query, variables=dict(username="episodeyang"))
+    if 'errors' in r:
+        raise RuntimeError(r['errors'])
+    else:
+        print(">>")
+        show(r['data'])
+
+
 def test_schema():
     from ml_dash.config import Args
     Args.logdir = "../../runs"

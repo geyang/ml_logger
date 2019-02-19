@@ -1,10 +1,11 @@
 from os import listdir
 from os.path import isfile, join, split, basename, dirname, realpath, isabs
 
-from graphene import ObjectType, relay, String, Field
+from graphene import ObjectType, relay, String, Field, GlobalID
 from ml_dash import schema
 from ml_dash.schema import files
 from ml_dash.schema.files.file_helpers import find_files
+from ml_dash.schema.files.metrics import find_metrics
 
 
 class Experiment(ObjectType):
@@ -13,14 +14,15 @@ class Experiment(ObjectType):
 
     name = String(description='name of the directory')
     parameters = Field(lambda: files.parameters.Parameters, )
-    metrics = Field(lambda: files.metrics.Metrics, )
+    metrics = Field(lambda: files.metrics.Metrics)
 
     def resolve_parameters(self, info):
         return files.parameters.get_parameters(self.parameters)
 
     def resolve_metrics(self, info):
-        # todo: find metric files
-        return files.metrics.get_metrics(self.id)
+        for m in find_metrics(self.id):
+            return m
+        return None
 
     # description = String(description='string serialized data')
     # experiments = List(lambda: schema.Experiments)

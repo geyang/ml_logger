@@ -20,6 +20,7 @@ class Metrics(ObjectType):
         keys = df.dropna().keys()
         return list(keys)
 
+    # add more complex queries.
     def resolve_value(self, info, keys=None):
         _ = read_dataframe(join(Args.logdir, self.id[1:]))
         if keys:
@@ -39,13 +40,14 @@ class MetricsConnection(relay.Connection):
         node = Metrics
 
 
-def get_metrics(experiment_path):
+def get_metrics(id):
     # note: this is where the key finding happens.
-    return Metrics(id=experiment_path + "/metrics.pkl")
+    return Metrics(id=id)
 
 
-def find_metrics_files(cwd, **kwargs):
+def find_metrics(cwd, **kwargs):
     from ml_dash.config import Args
-    cwd = realpath(join(Args.logdir, cwd[1:]))
-    parameter_files = find_files(cwd, "**/metrics.pkl", **kwargs)
-    return [Metrics(id="/" + join(cwd, p['dir'])) for p in parameter_files]
+    _cwd = realpath(join(Args.logdir, cwd[1:]))
+    parameter_files = find_files(_cwd, "**/metrics.pkl", **kwargs)
+    for p in parameter_files:
+        yield Metrics(id=join(cwd, p['path']))
