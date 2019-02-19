@@ -15,11 +15,13 @@ def test_schema():
                 projects(first: 1) {
                   edges {
                     node {
+                        id
                         name
                         experiments(first:10){ edges { node { 
                             name
                             parameters {value keys flat raw} 
                             metrics {
+                                id
                                 keys 
                                 value (keys: ["__timestamp", "sine"]) 
                             }

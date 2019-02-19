@@ -2,6 +2,7 @@ from os.path import split, realpath, join
 from graphene import relay, ObjectType, String, List, JSONString
 from graphene.types.generic import GenericScalar
 from ml_dash import schema
+from ml_dash.config import Args
 from ml_dash.schema.files.file_helpers import find_files, read_records, read_dataframe
 
 
@@ -15,16 +16,17 @@ class Metrics(ObjectType):
     value = GenericScalar(description="The value of the metrics file", keys=List(String))
 
     def resolve_keys(self, info):
-        df = read_dataframe(self.id)
+        df = read_dataframe(join(Args.logdir, self.id[1:]))
         keys = df.dropna().keys()
         return list(keys)
 
     def resolve_value(self, info, keys=None):
+        _ = read_dataframe(join(Args.logdir, self.id[1:]))
         if keys:
-            df = read_dataframe(self.id)[keys].dropna()
+            df = _[keys].dropna()
             return {k: df[k].values.tolist() for k in keys}
         else:
-            df = read_dataframe(self.id).dropna()
+            df = _.dropna()
             return {k: v.values.tolist() for k, v in df.items()}
 
     @classmethod

@@ -1,5 +1,5 @@
 from os import listdir
-from os.path import isfile, join, split, basename, dirname, realpath
+from os.path import isfile, join, split, basename, dirname, realpath, isabs
 
 from graphene import ObjectType, relay, String, Field
 from ml_dash import schema
@@ -58,8 +58,9 @@ def get_directory(id):
 
 def find_experiments(cwd, **kwargs):
     from ml_dash.config import Args
-    cwd = realpath(join(Args.logdir, cwd[1:]))
-    parameter_files = find_files(cwd, "**/parameters.pkl", **kwargs)
+    assert isabs(cwd), "the current work directory need to be an absolute path."
+    _cwd = realpath(join(Args.logdir, cwd[1:]))
+    parameter_files = find_files(_cwd, "**/parameters.pkl", **kwargs)
     return [
         # note: not sure about the name.
         Experiment(id=join(cwd, p['dir']), name=basename(p['dir']), parameters=join(cwd, p['path']), )

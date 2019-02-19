@@ -1,8 +1,9 @@
 from functools import reduce
-from os.path import split
+from os.path import split, join
 from graphene import ObjectType, relay, String, List
 from graphene.types.generic import GenericScalar
 from ml_dash import schema
+from ml_dash.config import Args
 from ml_dash.schema.files.file_helpers import read_json
 from ml_dash.schema.helpers import assign, dot_keys, dot_flatten
 
@@ -18,17 +19,17 @@ class Parameters(ObjectType):
     flat = GenericScalar(description="the raw data object for the parameters")
 
     def resolve_keys(self, info):
-        value = reduce(assign, read_json(self.id) or [{}])
+        value = reduce(assign, read_json(join(Args.logdir, self.id[1:])) or [{}])
         return dot_keys(value)
 
     def resolve_value(self, info, **kwargs):
-        return reduce(assign, read_json(self.id) or [{}])
+        return reduce(assign, read_json(join(Args.logdir, self.id[1:])) or [{}])
 
     def resolve_raw(self, info, **kwargs):
-        return read_json(self.id)
+        return read_json(join(Args.logdir, self.id[1:]))
 
     def resolve_flat(self, info, **kwargs):
-        value = reduce(assign, read_json(self.id) or [{}])
+        value = reduce(assign, read_json(join(Args.logdir, self.id[1:])) or [{}])
         return dot_flatten(value)
 
     # description = String(description='string serialized data')

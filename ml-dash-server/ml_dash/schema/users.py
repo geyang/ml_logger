@@ -1,3 +1,4 @@
+from os.path import isfile
 from graphene import ObjectType, relay, String
 from ml_dash import schema
 
@@ -17,7 +18,6 @@ class User(ObjectType):
     projects = relay.ConnectionField(lambda: schema.projects.ProjectConnection)
 
     def resolve_projects(self, info, **kwargs):
-        print(kwargs)
         return schema.projects.get_projects(self.username)
 
     # teams = List(lambda: schema.Team)
@@ -26,7 +26,7 @@ class User(ObjectType):
 def get_users(ids=None):
     import os
     from ml_dash.config import Args
-    return [User(username=_, name="Ge Yang") for _ in os.listdir(Args.logdir)]
+    return [User(username=_, name="Ge Yang") for _ in os.listdir(Args.logdir) if not isfile(_)]
 
 
 def get_user(username):

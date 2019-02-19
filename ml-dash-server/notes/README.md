@@ -10,11 +10,12 @@
 
 ## ToDos
 
-- [x] flat keys for parameters
-- [x] flat dictionary of parameters
-- [ ] metric files
-- [ ] metric file keys
-- [ ] metric file
+- [x] fix id to be absolute w.r.t `Args.logdir`
+    > right now it is the server absolute path. 
+    
+    Now all uses `join(Args.logdir, self.id)`. We could replace this with a helper function.
+
+- [ ] add metric query to root query.
 - [ ] unify `project`, `directory`, and `experiment` with the same master type
 - [ ] make the sample experiment 500MB large.
 - [ ] navigate to child context
@@ -51,3 +52,8 @@
 - [x] list directory under experiment
 - [x] list files under experiment
 - [x] list files under current context
+- [x] flat keys for parameters
+- [x] flat dictionary of parameters
+- [x] metric files
+- [x] metric file keys
+- [x] metric file value query with keys
