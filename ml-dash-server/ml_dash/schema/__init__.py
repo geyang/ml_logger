@@ -1,5 +1,3 @@
-from base64 import b64decode
-
 from graphene import relay, ObjectType, Float, Schema, AbstractType, List, String, Union, Field, GlobalID, ID, Argument
 from graphene.relay.node import from_global_id
 from ml_dash.schema.files.series import Series, get_series
@@ -10,8 +8,6 @@ from ml_dash.schema.projects import Project
 from ml_dash.schema.directories import Directory
 from ml_dash.schema.files import File
 from ml_dash.schema.experiments import Experiment
-
-from ml_dash.data import create_ship, get_faction, get_ship
 
 
 # class Experiment(graphene.ObjectType):
@@ -62,59 +58,15 @@ from ml_dash.data import create_ship, get_faction, get_ship
 #     y_label = graphene.String(description="label for the x axis")
 
 
-class Ship(ObjectType):
-    """A ship in the Star Wars saga"""
-
-    class Meta:
-        interfaces = relay.Node,
-
-    name = String(description="The name of the ship.")
-
-    @classmethod
-    def get_node(cls, info, id):
-        return get_ship(id)
-
-
-class ShipConnection(relay.Connection):
-    class Meta:
-        node = Ship
-
-
-class Faction(ObjectType):
-    """A faction in the Star Wars saga"""
-
-    class Meta:
-        interfaces = relay.Node,
-
-    name = String(description="The name of the faction.")
-    ships = relay.ConnectionField(
-        ShipConnection, description="The ships used by the faction."
-    )
-
-    def resolve_ships(self, info, **args):
-        # Transform the instance ship_ids into real instances
-        return [get_ship(ship_id) for ship_id in self.ships]
-
-    @classmethod
-    def get_node(cls, info, id):
-        return get_faction(id)
-
-
-class IntroduceShip(relay.ClientIDMutation):
+class EditText(relay.ClientIDMutation):
     class Input:
-        ship_name = String(required=True)
-        faction_id = String(required=True)
+        text = String(required=True, description='updated content for the text file')
 
-    ship = relay.Node.Field(Ship)
-    faction = relay.Node.Field(Faction)
+    text = String(description="the updated content for the text file")
 
     @classmethod
-    def mutate_and_get_payload(
-            cls, root, info, ship_name, faction_id, client_mutation_id=None
-    ):
-        ship = create_ship(ship_name, faction_id)
-        faction = get_faction(faction_id)
-        return IntroduceShip(ship=ship, faction=faction)
+    def mutate_and_get_payload(cls, root, info, text, ):
+        return dict(text=text)
 
 
 class Query(ObjectType):
@@ -145,29 +97,6 @@ class Query(ObjectType):
     def resolve_series(self, info, **kwargs):
         return get_series(**kwargs)
 
-    # dirs
-    # files
-
-    # Not Implemented atm
-    # experiments = relay.Node.Field(List(Experiment))
-    # experiment = relay.Node.Field(Experiment)
-
-    # def resolve_user(self, username):
-    #     return get_user(username)
-    #
-    # def resolve_users(self, team=None):
-    #     return get_users(team=team)
-
-    # rebels = relay.Node.Field(Faction)
-    # empire = relay.Node.Field(Faction)
-    # node = relay.Node.Field()
-    #
-    # def resolve_rebels(self, info):
-    #     return get_rebels()
-    #
-    # def resolve_empire(self, info):
-    #     return get_empire()
-
 
 class Mutation(ObjectType):
     # todo: remove_file
@@ -176,7 +105,7 @@ class Mutation(ObjectType):
     # todo: move_file
     # todo: copy_file
 
-    introduce_ship = IntroduceShip.Field()
+    update_text = EditText.Field()
 
 
 schema = Schema(query=Query, mutation=Mutation)

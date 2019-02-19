@@ -10,6 +10,11 @@
 
 ## ToDos
 
+- [x] CLEANUP: remove Starship starter code from the backend
+- [x] add shim EditText mutation
+- [ ] Make sure that the client still works
+- [ ] wrap up and take a break.
+
 do these after the frontend is working
 - [ ] actually return aggregated metric series
 - [ ] add rolling average window

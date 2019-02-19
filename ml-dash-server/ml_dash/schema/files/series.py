@@ -53,6 +53,8 @@ class Series(ObjectType):
     y_100 = List(GenericScalar, description="100% quantile")
     y_stddev = List(GenericScalar, description="standard deviation")
 
+    # todo: need to move the keys out, so that we can dropnan on the joint table.
+    #   Otherwise the different data columns would not necessarily be the same length.
     def resolve_x_data(self, info):
         # todo: error handling on KeyError
         s = self._df[self.x_key]

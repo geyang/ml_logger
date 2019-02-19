@@ -1,4 +1,3 @@
-from ml_dash.data import setup
 from ml_dash.schema import schema
 from sanic_graphql import GraphQLView
 
@@ -12,8 +11,6 @@ app = Sanic(__name__)
 # CORS(app)
 CORS(app, resources={r"/*": {"origins": "*"}}, automatic_options=True)
 
-# for debug, sets up dummy dataset
-setup()
 # new graphQL endpoints
 app.add_route(GraphQLView.as_view(schema=schema, graphiql=True), '/graphql',
               methods=['GET', 'POST', 'FETCH', 'OPTIONS'])
