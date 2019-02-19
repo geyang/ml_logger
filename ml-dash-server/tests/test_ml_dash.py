@@ -16,7 +16,14 @@ def test_schema():
                   edges {
                     node {
                         name
-                        experiments(first:10){ edges { node { name parameters {value keys flat raw} } } }
+                        experiments(first:10){ edges { node { 
+                            name
+                            parameters {value keys flat raw} 
+                            metrics {
+                                keys 
+                                value (keys: ["__timestamp", "sine"]) 
+                            }
+                        } } }
                         directories(first:10){
                             edges {
                                 node {

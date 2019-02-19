@@ -10,12 +10,12 @@
 
 ## ToDos
 
-- [x] list experiments under project
-- [x] list directory under experiment
-- [x] list files under experiment
-- [x] list files under current context
-    1. client side
-    2. server side
+- [x] flat keys for parameters
+- [x] flat dictionary of parameters
+- [ ] metric files
+- [ ] metric file keys
+- [ ] metric file
+- [ ] unify `project`, `directory`, and `experiment` with the same master type
 - [ ] make the sample experiment 500MB large.
 - [ ] navigate to child context
 - [ ] make file explorer 
@@ -47,3 +47,7 @@
 - [x] list directories under project
 - [x] list directory under directory
 - [x] list files under directory
+- [x] list experiments under project
+- [x] list directory under experiment
+- [x] list files under experiment
+- [x] list files under current context

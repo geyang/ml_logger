@@ -1,7 +1,6 @@
 from os.path import split
 from graphene import ObjectType, relay, String
-from ml_dash import schema
-from . import parameters
+from . import parameters, metrics
 
 
 class File(ObjectType):

@@ -1,27 +1,49 @@
-from os.path import split
-from graphene import ObjectType, relay, String
+from os.path import split, realpath, join
+from graphene import relay, ObjectType, String, List, JSONString
+from graphene.types.generic import GenericScalar
 from ml_dash import schema
+from ml_dash.schema.files.file_helpers import find_files, read_records, read_dataframe
 
 
-class File(ObjectType):
+class Metrics(ObjectType):
     class Meta:
         interfaces = relay.Node,
 
-    name = String(description='name of the directory')
+    keys = List(String, description="list of keys for the metrics")
 
-    # description = String(description='string serialized data')
-    # experiments = List(lambda: schema.Experiments)
+    # value = List(GenericScalar, description="the raw value")
+    value = GenericScalar(description="The value of the metrics file", keys=List(String))
+
+    def resolve_keys(self, info):
+        df = read_dataframe(self.id)
+        keys = df.dropna().keys()
+        return list(keys)
+
+    def resolve_value(self, info, keys=None):
+        if keys:
+            df = read_dataframe(self.id)[keys].dropna()
+            return {k: df[k].values.tolist() for k in keys}
+        else:
+            df = read_dataframe(self.id).dropna()
+            return {k: v.values.tolist() for k, v in df.items()}
 
     @classmethod
     def get_node(cls, info, id):
-        return get_file(id)
+        return Metrics(id)
 
 
-class FileConnection(relay.Connection):
+class MetricsConnection(relay.Connection):
     class Meta:
-        node = File
+        node = Metrics
 
 
-def get_file(id):
-    # path = os.path.join(Args.logdir, id[1:])
-    return File(id=id, name=split(id[1:])[1])
+def get_metrics(experiment_path):
+    # note: this is where the key finding happens.
+    return Metrics(id=experiment_path + "/metrics.pkl")
+
+
+def find_metrics_files(cwd, **kwargs):
+    from ml_dash.config import Args
+    cwd = realpath(join(Args.logdir, cwd[1:]))
+    parameter_files = find_files(cwd, "**/metrics.pkl", **kwargs)
+    return [Metrics(id="/" + join(cwd, p['dir'])) for p in parameter_files]

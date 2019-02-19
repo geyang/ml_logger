@@ -28,6 +28,11 @@ def find_files(cwd, query, start=None, stop=None):
         return files
 
 
+def read_dataframe(path, k=200):
+    from ml_logger.helpers import load_pickle_as_dataframe
+    return load_pickle_as_dataframe(path, k)
+
+
 def read_records(path, k=200):
     from ml_logger.helpers import load_pickle_as_dataframe
     df = load_pickle_as_dataframe(path, k)

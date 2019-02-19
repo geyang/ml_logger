@@ -13,9 +13,14 @@ class Experiment(ObjectType):
 
     name = String(description='name of the directory')
     parameters = Field(lambda: files.parameters.Parameters, )
+    metrics = Field(lambda: files.metrics.Metrics, )
 
     def resolve_parameters(self, info):
         return files.parameters.get_parameters(self.parameters)
+
+    def resolve_metrics(self, info):
+        # todo: find metric files
+        return files.metrics.get_metrics(self.id)
 
     # description = String(description='string serialized data')
     # experiments = List(lambda: schema.Experiments)
@@ -57,6 +62,6 @@ def find_experiments(cwd, **kwargs):
     parameter_files = find_files(cwd, "**/parameters.pkl", **kwargs)
     return [
         # note: not sure about the name.
-        Experiment(id="/" + join(cwd, p['dir']), name=basename(p['dir']), parameters=join(cwd, p['path']), )
+        Experiment(id=join(cwd, p['dir']), name=basename(p['dir']), parameters=join(cwd, p['path']), )
         for p in parameter_files
     ]
