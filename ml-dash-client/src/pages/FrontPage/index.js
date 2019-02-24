@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'found/lib/Link';
 
-export default class FrontPage extends React.Component {
+export default class Index extends React.Component {
   constructor(props) {
     super(props);
     this.state = {username: null};

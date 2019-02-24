@@ -19,6 +19,7 @@ export default class App extends React.Component {
     console.log({username, project, path});
     if (!props.user) return <div>user is null</div>;
     else return (<div>
+      <h1>App</h1>
       <p>
         ID: {props.user.username}, Name: {props.user.name}
       </p>

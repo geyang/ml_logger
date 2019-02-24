@@ -22,6 +22,16 @@ type DirectoryEdge {
   cursor: String!
 }
 
+input EditTextInput {
+  text: String!
+  clientMutationId: String
+}
+
+type EditTextPayload {
+  text: String
+  clientMutationId: String
+}
+
 type Experiment implements Node {
   id: ID!
   name: String
@@ -41,12 +51,6 @@ type ExperimentEdge {
   cursor: String!
 }
 
-type Faction implements Node {
-  id: ID!
-  name: String
-  ships(before: String, after: String, first: Int, last: Int): ShipConnection
-}
-
 type File implements Node {
   id: ID!
   name: String
@@ -64,18 +68,6 @@ type FileEdge {
 
 scalar GenericScalar
 
-input IntroduceShipInput {
-  shipName: String!
-  factionId: String!
-  clientMutationId: String
-}
-
-type IntroduceShipPayload {
-  ship(id: ID!): Ship
-  faction(id: ID!): Faction
-  clientMutationId: String
-}
-
 type Metrics implements Node {
   id: ID!
   keys: [String]
@@ -83,7 +75,7 @@ type Metrics implements Node {
 }
 
 type Mutation {
-  introduceShip(input: IntroduceShipInput!): IntroduceShipPayload
+  updateText(input: EditTextInput!): EditTextPayload
 }
 
 interface Node {
@@ -128,10 +120,10 @@ type Query {
   node(id: ID!): Node
   users: [User]
   user(username: String): User
-  projects(id: ID!): [Project]
-  project(id: ID!): Project
-  metrics(id: ID): Metrics
   series(prefix: String, metricsFiles: [String], window: Float, xKey: String, yKey: String, label: String): Series
+  project(id: ID!): Project
+  metrics(id: ID!): Metrics
+  directory(id: ID!): Directory
 }
 
 type Series implements Node {
@@ -153,21 +145,6 @@ type Series implements Node {
   y0: [GenericScalar]
   y100: [GenericScalar]
   yStddev: [GenericScalar]
-}
-
-type Ship implements Node {
-  id: ID!
-  name: String
-}
-
-type ShipConnection {
-  pageInfo: PageInfo!
-  edges: [ShipEdge]!
-}
-
-type ShipEdge {
-  node: Ship
-  cursor: String!
 }
 
 type User implements Node {
