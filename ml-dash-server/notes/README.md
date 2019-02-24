@@ -10,10 +10,17 @@
 
 ## ToDos
 
-- [x] CLEANUP: remove Starship starter code from the backend
-- [x] add shim EditText mutation
-- [ ] Make sure that the client still works
-- [ ] wrap up and take a break.
+- [ ] Show list of experiments
+- [ ] Build view components
+- [ ] parameter table
+- [ ] Show an averaged plot
+- [ ] frontend layout
+- [ ] different views
+- [ ] get bindr to work
+- [ ] think of front end design
+- [ ] add minimal front end
+- [ ] get parallel coordinate to work
+- [ ] get single chart to work
 
 do these after the frontend is working
 - [ ] actually return aggregated metric series
@@ -67,3 +74,23 @@ not working on.
     Now all uses `join(Args.logdir, self.id)`. We could replace this with a helper function.
 - [x] add metric query to root query.
 - [x] support queries with multiple metric files
+- [x] CLEANUP: remove Starship starter code from the backend
+- [x] add shim EditText mutation
+- [x] Make sure that the client still works
+- [x] wrap up and take a break.
+- [x] break is over!
+- [x] Parallel Coordinates
+    Visualizations like this is not a magic bullet. I will still need to code up 
+    the rest of the front-end to feature-parity.
+    
+
+---
+- [ ] File Browser
+- [ ] Experiment Row
+- [ ] Parameter Key Tags (and expanded view)
+    > save as default.parameters
+    > parameters: ["Args.lr", dict(name="some", domain=['some'])]
+    > charts: ["some", "chart:chart-name"]
+    **Aggregate**: choose `seed` to average? Need to key by *other* params first.
+    
+

@@ -17,7 +17,7 @@ class Project(ObjectType):
     experiments = relay.ConnectionField(lambda: schema.experiments.ExperimentConnection)
 
     def resolve_experiments(self, info, **kwargs):
-        return schema.experiments.find_experiments(self.id)
+        return schema.experiments.find_experiments(cwd=self.id)
 
     directories = relay.ConnectionField(lambda: schema.directories.DirectoryConnection)
     files = relay.ConnectionField(lambda: schema.files.FileConnection)

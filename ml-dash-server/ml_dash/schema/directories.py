@@ -1,8 +1,10 @@
 from os import listdir
 from os.path import isfile, join, split
 
-from graphene import ObjectType, relay, String, List
+from graphene import ObjectType, relay, String, List, Field
+from graphql_relay import to_global_id, from_global_id
 from ml_dash import schema
+from ml_dash.schema import files
 
 
 class Directory(ObjectType):
@@ -12,22 +14,20 @@ class Directory(ObjectType):
     name = String(description='name of the directory')
     _path = String(description='internal path on the server')
 
-    # description = String(description='string serialized data')
-    # experiments = List(lambda: schema.Experiments)
-    # children = List(lambda: schema.DirectoryAndFiles)
     experiments = relay.ConnectionField(lambda: schema.experiments.ExperimentConnection)
 
     def resolve_experiments(self, info, **kwargs):
-        return schema.experiments.find_experiments(self._path)
+        return schema.experiments.find_experiments(cwd=self.id)
 
     directories = relay.ConnectionField(lambda: schema.directories.DirectoryConnection)
-    files = relay.ConnectionField(lambda: schema.files.FileConnection)
 
     def resolve_directories(self, info, **kwargs):
         from ml_dash.config import Args
         root_dir = join(Args.logdir, self.id[1:])
         return [schema.Directory(id=join(self.id, _), name=_)
                 for _ in listdir(root_dir) if not isfile(join(root_dir, _))]
+
+    files = relay.ConnectionField(lambda: schema.files.FileConnection)
 
     def resolve_files(self, info, **kwargs):
         from ml_dash.config import Args
@@ -46,6 +46,5 @@ class DirectoryConnection(relay.Connection):
 
 
 def get_directory(id):
-    # path = os.path.join(Args.logdir, id[1:])
     from ml_dash.config import Args
-    return Directory(id=id, name=split(id[1:])[1], _path=join(Args.logdir, id[1:]))
+    return Directory(id=id, name=split(id[1:])[-1], _path=join(Args.logdir, id[1:]))

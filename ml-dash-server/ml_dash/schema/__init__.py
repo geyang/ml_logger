@@ -5,7 +5,7 @@ from ml_dash.schema.files.metrics import Metrics, get_metrics
 from ml_dash.schema.schema_helpers import bind, bind_args
 from ml_dash.schema.users import User, get_users, get_user
 from ml_dash.schema.projects import Project
-from ml_dash.schema.directories import Directory
+from ml_dash.schema.directories import Directory, get_directory
 from ml_dash.schema.files import File
 from ml_dash.schema.experiments import Experiment
 
@@ -77,25 +77,13 @@ class Query(ObjectType):
 
     users = Field(List(User), resolver=bind_args(get_users))
     user = Field(User, username=String(), resolver=bind_args(get_user))
+    series = Field(Series, resolver=bind_args(get_series),
+                   prefix=String(), metrics_files=List(String),
+                   window=Float(), x_key=String(), y_key=String(), label=String(), )
 
-    # Not Implemented atm
-    # teams = relay.Node.Field(List(Team))
-    # team = relay.Node.Field(Team)
-
-    projects = relay.Node.Field(List(Project))
     project = relay.Node.Field(Project)
-
-    metrics = Field(Metrics, id=Argument(ID))
-
-    def resolve_metrics(self, info, id=None):
-        _type, _id = from_global_id(id)
-        return get_metrics(_id)
-
-    series = Field(Series, prefix=String(), metrics_files=List(String),
-                   window=Float(), x_key=String(), y_key=String(), label=String())
-
-    def resolve_series(self, info, **kwargs):
-        return get_series(**kwargs)
+    metrics = relay.Node.Field(Metrics)
+    directory = relay.Node.Field(Directory)
 
 
 class Mutation(ObjectType):

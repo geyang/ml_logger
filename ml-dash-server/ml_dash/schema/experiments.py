@@ -53,11 +53,6 @@ class ExperimentConnection(relay.Connection):
         node = Experiment
 
 
-def get_directory(id):
-    # path = os.path.join(Args.logdir, id[1:])
-    return Experiment(id=id, name=split(id[1:])[1])
-
-
 def find_experiments(cwd, **kwargs):
     from ml_dash.config import Args
     assert isabs(cwd), "the current work directory need to be an absolute path."

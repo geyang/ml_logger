@@ -8,6 +8,12 @@ if __name__ == "__main__":
                 prefix = f"runs/{username}/{project}/experiment_{i:02d}"
                 logger.remove(prefix)
                 logger.configure(prefix=prefix)
+                logger.log_params(Args=dict(
+                    lr=10 ** (-2 - i),
+                    weight_decay=0.001,
+                    gradient_clip=0.9,
+                    env_id="GoalMassDiscreteIdLess-v0",
+                    seed=int(i * 100)))
                 for ep in range(500):
                     logger.log_metrics(epoch=ep, sine=np.sin(0.1 * ep / np.pi))
                     logger.flush()

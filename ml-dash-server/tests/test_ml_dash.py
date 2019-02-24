@@ -3,13 +3,54 @@ from ml_dash.schema import schema
 from tests import show
 
 
+def test_directory():
+    from ml_dash.config import Args
+    Args.logdir = "../../runs"
+    client = Client(schema)
+    query = """
+        query AppQuery {
+            directory (
+                id: "RGlyZWN0b3J5Oi9lcGlzb2RleWFuZy9wbGF5Z3JvdW5k"
+            ) { 
+                name 
+                experiments (first:10) {
+                    edges { node { 
+                        id name 
+                        parameters {keys flat}
+                    } }
+                }
+                directories (first:10) {
+                    edges {
+                        node {
+                            id name
+                            directories (first:10) {
+                                edges {
+                                    node {
+                                        id name
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+    r = client.execute(query, variables=dict(username="episodeyang"))
+    if 'errors' in r:
+        raise RuntimeError(r['errors'])
+    else:
+        print(">>")
+        show(r['data'])
+
+
 def test_series():
     from ml_dash.config import Args
     Args.logdir = "../../runs"
     client = Client(schema)
     query = """
         query AppQuery {
-            series(
+            series (
                 prefix:"/episodeyang/playground", 
                 xKey: "__timestamp"
                 yKey: "sine"
@@ -66,7 +107,7 @@ def test_schema():
                     node {
                         id
                         name
-                        experiments(first:10){ edges { node { 
+                        experiments(first:10) { edges { node { 
                             name
                             parameters {value keys flat raw} 
                             metrics {
@@ -78,6 +119,7 @@ def test_schema():
                         directories(first:10){
                             edges {
                                 node {
+                                    id
                                     name
                                     files(first:10){
                                         edges {
