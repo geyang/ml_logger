@@ -1,29 +1,79 @@
-import React from 'react';
-import graphql from 'babel-plugin-relay/macro';
+import React from "react";
+import {Box, Grid} from "grommet/es6";
+import {createFragmentContainer, createPaginationContainer} from "react-relay";
+import graphql from "babel-plugin-relay/macro";
+import Link from "found/lib/Link";
 
 class Navbar extends React.Component {
   render() {
-    return <div>Navbar</div>
+    const {directory, ...props} = this.props;
+    console.log(directory, props);
+    const {directories, experiments} = directory;
+    return <Grid fill={true}
+                 gap='none'
+                 rows={['100px', 'auto']}
+                 columns={['full']}
+                 areas={[
+                   {name: 'head', start: [0, 0], end: [0, 0]},
+                   {name: 'main', start: [1, 0], end: [1, 0]},
+                 ]} {...props}>
+      <Box area="head" align="center" justify="center"><h1>{directory.name}</h1></Box>
+      <Box area="main" gap='none' overflow={{vertical: 'scroll'}}>
+        <Box justify="center" pad='small' background='gray' height="36px">
+          <h4>Quick Selection</h4>
+        </Box>
+        <Box justify="center" pad='small' background='gray' height="36px">
+          <h4>Directories</h4>
+        </Box>
+        {directories.edges.map(({node}) =>
+            <Box justify="center" pad='small'
+                 key={node.id}
+                 border={{side: "bottom", color: "gray", size: "1px"}} height="36px"
+                 as={Link} to={node.path}>
+              {node.name}
+            </Box>
+        )}
+        <Box justify="center" pad='small' background='gray' height="36px">
+          <h4>Experiments</h4>
+        </Box>
+        {experiments.edges.map(({node}) =>
+            <Box justify="center" pad='small'
+                 key={node.id}
+                 border={{side: "bottom", color: "gray", size: "1px"}} height="36px"
+                 as={Link} to={node.path}>
+              {node.name}
+            </Box>
+        )}
+      </Box>
+    </Grid>
   }
 }
 
-export default createPaginationContainer(
-    Navbar,
-       graphql`
-        fragment Experiment_
-          directories (first:10) {
+
+export default createFragmentContainer(Navbar, {
+  directory: graphql`
+      fragment Navbar_directory on Directory {
+          name
+          directories ( first:10 ) @connection(key: "Directory_directories"){
               edges {
+                  cursor
                   node {
-                      id name
+                      id
+                      name
+                      path
                       directories (first:10) {
-                          edges {
-                              node {
-                                  id name
-                              }
-                          }
+                          edges { node { id name } }
                       }
                   }
               }
           }
-      `,
-)
+          experiments (first:10) @connection(key: "Directory_experiments"){
+              edges { node {
+                  id name path
+                  parameters {keys flat}
+              } }
+          }
+
+      }
+  `
+});

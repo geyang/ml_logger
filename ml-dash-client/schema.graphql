@@ -6,7 +6,7 @@ schema {
 type Directory implements Node {
   id: ID!
   name: String
-  Path: String
+  path: String
   experiments(before: String, after: String, first: Int, last: Int): ExperimentConnection
   directories(before: String, after: String, first: Int, last: Int): DirectoryConnection
   files(before: String, after: String, first: Int, last: Int): FileConnection
@@ -35,6 +35,7 @@ type EditTextPayload {
 type Experiment implements Node {
   id: ID!
   name: String
+  path: String
   parameters: Parameters
   metrics: Metrics
   directories(before: String, after: String, first: Int, last: Int): DirectoryConnection

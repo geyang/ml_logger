@@ -27,7 +27,7 @@ const Router = createFarceRouter({
 });
 
 ReactDOM.render(
-    <Theme plain full={true}>
+    <Theme full={true}>
       <Router resolver={new Resolver(modernEnvironment)}/>
     </Theme>,
     document.getElementById('root'),
