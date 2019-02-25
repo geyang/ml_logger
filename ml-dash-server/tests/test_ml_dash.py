@@ -28,7 +28,7 @@ def test_directory():
                 }
                 experiments (first:10) {
                     edges { node { 
-                        id name 
+                        id name path
                         parameters {keys flat}
                     } }
                 }

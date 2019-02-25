@@ -13,6 +13,7 @@ class Experiment(ObjectType):
         interfaces = relay.Node,
 
     name = String(description='name of the directory')
+    path = String(description="path to the experiment")
     parameters = Field(lambda: files.parameters.Parameters, )
     metrics = Field(lambda: files.metrics.Metrics)
 
@@ -58,6 +59,7 @@ def find_experiments(cwd, **kwargs):
         # note: not sure about the name.
         Experiment(id=join(cwd.rstrip('/'), p['dir']),
                    name=basename(p['dir']) or ".",
+                   path=join(cwd.rstrip('/'), p['dir']),
                    parameters=join(cwd.rstrip('/'), p['path']), )
         for p in parameter_files
     ]
