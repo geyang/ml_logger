@@ -10,7 +10,16 @@
 
 ## ToDos
 
-- [ ] Show list of experiments
+- [ ] show current project name
+- [ ] show current directory name
+- [ ] connection container directories
+- [ ] connection container for experiments
+- [ ] Show list of directories under current directory
+- [ ] Show list of experiments under current directory
+- [ ] Advanced React Patterns:
+    - ContextContainer
+    - FragmentContainer
+    - Getting Query Container to work with `found`
 - [ ] Build view components
 - [ ] parameter table
 - [ ] Show an averaged plot

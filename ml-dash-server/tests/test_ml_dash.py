@@ -8,21 +8,14 @@ def test_directory():
     Args.logdir = "../../runs"
     client = Client(schema)
     query = """
-        query AppQuery {
-            directory (
-                id: "RGlyZWN0b3J5Oi9lcGlzb2RleWFuZy9wbGF5Z3JvdW5k"
-            ) { 
+        query AppQuery ($id: ID!) {
+            directory ( id:  $id ) { 
+                id
                 name 
-                experiments (first:10) {
-                    edges { node { 
-                        id name 
-                        parameters {keys flat}
-                    } }
-                }
                 directories (first:10) {
                     edges {
                         node {
-                            id name
+                            id name path
                             directories (first:10) {
                                 edges {
                                     node {
@@ -33,10 +26,17 @@ def test_directory():
                         }
                     }
                 }
+                experiments (first:10) {
+                    edges { node { 
+                        id name 
+                        parameters {keys flat}
+                    } }
+                }
             }
         }
     """
-    r = client.execute(query, variables=dict(username="episodeyang"))
+    # r = client.execute(query, variables=dict(id="RGlyZWN0b3J5Oi9lcGlzb2RleWFuZy9wbGF5Z3JvdW5k"))
+    r = client.execute(query, variables=dict(id="RGlyZWN0b3J5Oi9lcGlzb2RleWFuZy9wbGF5Z3JvdW5kLw=="))
     if 'errors' in r:
         raise RuntimeError(r['errors'])
     else:

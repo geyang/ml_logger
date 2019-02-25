@@ -4,8 +4,8 @@ from ml_logger import logger
 if __name__ == "__main__":
     for username in ["episodeyang", "amyzhang"]:
         for project in ['cpc-belief', 'playground']:
-            for i in range(4):
-                prefix = f"runs/{username}/{project}/experiment_{i:02d}"
+            for i in range(20):
+                prefix = f"runs/{username}/{project}/{'mdp/' if i < 10 else '/'}experiment_{i:02d}"
                 logger.remove(prefix)
                 logger.configure(prefix=prefix)
                 logger.log_params(Args=dict(

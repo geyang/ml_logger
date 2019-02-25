@@ -1,7 +1,7 @@
 from os import listdir
-from os.path import isfile, join, split, basename, dirname, realpath, isabs
+from os.path import isfile, join, basename, realpath, isabs
 
-from graphene import ObjectType, relay, String, Field, GlobalID
+from graphene import ObjectType, relay, String, Field
 from ml_dash import schema
 from ml_dash.schema import files
 from ml_dash.schema.files.file_helpers import find_files
@@ -24,10 +24,6 @@ class Experiment(ObjectType):
             return m
         return None
 
-    # description = String(description='string serialized data')
-    # experiments = List(lambda: schema.Experiments)
-    # children = List(lambda: schema.ExperimentAndFiles)
-
     directories = relay.ConnectionField(lambda: schema.directories.DirectoryConnection)
     files = relay.ConnectionField(lambda: schema.files.FileConnection)
 
@@ -45,7 +41,7 @@ class Experiment(ObjectType):
 
     @classmethod
     def get_node(cls, info, id):
-        return get_directory(id)
+        return Experiment(id=id)
 
 
 class ExperimentConnection(relay.Connection):
@@ -56,10 +52,12 @@ class ExperimentConnection(relay.Connection):
 def find_experiments(cwd, **kwargs):
     from ml_dash.config import Args
     assert isabs(cwd), "the current work directory need to be an absolute path."
-    _cwd = realpath(join(Args.logdir, cwd[1:]))
+    _cwd = realpath(join(Args.logdir, cwd[1:])).rstrip('/')
     parameter_files = find_files(_cwd, "**/parameters.pkl", **kwargs)
     return [
         # note: not sure about the name.
-        Experiment(id=join(cwd, p['dir']), name=basename(p['dir']), parameters=join(cwd, p['path']), )
+        Experiment(id=join(cwd.rstrip('/'), p['dir']),
+                   name=basename(p['dir']) or ".",
+                   parameters=join(cwd.rstrip('/'), p['path']), )
         for p in parameter_files
     ]
