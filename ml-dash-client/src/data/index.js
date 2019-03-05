@@ -1,13 +1,16 @@
 import {Environment, Network, RecordSource, Store} from 'relay-runtime';
+import JSON5 from 'json5';
 
-export function fetchQuery(operation, variables) {
+function fetchQuery(operation, variables) {
   return fetch('http://localhost:8081/graphql', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({query: operation.text, variables,}),
-  }).then(response => response.json());
+  })
+      .then(response => response.text())
+      .then(text => JSON5.parse(text));
 }
 
 export const modernEnvironment = new Environment({

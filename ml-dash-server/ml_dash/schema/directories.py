@@ -1,6 +1,6 @@
 from os import listdir
 from os.path import isfile, join, split
-from graphene import ObjectType, relay, String
+from graphene import ObjectType, relay, String, Field
 from ml_dash import schema
 
 
@@ -10,6 +10,18 @@ class Directory(ObjectType):
 
     name = String(description='name of the directory')
     path = String(description='absolute path of the directory')
+
+    readme = Field(lambda: schema.files.File)
+
+    def resolve_readme(self, info, *args, **kwargs):
+        # note: keep it simple, just use README for now.
+        readmes = schema.experiments.files.find_files_by_query(cwd=self.id, query="README.md")
+        return readmes[0] if readmes else None
+
+    dash_configs = relay.ConnectionField(lambda: schema.files.FileConnection)
+
+    def resolve_dash_configs(self, info, *args, **kwargs):
+        return schema.experiments.files.find_files_by_query(cwd=self.id, query="*.dashcfg")
 
     experiments = relay.ConnectionField(lambda: schema.experiments.ExperimentConnection)
 

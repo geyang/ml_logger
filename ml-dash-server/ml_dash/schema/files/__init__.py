@@ -1,5 +1,11 @@
-from os.path import split
-from graphene import ObjectType, relay, String
+from os.path import split, isabs, realpath, join, basename, dirname
+
+from click import Argument
+from graphene import ObjectType, relay, String, Int, Mutation, ID, Field, Node
+from graphene.types.generic import GenericScalar
+from graphql_relay import from_global_id
+from ml_dash.schema.files.file_helpers import find_files
+
 from . import parameters, metrics
 
 
@@ -8,9 +14,48 @@ class File(ObjectType):
         interfaces = relay.Node,
 
     name = String(description='name of the directory')
+    stem = String(description="stem of the file name")
 
-    # description = String(description='string serialized data')
-    # experiments = List(lambda: schema.Experiments)
+    def resolve_stem(self, info, ):
+        return self.name.split("/")[-1].split('.')[0]
+
+    path = String(description='path to the file')
+    rel_path = String(description='relative path to the file')
+    text = String(description='text content of the file', start=Int(required=False, default_value=0),
+                  stop=Int(required=False, default_value=None))
+
+    def resolve_text(self, info, start=0, stop=None):
+        from ml_dash.config import Args
+        with open(join(Args.logdir, self.id[1:]), "r") as f:
+            lines = list(f)[start: stop]
+            return "".join(lines)
+
+    json = GenericScalar(description="the json content of the file")
+
+    def resolve_json(self, info):
+        import json
+        try:
+            with open(self.id, 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return None
+
+    yaml = GenericScalar(description="the content of the file using yaml")
+
+    def resolve_yaml(self, info):
+        import ruamel.yaml
+        if ruamel.yaml.version_info < (0, 15):
+            yaml = ruamel.yaml
+            load_fn = yaml.safe_load
+        else:
+            from ruamel.yaml import YAML
+            yaml = YAML()
+            yaml.explict_start = True
+            load_fn = yaml.load
+
+        from ml_dash.config import Args
+        with open(join(Args.logdir, self.id[1:]), "r") as f:
+            return load_fn('\n'.join(f))
 
     @classmethod
     def get_node(cls, info, id):
@@ -25,3 +70,81 @@ class FileConnection(relay.Connection):
 def get_file(id):
     # path = os.path.join(Args.logdir, id[1:])
     return File(id=id, name=split(id[1:])[1])
+
+
+def find_files_by_query(cwd, query="**/*.*", **kwargs):
+    from ml_dash.config import Args
+    assert isabs(cwd), "the current work directory need to be an absolute path."
+    _cwd = realpath(join(Args.logdir, cwd[1:])).rstrip('/')
+    parameter_files = find_files(_cwd, query)
+    return [
+        # note: not sure about the name.
+        File(id=join(cwd.rstrip('/'), p['path']),
+             name=basename(p['path']),
+             path=join(cwd.rstrip('/'), p['path']),
+             rel_path=p['path'], )
+        for p in parameter_files
+    ]
+
+
+def save_text_to_file(path, text):
+    from ml_dash.config import Args
+    assert isabs(path), "the path has to be absolute path."
+    _path = join(Args.logdir, path[1:])
+    with open(_path, "w") as f:
+        f.write(text)
+    return get_file(path)
+
+
+def save_json_to_file(path, data):
+    from ml_dash.config import Args
+    assert isabs(path), "the path has to be absolute path."
+    _path = join(Args.logdir, path[1:])
+    # note: assume all text format
+    with open(_path, "w+") as f:
+        import json
+        _ = json.dumps(data, sortKeys=True, indent=2)
+        f.write(_)
+    return get_file(path)
+
+
+def save_yaml_to_file(path, data):
+    raise NotImplementedError
+
+
+class MutateTextFile(relay.ClientIDMutation):
+    class Input:
+        id = ID()
+        text = String(required=True)
+
+    file = Field(File)
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, id, text, client_mutation_id):
+        _type, id = from_global_id(id)
+        return MutateTextFile(file=save_text_to_file(id, text))
+
+
+class MutateYamlFile(relay.ClientIDMutation):
+    class Arguments:
+        data = String()
+
+    file = Field(File)
+
+    @classmethod
+    def mutate_and_get_payload(self, root, info, data, client_mutation_id):
+        _type, id = from_global_id(client_mutation_id)
+        return MutateYamlFile(file=save_yaml_to_file(id, data))
+
+
+class MutateJSONFile(relay.ClientIDMutation):
+    class Arguments:
+        id = ID()
+        data = String()
+
+    file = Field(File)
+
+    @classmethod
+    def mutate_and_get_payload(self, root, info, id, data, client_mutation_id):
+        _type, id = from_global_id(client_mutation_id)
+        return MutateJSONFile(file=save_json_to_file(id, data))

@@ -9,6 +9,8 @@
     />
     <meta name="theme-color" content="#000000"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
+    <!--<link rel="stylesheet" href="https://unpkg.com/react-vis/dist/style.css">-->
+    <link rel="stylesheet" href="/github-markdown.css">
     <style> body, body > div {
         margin: 0;
         position: absolute;
@@ -18,7 +20,24 @@
         right: 0;
         height: 100%;
         width: 100%;
-    } </style>
+    }
+    </style>
+    <!--    for monaco editor-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.13.1/min/vs/loader.js" type="text/javascript"/>
+    <script>
+      require.config({
+        paths: {
+          'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.15.6/min/vs',
+          'monaco-vim': 'https://unpkg.com/monaco-vim/dist/monaco-vim'
+        }
+      });
+      window.MonacoEnvironment = {
+        getWorkerUrl: function (workerId, label) {
+          return '/monaco-editor-worker-loader-proxy.js';
+        }
+      };
+    </script>
+
     <!--
       manifest.json provides metadata used when your web app is added to the
       homescreen on Android. See https://developers.google.com/web/fundamentals/web-app-manifest/

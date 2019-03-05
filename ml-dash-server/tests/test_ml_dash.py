@@ -1,6 +1,32 @@
 from graphene.test import Client
+from graphql_relay import from_global_id, to_global_id
 from ml_dash.schema import schema
-from tests import show
+from tests import show, shows
+
+
+def test_mutate_text_file():
+    from ml_dash.config import Args
+    Args.logdir = "../../runs"
+    client = Client(schema)
+    query = """
+        mutation AppMutation ($id: ID!) {
+            updateText (input: { 
+                            id: $id, 
+                            text: "new text!!\\n1\\n2\\n3\\n4\\n5\\n6",
+                            clientMutationId: "10", 
+             }) { 
+                file { id name text (stop:5) }
+            }
+        }
+    """
+    path = "/episodeyang/cpc-belief/README.md"
+    r = client.execute(query, variables=dict(id=to_global_id("File", path)))
+
+    if 'errors' in r:
+        raise RuntimeError("\n" + shows(r['errors']))
+    else:
+        print(">>")
+        show(r['data'])
 
 
 def test_directory():
@@ -12,6 +38,19 @@ def test_directory():
             directory ( id:  $id ) { 
                 id
                 name 
+                readme {
+                    id name path relPath
+                    text(stop:11)
+                }
+                dashConfigs(first:10) {
+                    edges {
+                        node {
+                            id name path relPath
+                            yaml
+                            text(stop:11)
+                        }
+                    }
+                }
                 directories (first:10) {
                     edges {
                         node {
@@ -35,8 +74,41 @@ def test_directory():
             }
         }
     """
-    # r = client.execute(query, variables=dict(id="RGlyZWN0b3J5Oi9lcGlzb2RleWFuZy9wbGF5Z3JvdW5k"))
-    r = client.execute(query, variables=dict(id="RGlyZWN0b3J5Oi9lcGlzb2RleWFuZy9wbGF5Z3JvdW5kLw=="))
+    path = "/episodeyang/playground/mdp"
+    r = client.execute(query, variables=dict(id=to_global_id("Directory", path)))
+    if 'errors' in r:
+        raise RuntimeError(r['errors'])
+    else:
+        print(">>")
+        show(r['data'])
+
+
+def test_series_2():
+    query = """
+    query LineChartsQuery(
+      $prefix: String
+      $xKey: String
+      $yKey: String
+      $yKeys: [String]
+      $metricsFiles: [String]
+    ) {
+      series(metricsFiles: $metricsFiles, prefix: $prefix, k: 10, xKey: $xKey, yKey: $yKey, yKeys: $yKeys) {
+        id
+        xKey
+        yKey
+        xData
+        yMean
+        yCount
+      }
+    }
+    """
+    variables = {"prefix": None, "xKey": "epoch", "yKey": "slow_sine", "yKeys": None,
+                 "metricsFiles": ["/episodeyang/playground/mdp/experiment_04/metrics.pkl"]}
+
+    from ml_dash.config import Args
+    Args.logdir = "../../runs"
+    client = Client(schema)
+    r = client.execute(query, variables=variables)
     if 'errors' in r:
         raise RuntimeError(r['errors'])
     else:
@@ -51,16 +123,29 @@ def test_series():
     query = """
         query AppQuery {
             series (
-                prefix:"/episodeyang/playground", 
-                xKey: "__timestamp"
-                yKey: "sine"
-                metricsFiles:["experiment_00/metrics.pkl", "experiment_01/metrics.pkl", "experiment_02/metrics.pkl"]
+                k:30
+                tail: 100
+                prefix:"/episodeyang/playground"
+                metricsFiles:["experiment_05/metrics.pkl", "experiment_06/metrics.pkl", "experiment_07/metrics.pkl"]
+                # xKey: "__timestamp"
+                xKey: "epoch"
+                # yKey: "sine"
+                yKeys: ["sine", "slow_sine"]
+                # xAlign: "start"
             ) { 
                 id
                 xKey
                 yKey
+                yKeys
                 xData
-                yData
+                yMean
+                yMedian
+                y25
+                y75
+                y05
+                y95
+                yMedian
+                yCount
             }
         }
     """
@@ -78,9 +163,10 @@ def test_metric():
     client = Client(schema)
     query = """
         query AppQuery {
-            metrics(id:"TWV0cmljczovZXBpc29kZXlhbmcvcGxheWdyb3VuZC9leHBlcmltZW50XzAzL21ldHJpY3MucGts") { 
+            metrics(id:"TWV0cmljczovZXBpc29kZXlhbmcvcGxheWdyb3VuZC9leHBlcmltZW50XzA1L21ldHJpY3MucGts" ) { 
                 id
                 keys
+                path
                 value (keys: ["__timestamp", "sine"])
             }
         }

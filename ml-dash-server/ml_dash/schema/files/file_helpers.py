@@ -21,6 +21,15 @@ def file_stat(file_path):
 
 
 def find_files(cwd, query, start=None, stop=None):
+    """
+    find files by iGlob.
+
+    :param cwd: the context folder for the glob, excluded from returned path list.
+    :param query: glob query
+    :param start: starting index for iGlob.
+    :param stop: ending index for iGlob
+    :return:
+    """
     from itertools import islice
     with cwdContext(cwd):
         file_paths = list(islice(iglob(query, recursive=True), start or 0, stop or 200))
@@ -30,7 +39,10 @@ def find_files(cwd, query, start=None, stop=None):
 
 def read_dataframe(path, k=200):
     from ml_logger.helpers import load_pickle_as_dataframe
-    return load_pickle_as_dataframe(path, k)
+    try:
+        return load_pickle_as_dataframe(path, k)
+    except FileNotFoundError:
+        return None
 
 
 def read_records(path, k=200):

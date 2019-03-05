@@ -10,18 +10,90 @@
 
 ## ToDos
 
-- [ ] show current project name
-- [ ] show current directory name
-- [ ] connection container directories
-- [ ] connection container for experiments
-- [ ] Show list of directories under current directory
-- [ ] Show list of experiments under current directory
+**Reach Feature Parity!!!!!!!**
+
+## Grid View
+
+```yaml
+charts:
+- series:
+  - metricFiles: ['experiment_00/metrics.pkl', 'experiment_01/metrics.pkl']
+    prefix: 'episodeyang/playground/mdp'
+    xKey: __timestamp
+    yKey: sine
+    interpolation: null
+    k: 100  # the number of points to return
+```
+
+- [ ] change ExperimentDash to react hook
+- [ ] **Comparison View**: Multiple Selection
+- [ ] **Inline Charts**
+- [ ] `parameters` field: 
+    - [ ] hide row (place to the end?)
+    - [ ] order by column
+- [ ] add selection to table
+- [ ] add chart to table row
+- [ ] add row selector
+- [ ] add delete button
+- [ ] add comparison
+- [ ] add image
+- [ ] add video
+
+- [ ] 
+
+I need to focus on getting this dashboard to production ready.
+- [ ] add range to plots
+- [ ] comparison view (is this slow?)
+- [ ] show figures in expanded list view
+- [ ] chart builder
+- in narrow viewport size, path#file? collapses into just file view. handle this inside the Dash module
+- [x] write chat library in hooks 
+- tab bar:
+    - [x] create dash config
+    - [x] get dash config
+    - [x] edit dash config
+    - [x] change to relay mutation
+    - [x] get readme
+    - [x] display Readme note
+    - [x] show readme
+    - [x] write readme
+    - [ ] order by value (on client side)
+    - [ ] make single file view
+    - [ ] make first version of chart def.
+    - [ ] show the first chart
+    - [ ] show content of the dahsboard config file
+    - [ ] create readme (client side only)
+    - [ ] change readme filename (more involved)
+    - [ ] Where to put the button for the README?
+    
+    - on the right: hamburger button to expand the dash configs
+    - need `default.dashcfg` support
+    - show `some_config.dashcfg`
+    
+    dash config supports multiple fines in the same yml configuration file.
+    
+- if is experiment: show experiment view in tab bar? or the same as the dash?
+- search container
+    > directory id
+    > search query
+    > experiments
+
+    How is the experiments listed at the moment? (list *all* experiments under directory)
+
+- [ ] result table (get aggregated slice from an averaged metric)
+    - parameter keys
+    - metric keys
+- [ ] image component: epoch number
+- [ ] video component: epoch number
+- [ ] parameter table: define the API
+- [ ] file-serving api: for image, video, and text.
+
+> package these nicely, into some stand-along component that I can use.
 - [ ] Advanced React Patterns:
+    - ConnectionContainer: need to add search
     - ContextContainer
     - FragmentContainer
     - Getting Query Container to work with `found`
-- [ ] Build view components
-- [ ] parameter table
 - [ ] Show an averaged plot
 - [ ] frontend layout
 - [ ] different views
@@ -91,15 +163,24 @@ not working on.
 - [x] Parallel Coordinates
     Visualizations like this is not a magic bullet. I will still need to code up 
     the rest of the front-end to feature-parity.
+- [x] show current project name
+- [x] show current directory name
+- [x] connection container directories
+- [x] connection container for experiments
+- [x] Build view components
     
 
 ---
-- [ ] File Browser
-- [ ] Experiment Row
-- [ ] Parameter Key Tags (and expanded view)
+- [x] File Browser
+- [x] Experiment Row
+- [x] Parameter Key Tags (and expanded view)
     > save as default.parameters
     > parameters: ["Args.lr", dict(name="some", domain=['some'])]
     > charts: ["some", "chart:chart-name"]
     **Aggregate**: choose `seed` to average? Need to key by *other* params first.
+- [x] Show list of directories under current directory
+- [x] Show list of experiments under current directory
     
 
+- [x] make charts from table
+- [x] grid view

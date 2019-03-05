@@ -243,7 +243,7 @@ class LoggingServer:
             if ruamel.yaml.version_info < (0, 15):
                 yaml = ruamel.yaml
                 StringIO = ruamel.yaml.StringIO
-                load_fn = yaml.save_load
+                load_fn = yaml.safe_load
             else:
                 from ruamel.yaml import YAML, StringIO
                 yaml = YAML()

@@ -1,7 +1,7 @@
 from os.path import split, realpath, join
-from graphene import relay, ObjectType, String, List, JSONString
+from graphene import relay, ObjectType, String, List, JSONString, Int
 from graphene.types.generic import GenericScalar
-from ml_dash import schema
+from graphql_relay import from_global_id
 from ml_dash.config import Args
 from ml_dash.schema.files.file_helpers import find_files, read_records, read_dataframe
 
@@ -10,19 +10,30 @@ class Metrics(ObjectType):
     class Meta:
         interfaces = relay.Node,
 
+    path = String(description="path to the file")
+
+    def resolve_path(self, info):
+        return self.id
+
     keys = List(String, description="list of keys for the metrics")
 
     # value = List(GenericScalar, description="the raw value")
-    value = GenericScalar(description="The value of the metrics file", keys=List(String))
+    value = GenericScalar(description="The value of the metrics file",
+                          keys=List(String),
+                          k=Int(required=False),
+                          last=Int(required=False),
+                          window=Int(required=False))
 
     def resolve_keys(self, info):
         df = read_dataframe(join(Args.logdir, self.id[1:]))
         keys = df.dropna().keys()
         return list(keys)
 
-    # add more complex queries.
-    def resolve_value(self, info, keys=None):
-        _ = read_dataframe(join(Args.logdir, self.id[1:]))
+    # todo: add more complex queries.
+    def resolve_value(self, info, keys=None, k=None, last=None, window=None):
+        path = join(Args.logdir, self.id[1:])
+        realpath(path)
+        _ = read_dataframe(path)
         if keys:
             df = _[keys].dropna()
             return {k: df[k].values.tolist() for k in keys}

@@ -7,6 +7,8 @@ type Directory implements Node {
   id: ID!
   name: String
   path: String
+  readme: File
+  dashConfigs(before: String, after: String, first: Int, last: Int): FileConnection
   experiments(before: String, after: String, first: Int, last: Int): ExperimentConnection
   directories(before: String, after: String, first: Int, last: Int): DirectoryConnection
   files(before: String, after: String, first: Int, last: Int): FileConnection
@@ -20,16 +22,6 @@ type DirectoryConnection {
 type DirectoryEdge {
   node: Directory
   cursor: String!
-}
-
-input EditTextInput {
-  text: String!
-  clientMutationId: String
-}
-
-type EditTextPayload {
-  text: String
-  clientMutationId: String
 }
 
 type Experiment implements Node {
@@ -55,6 +47,12 @@ type ExperimentEdge {
 type File implements Node {
   id: ID!
   name: String
+  stem: String
+  path: String
+  relPath: String
+  text(start: Int = 0, stop: Int): String
+  json: GenericScalar
+  yaml: GenericScalar
 }
 
 type FileConnection {
@@ -71,12 +69,44 @@ scalar GenericScalar
 
 type Metrics implements Node {
   id: ID!
+  path: String
   keys: [String]
-  value(keys: [String]): GenericScalar
+  value(keys: [String], k: Int, last: Int, window: Int): GenericScalar
+}
+
+input MutateJSONFileInput {
+  clientMutationId: String
+}
+
+type MutateJSONFilePayload {
+  file: File
+  clientMutationId: String
+}
+
+input MutateTextFileInput {
+  id: ID
+  text: String!
+  clientMutationId: String
+}
+
+type MutateTextFilePayload {
+  file: File
+  clientMutationId: String
+}
+
+input MutateYamlFileInput {
+  clientMutationId: String
+}
+
+type MutateYamlFilePayload {
+  file: File
+  clientMutationId: String
 }
 
 type Mutation {
-  updateText(input: EditTextInput!): EditTextPayload
+  updateText(input: MutateTextFileInput!): MutateTextFilePayload
+  updateJson(input: MutateJSONFileInput!): MutateJSONFilePayload
+  updateYaml(input: MutateYamlFileInput!): MutateYamlFilePayload
 }
 
 interface Node {
@@ -121,7 +151,7 @@ type Query {
   node(id: ID!): Node
   users: [User]
   user(username: String): User
-  series(prefix: String, metricsFiles: [String], window: Float, xKey: String, yKey: String, label: String): Series
+  series(metricsFiles: [String], prefix: String, head: Int, tail: Int, xLow: Float, xHigh: Float, k: Int, xAlign: GenericScalar, xKey: String, yKey: String, yKeys: [String], label: String): Series
   project(id: ID!): Project
   metrics(id: ID!): Metrics
   directory(id: ID!): Directory
@@ -133,19 +163,21 @@ type Series implements Node {
   prefix: String
   metricsFiles: [ID]
   Df: GenericScalar
-  Dfs: GenericScalar
   window: Float
   label: String
   xKey: String
   yKey: String
   yKeys: [String]
-  xData: [GenericScalar]
-  yData: [GenericScalar]
-  y25: [GenericScalar]
-  y75: [GenericScalar]
-  y0: [GenericScalar]
-  y100: [GenericScalar]
-  yStddev: [GenericScalar]
+  xData: GenericScalar
+  yMean: GenericScalar
+  yMedian: GenericScalar
+  yMin: GenericScalar
+  yMax: GenericScalar
+  y25: GenericScalar
+  y75: GenericScalar
+  y95: GenericScalar
+  y05: GenericScalar
+  yCount: GenericScalar
 }
 
 type User implements Node {
