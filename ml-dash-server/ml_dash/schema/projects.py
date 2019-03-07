@@ -56,7 +56,7 @@ def get_projects(username):
     from ml_dash.config import Args
     user_root = join(Args.logdir, username)
     return [Project(name=_, id=join('/', username, _))
-            for _ in os.listdir(user_root)]
+            for _ in os.listdir(user_root) if not isfile(_)]
 
 
 def get_project(id):

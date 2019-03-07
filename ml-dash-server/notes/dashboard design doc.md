@@ -2,6 +2,17 @@
 example dash config
 
 ```yaml
+charts:
+- series:
+  - metricFiles: ['experiment_00/metrics.pkl', 'experiment_01/metrics.pkl']
+    prefix: 'episodeyang/playground/mdp'
+    xKey: __timestamp
+    yKey: sine
+    interpolation: null
+    k: 100  # the number of points to return
+```
+
+```yaml
 - parameters:
     - Args.seed: "sum"
     - Args.lr: "=10"

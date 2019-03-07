@@ -1,6 +1,6 @@
 import React, {Fragment} from "react";
 import LineChart from "../../Charts/LineChart";
-import {Grid, Box} from "grommet";
+import {Grid, Box, CheckBox} from "grommet";
 
 function GridView({series, ...props}) {
   console.log(series);
@@ -17,32 +17,31 @@ function chartRegular(chartString) {
   else return {type: "line", yKey: chartString}
 }
 
-class ChartGrid extends React.Component {
-
-  render() {
-    const {experiments, charts, relay, ...props} = this.props;
-    console.log(experiments);
-    console.log(charts);
-    return <div>
-      <h1>chart grid</h1>
-      <Grid fill={true} rows="small" columns="small">
-        {experiments.map(({metrics}) => <Fragment key={metrics.path}>
-              {charts
-                  .map(chartRegular)
-                  .filter(chart => chart.type === 'line')
-                  .map((chart) => {
-                    let {metricsFiles, ..._chart} = chart;
-                    metricsFiles = metricsFiles || [metrics.path];
-                    console.log(metricsFiles);
-                    return <Box key={chart.xKey}>
-                      <LineChart metricsFiles={metricsFiles} {..._chart}/>
-                    </Box>;
-                  })}
-            </Fragment>
-        )}
-      </Grid>
-    </div>
-  }
+function ChartGrid({experiments, charts, relay, ..._props}) {
+  console.log(experiments);
+  console.log(charts);
+  return <div>
+    <Box justify="left" pad='small' height="36px" direction='row' align="start" fill='horizontal' gap='medium'
+         height={56}>
+      <Box as="h1">Comparison</Box>
+      <Box as={CheckBox} label="by Row"/>
+    </Box>
+    <Grid fill={true} rows="small" columns="small">
+      {experiments.map(({metrics}) => <Fragment key={metrics.path}>
+            {charts
+                .map(chartRegular)
+                .filter(chart => chart.type === 'line')
+                .map((chart) => {
+                  let {metricsFiles, ..._chart} = chart;
+                  metricsFiles = metricsFiles || [metrics.path];
+                  return <Box key={chart.xKey}>
+                    <LineChart metricsFiles={metricsFiles} {..._chart}/>
+                  </Box>;
+                })}
+          </Fragment>
+      )}
+    </Grid>
+  </div>
 }
 
 

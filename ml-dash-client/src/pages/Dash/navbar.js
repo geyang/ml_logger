@@ -1,5 +1,5 @@
 import React from "react";
-import {Box, Grid} from "grommet/es6";
+import {Box, Grid, Button} from "grommet/es6";
 import {createFragmentContainer, createPaginationContainer} from "react-relay";
 import graphql from "babel-plugin-relay/macro";
 import Link from "found/lib/Link";
@@ -20,7 +20,7 @@ class Navbar extends React.Component {
       <Box area="head" align="center" justify="center">
         <h1>{directory.name}</h1>
       </Box>
-      <Box area="main" gap='none' overflow={{vertical: 'scroll'}}>
+      <Box area="main" gap='0.2em' overflow={{vertical: 'scroll'}}>
         <Box justify="center" pad='small' background='gray' height="36px">
           <h4 style={{color: "white"}}>Quick Selection</h4>
         </Box>
@@ -28,18 +28,22 @@ class Navbar extends React.Component {
           <h4 style={{color: "white"}}>Directories</h4>
         </Box>
         {directories.edges.map(({node}) =>
-            <Box justify="center" pad='small'
-                 key={node.id}
-                 border={{side: "bottom", color: "gray", size: "1px"}} height="36px"
-                 as={({className}) => <Link to={node.path} className={className}>{node.name}</Link>}/>)}
+            <Button as={Link} to={node.path}>
+              <Box justify="center" pad='small'
+                   key={node.id}
+                   height="36px">
+                {node.name}
+              </Box></Button>)}
         <Box justify="center" pad='small' background='gray' height="36px">
           <h4 style={{color: "white"}}>Experiments</h4>
         </Box>
         {experiments.edges.map(({node}) =>
-            <Box justify="center" pad='small'
-                 key={node.id}
-                 border={{side: "bottom", color: "gray", size: "1px"}} height="36px"
-                 as={({className}) => <Link to={node.path} className={className}>{node.name}</Link>}/>)}
+            <Button as={Link} to={node.path}>
+              <Box justify="center" pad='small'
+                   key={node.id}
+                   height="36px">
+                {node.name}
+              </Box></Button>)}
       </Box>
     </Grid>
   }

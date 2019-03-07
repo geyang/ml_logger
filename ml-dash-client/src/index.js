@@ -8,6 +8,7 @@ import FrontPage from './pages/FrontPage';
 import Profile, {ProfileQuery} from "./pages/Profile";
 import Dash, {DashPrepareVariables, DashQuery} from "./pages/Dash";
 import Theme from "./Theme";
+import Settings from "./pages/Settings";
 
 const Router = createFarceRouter({
   historyProtocol: new BrowserProtocol(),
@@ -15,6 +16,7 @@ const Router = createFarceRouter({
   routeConfig: makeRouteConfig(
       <Route path="/">
         <Route Component={FrontPage}/>
+        <Route path="settings" Component={Settings}/>
         <Route path=":username" Component={Profile} prepareVariables={(params) => params} query={ProfileQuery}/>
         <Route path=":username/:project/:path*"
                Component={Dash}

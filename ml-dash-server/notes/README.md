@@ -10,24 +10,52 @@
 
 ## ToDos
 
-**Reach Feature Parity!!!!!!!**
+- [ ] **Reach Feature Parity!!!!!!!**
+- [ ] package for deployment
+    - start vis app
+    - start vis server (existing connection: local)
+    - add configuration to turn off local config
+    - add config for vis-only.
+    - add file API
 
 ## Grid View
 
-```yaml
-charts:
-- series:
-  - metricFiles: ['experiment_00/metrics.pkl', 'experiment_01/metrics.pkl']
-    prefix: 'episodeyang/playground/mdp'
-    xKey: __timestamp
-    yKey: sine
-    interpolation: null
-    k: 100  # the number of points to return
-```
 
-- [ ] change ExperimentDash to react hook
+typical workflow:
+> search for parameters, add filters to search to condense. (logger add start time and end time!)
+- parameter search
+- add experiment start and update time to parameters
+- add view for experiment quick view
+
+- [ ] table show metric results [need metrics query api, better to be single call]
+- [ ] simple table component
+- [ ] select charts to compare with each other
+- [ ] `summary { 
+        metricFiles: []
+        prefix: string!
+        key: string
+        tail (n) {mean pc25 pc75 pc95 pc05 pc84 pc16 stddev mode}
+        last
+        }`
+
+- **default values for `prefix`** key.
+  the value for the prefix key should be the same to the current context
+  and the relative paths should require a prefix key on the API side.
+The powerful thing is that we can encapsulate these as react components.
+
+
+
+- [ ] implement end-point configuration
+- [ ] build client
+- [ ] deploy on server
+- [ ] file container: 
+    - search in loaded list of files.
+    - or search via query
+- [ ] image scroller component
+- [ ] video scroller component
+- [ ] chart component with title
+
 - [ ] **Comparison View**: Multiple Selection
-- [ ] **Inline Charts**
 - [ ] `parameters` field: 
     - [ ] hide row (place to the end?)
     - [ ] order by column
@@ -184,3 +212,12 @@ not working on.
 
 - [x] make charts from table
 - [x] grid view
+
+- [x] change ExperimentDash to react hook
+- [x] add selections box
+- [x] get all selected rows
+- [x] add toggle editDash
+- [x] add toggle editReadme
+- [x] add toggle showReadme
+
+- [x] add **Inline Charts**

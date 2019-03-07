@@ -1,4 +1,4 @@
-from os.path import split, realpath, join
+from os.path import split, realpath, join, isabs
 from graphene import relay, ObjectType, String, List, JSONString, ID, Enum, Date, Time, DateTime, Int, Float, Union
 from graphene.types.generic import GenericScalar
 from ml_dash.config import Args
@@ -124,6 +124,9 @@ def get_series(metrics_files=tuple(),
     assert not y_key or not y_keys, "yKey and yKeys can not be trueful at the same time"
     assert y_key or y_keys, "yKey and yKeys can not be both falseful."
     assert head is None or tail is None, "head and tail can not be trueful at the same time"
+    if not prefix:
+        for id in metrics_files:
+            assert isabs(id), f"metricFile need to be absolute path is prefix is {prefix}. It is {id} instead."
 
     ids = [join(prefix or "", id) for id in metrics_files]
     dfs = [read_dataframe(join(Args.logdir, _id[1:])) for _id in ids]
@@ -167,6 +170,9 @@ def get_series(metrics_files=tuple(),
         else:
             joined.append(df[join_keys])
 
+    if not joined:  # No dataframe, return `null`.
+        return None
+
     import pandas as pd
     all = pd.concat(joined)
 
@@ -209,16 +215,16 @@ def get_series(metrics_files=tuple(),
 
 
 SeriesArguments = dict(
-    metrics_files=List(String),
-    prefix=String(),
+    metrics_files=List(String, required=True),
+    prefix=String(description="prefix to the metricFiles.", required=False),
     head=Int(description="the number of datapoints (for each metrics file) to take from the head-end"),
     tail=Int(description="the number of datapoints (for each metrics file) to take from the tail-end"),
     x_low=Float(description="the (inclusive) lower end of the x column"),
     x_high=Float(description="the (inclusive) higher end of the x column"),
-    k=Int(description='the number of datapoints to return.'),
+    k=Int(required=False, description='the number of datapoints to return.'),
     x_align=GenericScalar(description="a number (anchor point), 'start', 'end'"),
     x_key=String(),
-    y_key=String(),
-    y_keys=List(String),
+    y_key=String(description="You can leave the xKey, but the yKey is required."),
+    y_keys=List(String, description="Alternatively you can pass a list of keys to yKey*s*."),
     label=String(),
 )
