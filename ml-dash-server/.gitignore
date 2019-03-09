@@ -1,4 +1,5 @@
 .pytest_cache
+**/runs
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
@@ -6,6 +7,7 @@
 
 # pytest output directories
 test-logs
+
 
 # User-specific stuff:
 .idea

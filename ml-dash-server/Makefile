@@ -35,10 +35,10 @@ publish: convert-rst
 	twine upload dist/*
 start: # dev start: use sanic to bootstrap.
 	source activate playground && python -m ml_dash.main --host=0.0.0.0 --port=8081 --workers=4 --logdir="tests/runs"
+test:
+	python -m pytest tests --capture=no --log-dir="../runs"
 
 # older scripts
-#test:
-#	python -m pytest tests --capture=no
 #start-test-server:
 #	python -m ml_dash.server --log-dir /tmp/ml-logger-debug
 #test-with-server:

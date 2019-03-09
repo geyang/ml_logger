@@ -1,12 +1,18 @@
+import pytest
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import to_global_id
 from ml_dash.schema import schema
 from tests import show, shows
 
 
-def test_mutate_text_file():
+@pytest.fixture(scope='session')
+def log_dir(request):
+    return request.config.getoption('--log-dir')
+
+
+def test_mutate_text_file(log_dir):
     from ml_dash.config import Args
-    Args.logdir = "../../runs"
+    Args.logdir = log_dir
     client = Client(schema)
     query = """
         mutation AppMutation ($id: ID!) {
@@ -29,9 +35,9 @@ def test_mutate_text_file():
         show(r['data'])
 
 
-def test_directory():
+def test_directory(log_dir):
     from ml_dash.config import Args
-    Args.logdir = "../../runs"
+    Args.logdir = log_dir
     client = Client(schema)
     query = """
         query AppQuery ($id: ID!) {
@@ -83,14 +89,14 @@ def test_directory():
         show(r['data'])
 
 
-def test_series_2():
+def test_series_2(log_dir):
     query = """
     query LineChartsQuery(
       $prefix: String
       $xKey: String
       $yKey: String
       $yKeys: [String]
-      $metricsFiles: [String]
+      $metricsFiles: [String]!
     ) {
       series(metricsFiles: $metricsFiles, prefix: $prefix, k: 10, xKey: $xKey, yKey: $yKey, yKeys: $yKeys) {
         id
@@ -106,7 +112,7 @@ def test_series_2():
                  "metricsFiles": ["/episodeyang/playground/mdp/experiment_04/metrics.pkl"]}
 
     from ml_dash.config import Args
-    Args.logdir = "../../runs"
+    Args.logdir = log_dir
     client = Client(schema)
     r = client.execute(query, variables=variables)
     if 'errors' in r:
@@ -116,9 +122,9 @@ def test_series_2():
         show(r['data'])
 
 
-def test_series():
+def test_series(log_dir):
     from ml_dash.config import Args
-    Args.logdir = "../../runs"
+    Args.logdir = log_dir
     client = Client(schema)
     query = """
         query AppQuery {
@@ -157,9 +163,9 @@ def test_series():
         show(r['data'])
 
 
-def test_metric():
+def test_metric(log_dir):
     from ml_dash.config import Args
-    Args.logdir = "../../runs"
+    Args.logdir = log_dir
     client = Client(schema)
     query = """
         query AppQuery {
@@ -179,9 +185,9 @@ def test_metric():
         show(r['data'])
 
 
-def test_schema():
+def test_schema(log_dir):
     from ml_dash.config import Args
-    Args.logdir = "../../runs"
+    Args.logdir = log_dir
     client = Client(schema)
     query = """
         query AppQuery ($username:String) {
