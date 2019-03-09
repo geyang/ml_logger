@@ -1,6 +1,4 @@
 from os.path import split, isabs, realpath, join, basename, dirname
-
-from click import Argument
 from graphene import ObjectType, relay, String, Int, Mutation, ID, Field, Node
 from graphene.types.generic import GenericScalar
 from graphql_relay import from_global_id
