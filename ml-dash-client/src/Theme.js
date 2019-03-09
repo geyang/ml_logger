@@ -13,6 +13,22 @@ const theme = {
       height: '20px'
     },
   },
+  formField: {
+    label: {
+      margin: {left: '0px'},
+      style: {
+        fontWeight: 900,
+        fontSize: "1em"
+      }
+    },
+  },
+  anchor: {
+    color: "inherent",
+    textDecoration: "none",
+    hover: {
+      textDecoration: "none",
+    }
+  }
 };
 
 function Theme(props) {

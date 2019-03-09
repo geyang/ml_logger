@@ -1,8 +1,9 @@
 import {Environment, Network, RecordSource, Store} from 'relay-runtime';
 import JSON5 from 'json5';
+import store from "../local-storage";
 
 function fetchQuery(operation, variables) {
-  return fetch('http://localhost:8081/graphql', {
+  return fetch(store.value.profile.url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

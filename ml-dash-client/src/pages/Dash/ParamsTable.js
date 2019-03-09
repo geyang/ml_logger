@@ -1,17 +1,8 @@
 import React, {Fragment, useState} from "react";
 import {
-  Grid,
-  Box,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableCell,
-  Image,
-  Video,
-  CheckBox,
-  RangeInput
-} from "Grommet";
+  Grid, Box, Table, TableHeader, TableBody, TableRow, TableCell, Image, Video,
+  CheckBox, RangeInput
+} from "grommet";
 import {Eye, EyeOff} from 'react-feather';
 import DataFrame from "dataframe-js";
 import {minus, unique, match, intersect} from "../../lib/sigma-algebra";
@@ -31,8 +22,8 @@ export function ParamsTable({
                               agg = [], // seed
                               ignore = [],
                               groupBy = null, // regEx: Args.*
-                              onClick,
-                              onSelectRow,
+                              onClick, // not implemented
+                              onSelectRow,  //not implemented
                               inlineCharts
                             }) {
 
@@ -42,7 +33,10 @@ export function ParamsTable({
   ignore = typeof ignore === 'string' ? [ignore] : ignore;
 
   const [selected, setSelected] = useState({});
-  const [hidden, setHidden] = useState({});
+  const defaultHidden = {};
+  if (inlineCharts.length) //note: default show 3 experiments. Only when charts are available.
+    exps.slice(3).map(({id}) => defaultHidden[id] = true);
+  const [hidden, setHidden] = useState(defaultHidden);
   const [bySelection, setBySelection] = useState(false);
 
   keys = keys.length ? keys : unique(exps.flatMap(exp => exp.parameters.keys));

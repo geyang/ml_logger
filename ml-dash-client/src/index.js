@@ -1,14 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import store from "./local-storage";
+import {modernEnvironment} from "./data";
 import {BrowserProtocol, queryMiddleware} from 'farce';
 import {createFarceRouter, createRender, makeRouteConfig, Route,} from 'found';
 import {Resolver} from 'found-relay';
-import {modernEnvironment} from "./data";
 import FrontPage from './pages/FrontPage';
 import Profile, {ProfileQuery} from "./pages/Profile";
 import Dash, {DashPrepareVariables, DashQuery} from "./pages/Dash";
 import Theme from "./Theme";
 import Settings from "./pages/Settings";
+import Profiles from "./pages/Profiles";
 
 const Router = createFarceRouter({
   historyProtocol: new BrowserProtocol(),
@@ -16,6 +18,7 @@ const Router = createFarceRouter({
   routeConfig: makeRouteConfig(
       <Route path="/">
         <Route Component={FrontPage}/>
+        <Route path="profiles" Component={Profiles}/>
         <Route path="settings" Component={Settings}/>
         <Route path=":username" Component={Profile} prepareVariables={(params) => params} query={ProfileQuery}/>
         <Route path=":username/:project/:path*"
@@ -27,6 +30,10 @@ const Router = createFarceRouter({
 
   render: createRender({}),
 });
+
+if (!store.value.profile)
+  if (window.location.pathname !== "/profiles")
+    window.location.href = '/profiles';
 
 ReactDOM.render(
     <Theme full={true}>

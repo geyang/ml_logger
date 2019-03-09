@@ -14,28 +14,23 @@ export const ProfileQuery = graphql`
                 }
             }
         }
-    }
-`;
+    }`;
 
-export default class Index extends React.Component {
-  render() {
-    const {user} = this.props;
-    console.log(user);
-    return (
-        <Box fill={true} direction="row" justify='stretch' background="#eeeeee">
-          <Box alignSelf={'center'} justifySelt={'center'} fill="horizontal" direction="column" align="center">
-            <Box animation="slideDown">
-              <h1>Profile Page</h1>
-              <p>
-                <strong>Username</strong>: {user.username}<br/>
-                <strong>Name</strong>: {user.name}
-              </p>
-              <Box gap="small">
-                <h1>projects:</h1>
-                {user.projects.edges.map(({node}) =>
-                    <ProjectSnippet key={node.id} username={user.username} name={node.name}/>
-                )}
-              </Box>
-            </Box></Box></Box>);
-  }
+export default function Index({user}) {
+  return (
+      <Box fill={true} direction="row" justify='stretch' background="#fafafa">
+        <Box alignSelf={'center'} justifySelt={'center'} fill="horizontal" direction="column" align="center">
+          <Box animation="slideDown">
+            {(user && user.username)
+                ? <h1>Welcome, {user.username}!</h1>
+                : <h1>Profile Page</h1>}
+            <p>You have the following projects on the server.</p>
+            <Box gap="small" overflow={"vertical"} style={{marginTop: "2em", marginBottom: "300px"}}>
+              {user.projects.edges.map(({node}) =>
+                  <ProjectSnippet key={node.id} username={user.username} name={node.name}/>
+              )}
+            </Box>
+          </Box>
+        </Box></Box>
+  );
 }

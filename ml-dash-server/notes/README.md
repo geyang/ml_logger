@@ -10,6 +10,10 @@
 
 ## ToDos
 
+- [ ] window for adding the keys
+- [ ] add multiKey support?? does it work now?
+    - multi-key support already exist on the backend.
+    - [x] need to add support in line chart.
 - [ ] **Reach Feature Parity!!!!!!!**
 - [ ] package for deployment
     - start vis app
@@ -29,6 +33,7 @@ typical workflow:
 
 - [ ] table show metric results [need metrics query api, better to be single call]
 - [ ] simple table component
+- [ ] launch new vis server backend
 - [ ] select charts to compare with each other
 - [ ] `summary { 
         metricFiles: []
@@ -44,11 +49,13 @@ typical workflow:
 The powerful thing is that we can encapsulate these as react components.
 
 
+- [ ] default unhide 3 expeirments in list view
 
-- [ ] implement end-point configuration
-- [ ] build client
-- [ ] deploy on server
-- [ ] file container: 
+
+- [x] implement end-point configuration
+- [ ] deploy new visualization graphql server
+- [ ] serve from the `./build` folder
+- [ ] file container:
     - search in loaded list of files.
     - or search via query
 - [ ] image scroller component
