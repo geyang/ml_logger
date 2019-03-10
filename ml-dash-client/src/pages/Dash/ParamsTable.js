@@ -27,6 +27,8 @@ export function ParamsTable({
                               inlineCharts
                             }) {
 
+  console.log(keys);
+
   keys = typeof keys === 'string' ? [keys] : keys;
   sortBy = typeof sortBy === 'string' ? [sortBy] : sortBy;
   agg = typeof agg === 'string' ? [agg] : agg;
@@ -41,9 +43,11 @@ export function ParamsTable({
 
   keys = keys.length ? keys : unique(exps.flatMap(exp => exp.parameters.keys));
 
+  console.log(keys);
+
   let df = new DataFrame(exps.map(exp => ({
     id: exp.id,
-    metricsPath: exp.metrics.path,
+    metricsPath: exp.metrics ? exp.metrics.path : null,
     ...exp.parameters.flat
   })));
 

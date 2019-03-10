@@ -17,9 +17,10 @@ To **install** `ml_dash`, do:
 pip install ml-dash
 ```
 
-**Skip this if you just want to log locally.** To kickstart a logging server (Instrument Server), run
+**Note: the server accepts requests from `localhost` only, by default.** In order to 
+
 ```bash
-python -m ml_dash.server
+python -m ml_dash.main --log-dir=<your-log-dir> --host=0.0.0.0 --port=<your-port-number> --workers=4
 ```
 It is the easiest if you setup a long-lived instrument server with a public ip for yourself or the entire lab.
 

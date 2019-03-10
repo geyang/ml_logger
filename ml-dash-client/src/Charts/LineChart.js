@@ -44,6 +44,8 @@ function fetchSeries({metricsFiles, prefix, xKey, yKey, yKeys, k,}) {
 }
 
 function seriesToRecords(series) {
+  if (!series || !series.yMean)
+    return [];
   const df = new DataFrame({
     y: series.yMean,
     x: series.xData ? series.xData : series.yMean.map((_, i) => i)
@@ -54,6 +56,8 @@ function seriesToRecords(series) {
 }
 
 function seriesToAreaRecords(series) {
+  if (!series || !series.y75 || !series.y25)
+    return [];
   const df = new DataFrame({
     y0: series.y75,
     y: series.y25,
@@ -100,7 +104,10 @@ function LineChart({
   useEffect(() => {
     if (!lines.length) fetchSeries({metricsFiles, prefix, xKey, yKey, yKeys, k})
         .then(({series}) => setLines([
-          {mean: seriesToRecords(series), quarter: seriesToAreaRecords(series)}
+          {
+            mean: seriesToRecords(series),
+            quarter: seriesToAreaRecords(series)
+          }
         ]));
   }, [metricsFiles, prefix, xKey, yKey, yKeys, k]);
 

@@ -2,7 +2,20 @@ import React, {Fragment} from "react";
 import {useToggle} from "react-use";
 import {commitMutation, createFragmentContainer} from "react-relay";
 import graphql from "babel-plugin-relay/macro";
-import {Grid, Box, Tabs, Tab, Table, TableHeader, TableBody, TableRow, TableCell, Markdown, CheckBox, Button} from "grommet";
+import {
+  Grid,
+  Box,
+  Tabs,
+  Tab,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableCell,
+  Markdown,
+  CheckBox,
+  Button
+} from "grommet";
 import MonacoEditor from "react-monaco-editor";
 import {debounce} from "throttle-debounce";
 import {toGlobalId} from "../../lib/relay-helpers";
@@ -58,8 +71,9 @@ function ExperimentDash({
   const dashConfig = dashConfigs[0] || {yaml: {}};
 
   const inlineCharts = (dashConfig.yaml.charts || [])
-      .filter(c => (!c.prefix && !c.metricsFiles))
+      .filter(c => c !== null)
       .map(c => (typeof c === 'string') ? {type: "line", yKey: c} : c)
+      .filter(c => (!c.prefix && !c.metricsFiles))
       .map(c => ({...c, type: c.type || "line"}));
 
   console.log(inlineCharts);

@@ -4,6 +4,8 @@ from sanic import response
 from sanic.exceptions import RequestTimeout
 
 from ml_dash.file_utils import path_match
+from termcolor import cprint
+
 from . import config
 import json
 
@@ -26,7 +28,7 @@ class Handler(AIOEventHandler):
 def setup_watch_queue(app, loop):
     print('setting up watch queue')
     start_watcher()
-    print('watcher setup is complete!')
+    cprint('watcher setup complete!', "green")
 
 
 def start_watcher():

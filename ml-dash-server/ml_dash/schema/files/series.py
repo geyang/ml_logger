@@ -165,10 +165,15 @@ def get_series(metrics_files=tuple(),
             df = df.loc[inds]
 
         # todo: only dropna if we are not using ranges. <need to test>
-        if head is None and tail is None:
-            joined.append(df[join_keys].dropna())
-        else:
-            joined.append(df[join_keys])
+        try:
+            if head is None and tail is None:
+                joined.append(df[join_keys].dropna())
+            else:
+                joined.append(df[join_keys])
+        except KeyError as e:
+            raise KeyError(
+                f"{join_keys} contain keys that is not in the dataframe. "
+                f"Keys available include {df.keys()}") from e
 
     if not joined:  # No dataframe, return `null`.
         return None
@@ -202,6 +207,8 @@ def get_series(metrics_files=tuple(),
             raise KeyError(f"x_edge {[x_edge]} should be OneOf['start', 'after', 'mid', 'mode']")
     else:
         df['__x'] = df.index
+
+    df.sort_values(by='__x')
 
     return Series(metrics_files,
                   _df=df,
