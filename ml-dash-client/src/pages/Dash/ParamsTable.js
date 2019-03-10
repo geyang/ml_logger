@@ -1,6 +1,8 @@
 import React, {Fragment, useState} from "react";
 import {
-  Grid, Box, Table, TableHeader, TableBody, TableRow, TableCell, Image, Video,
+  Grid, Box, Table,
+  TableHeader, TableBody, TableRow, TableCell,
+  Image, Video,
   CheckBox, RangeInput
 } from "grommet";
 import {Eye, EyeOff} from 'react-feather';
@@ -8,6 +10,7 @@ import DataFrame from "dataframe-js";
 import {minus, unique, match, intersect} from "../../lib/sigma-algebra";
 import LineChart from "../../Charts/LineChart";
 import {colorMap} from "../../Charts/chart-theme";
+import {toTitle} from "../../lib/string-sort";
 
 function trueDict(keys = []) {
   let _ = {};
@@ -18,10 +21,13 @@ function trueDict(keys = []) {
 export function ParamsTable({
                               exps,
                               keys = [],
+                              hideKeys = [],
                               sortBy = [],
                               agg = [], // seed
                               ignore = [],
                               groupBy = null, // regEx: Args.*
+                              width, height,
+                              onKeyChange,
                               onClick, // not implemented
                               onSelectRow,  //not implemented
                               inlineCharts
@@ -42,21 +48,22 @@ export function ParamsTable({
   const [bySelection, setBySelection] = useState(false);
 
   keys = keys.length ? keys : unique(exps.flatMap(exp => exp.parameters.keys));
+  keys = minus(keys, hideKeys);
 
   console.log(keys);
 
   let df = new DataFrame(exps.map(exp => ({
     id: exp.id,
     metricsPath: exp.metrics ? exp.metrics.path : null,
-    ...exp.parameters.flat
+    ...(exp.parameters && exp.parameters.flat || {})
   })));
 
   const allKeys = df.listColumns();
   const ids = exps.map(exp => exp.id);
 
-  const allShown = Object.keys(hidden).length === 0;
+  const someShown = Object.keys(hidden).length !== exps.length;
   const toggleHidden = (id) => setHidden({...hidden, [id]: !hidden[id]});
-  const toggleAllHidden = () => setHidden(allShown ? trueDict(ids) : {});
+  const toggleAllHidden = () => setHidden(someShown ? trueDict(ids) : {});
 
   const someSelected = !!Object.keys(selected).length;
   const toggleSelected = (id) => setSelected({...selected, [id]: !selected[id]});
@@ -72,25 +79,46 @@ export function ParamsTable({
 
   df = new DataFrame({
     ...grouped.select(...groupKeys).toDict(),
-    ...new DataFrame(grouped.select('aggregation').toDict().aggregation).toDict()
+    ...new DataFrame(grouped.select('aggregation').toDict().aggregation || []).toDict()
   });
 
   const expList = df.toCollection();
   console.log(expList);
 
+//   return (
+//       <Table
+//           columns={keys.map((k, ind) => ({
+//             key: ind,
+//             title: toTitle(k),
+//             dataIndex: k,
+//             width: ind !== (keys.length - 1) ? 80 : undefined,
+//             textWrap: 'ellipsis'
+//           }))}
+//           dataSource={expList.map((exp, ind) => ({key: exp.id || ind, ...exp}))}
+//           rowSelection={() => null}
+//           size="small"
+//           bordered
+//           scroll={{x: width, y: height}}
+//           pagination={false}
+//           expandedRowRender={(row) => <div style={{height: 500}}> hey this is working</div>}
+//       />);
+//
+// }
+
+// function Test() {
   return <Table fill="full" flex="auto" scrollable={true}>
     <TableHeader>
       <TableRow>
         <Box as={TableCell} justify="left" pad='small' height="36px" direction='row' align="start"
              fill='horizontal' gap='xsmall' height={56}>
           <CheckBox alt="Toggle Select All" checked={someSelected} onChange={toggleAllSelected}/>
-          {allShown
-              ? <Box as={Eye} onClick={toggleAllHidden} style={{cursor: "pointer"}}/>
-              : <Box as={EyeOff} onClick={toggleAllHidden} style={{cursor: "pointer"}}/>
+          {someShown
+              ? <Box as={EyeOff} onClick={toggleAllHidden} style={{cursor: "pointer"}}/>
+              : <Box as={Eye} onClick={toggleAllHidden} style={{cursor: "pointer"}}/>
           }</Box>
         {keys.map((key, i) =>
             <TableCell scope="col" key={i}>
-              <strong>{key}</strong>
+              <strong>{toTitle(key)}</strong>
             </TableCell>
         )}</TableRow>
     </TableHeader>
@@ -148,4 +176,5 @@ export function ParamsTable({
       )}
     </TableBody>
   </Table>
+
 }

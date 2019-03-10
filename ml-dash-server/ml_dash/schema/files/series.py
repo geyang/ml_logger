@@ -184,6 +184,8 @@ def get_series(metrics_files=tuple(),
     if x_key:
         all = all.set_index(x_key)
 
+    all.rank(method='first')
+
     if k is not None:
         bins = pd.qcut(all.index, k)
         grouped = all.groupby(bins)
@@ -192,8 +194,6 @@ def get_series(metrics_files=tuple(),
 
     df = pd.merge(grouped[y_keys].agg(['count', 'mean', 'min', 'max']).reset_index(),
                   grouped[y_keys].describe(percentiles=[0.25, 0.75, 0.5, 0.05, 0.95]))
-
-    # _ = grouped.apply(lambda x: x[y_key].mode()[0])
 
     if k is not None:
         if x_edge == "right" or x_edge is None:
@@ -208,7 +208,7 @@ def get_series(metrics_files=tuple(),
     else:
         df['__x'] = df.index
 
-    df.sort_values(by='__x')
+    # df.sort_values(by='__x')
 
     return Series(metrics_files,
                   _df=df,
@@ -229,7 +229,7 @@ SeriesArguments = dict(
     x_low=Float(description="the (inclusive) lower end of the x column"),
     x_high=Float(description="the (inclusive) higher end of the x column"),
     k=Int(required=False, description='the number of datapoints to return.'),
-    x_align=GenericScalar(description="a number (anchor point), 'start', 'end'"),
+    x_align=String(description="a number (anchor point), 'start', 'end'"),
     x_key=String(),
     y_key=String(description="You can leave the xKey, but the yKey is required."),
     y_keys=List(String, description="Alternatively you can pass a list of keys to yKey*s*."),

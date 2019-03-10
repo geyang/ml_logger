@@ -1,5 +1,5 @@
-import React, {Fragment} from "react";
-import {useToggle} from "react-use";
+import React, {Fragment, useRef, useState, useEffect} from "react";
+import {useToggle, useMount} from "react-use";
 import {commitMutation, createFragmentContainer} from "react-relay";
 import graphql from "babel-plugin-relay/macro";
 import {
@@ -45,6 +45,24 @@ function ExperimentDash({
                           ..._props
                         }) {
 
+  const tableContainer = useRef(null);
+  const [tSize, setTSize] = useState({width: 0, height: 0});
+
+  const tableResize = function () {
+    console.log(tableContainer.current);
+    window.r = tableContainer.current;
+    let _ = {
+      width: tableContainer.current.clientWidth - 10,
+      height: tableContainer.current.clientHeight - 79
+    };
+    console.log(_);
+    setTSize(_);
+  };
+
+  console.log(tSize);
+
+  useMount(() => setTimeout(tableResize, 500));
+
   const [editDash, toggleDashEdit] = useToggle(false);
   const [showReadme, toggleReadme] = useToggle(false);
   const [editReadme, toggleReadmeEdit] = useToggle(false);
@@ -78,9 +96,11 @@ function ExperimentDash({
 
   console.log(inlineCharts);
 
-  return <Box style={{width: "100%", height: "100vh"}}
-              alignContent="stretch" basis='auto' flex={true}
-              direction="column" gap='none' fill={true} {..._props}>
+  return <Box
+      height={"100vh!important"}
+      width={"100%"}
+      alignContent="stretch" basis='auto' flex={true}
+      direction="column" gap='none' fill={true} {..._props}>
     <Box justify="left" pad='small' height="36px" direction='row' align="start" fill='horizontal' gap='medium'
          height={56}>
       <Box as="h2">{dashConfig.name}</Box>
@@ -101,15 +121,22 @@ function ExperimentDash({
               onChange={(value) => updateDashConfig(dashConfig && dashConfig.id, value)}
               editorDidMount={() => null}/>
         </Box> : null}
-    <Box area="main" gap='none' direction="column" overflow='auto' fill={true}>
-      <ParamsTable exps={fullExperiments.edges.map(({node}) => node)}
-                   keys={dashConfig.yaml.keys || []}
-                   agg={dashConfig.yaml.aggregate || []}
-                   ignore={dashConfig.yaml.aggIgnore || []}
-                   sortBy={false}
-                   groupBy={false}
-                   inlineCharts={inlineCharts}
-      />
+    <Box area="main" ref={tableContainer} gap='none' direction="column"
+         overflow={true}
+        // background="red"
+         style={{display: "block", width: "100%", overflow: "auto"}}>
+      {(tSize.width && tSize.height) ?
+          <ParamsTable exps={fullExperiments.edges.map(({node}) => node)}
+                       keys={dashConfig.yaml.keys || []}
+                       hideKeys={dashConfig.yaml.hide || []}
+                       agg={dashConfig.yaml.aggregate || []}
+                       ignore={dashConfig.yaml.aggIgnore || []}
+                       sortBy={false}
+                       groupBy={false}
+                       inlineCharts={inlineCharts}
+                       width={tSize.width}
+                       height={tSize.height}
+          /> : null}
     </Box>
     {showReadme ?
         <Box area="readme" overflow="auto" background="white" fill={true}>
@@ -134,7 +161,7 @@ export default createFragmentContainer(ExperimentDash, {
       fragment ExperimentDash_directory on Directory {
           name
           path
-          files ( first:50 ) @connection(key: "ExperimentDash_files"){
+          files ( first:5 ) @connection(key: "ExperimentDash_files"){
               edges {
                   cursor
                   node { id name }

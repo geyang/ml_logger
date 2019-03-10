@@ -31,6 +31,56 @@ typical workflow:
 - add experiment start and update time to parameters
 - add view for experiment quick view
 
+- [x] change toggle to hide first
+
+### Urgent ToDos
+
+- allow removal of column names
+- [ ] Need to add `startTime`, `endTime`, `length` to create
+    - always add during experiment registration
+    - for endTime, use metrics file __timestamp
+    - If endTime large than 5 min, show stopped.
+- add title bard to charts
+- Allow adding charts to exp
+
+
+### Rest Usability Issues
+
+- [ ] add dates to directories (no need for now)
+- [ ] add `load more` button to Directories
+- allow reorder of column names via drag and drop
+- add DATES to the NavBar
+- add order (accent/decent) button to directories
+- add delete button to Directories
+- add rename button to Directories
+- allow ordering by column
+- allow grouping of columns (shift select)
+- add `load more...` to the folders and files on the left.
+- add search to `Directories (find)` and `Files (find)`. For `Experiments`, 
+
+- Do not know what keys there are
+- Do not know what metrics there are
+- Would be good if we could order all experiments by dates. Starting from year, unfold by dates started
+
+- At Project root, there are a lot of folders. Navbar only shows a few of them
+- Need to be able to order the project folders
+- Need to be able to navigate back to parent folder
+- Need to support Images
+- Need to support summary in table
+- Want to be able to search
+- Need to support sorting in table
+- Need to add `startTime`, `endTime`, `length` to table for sorting
+- use infinite list for table
+- use draggable column width for table
+
+
+- [ ] fix the trace ordering issue
+- [ ] Change UI, to add table columns, with typeahead
+- [ ] add title bar to chart
+- [ ] next to title, add (...) button for modifying the chart config
+- [ ] add in-line block to create chart
+- [ ] add yaml encoding write
+
 - [ ] table show metric results [need metrics query api, better to be single call]
 - [ ] simple table component
 - [ ] launch new vis server backend

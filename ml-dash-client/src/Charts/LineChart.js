@@ -21,6 +21,7 @@ const seriesQuery = graphql`
     query LineChartsQuery(
     $prefix: String,
     $xKey: String,
+    $xAlign: String,
     $yKey: String,
     $yKeys: [String],
     $k: Int,
@@ -33,14 +34,14 @@ const seriesQuery = graphql`
             xKey: $xKey
             yKey: $yKey
             yKeys: $yKeys
-            xAlign: "start"
+            xAlign: $xAlign
             # k: 10                    
         ) {id xKey yKey xData yMean y25 y75}
     }
 `;
 
-function fetchSeries({metricsFiles, prefix, xKey, yKey, yKeys, k,}) {
-  return fetchQuery(modernEnvironment, seriesQuery, {metricsFiles, prefix, xKey, yKey, yKeys, k});
+function fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k,}) {
+  return fetchQuery(modernEnvironment, seriesQuery, {metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k});
 }
 
 function seriesToRecords(series) {

@@ -11,6 +11,7 @@ import Dash, {DashPrepareVariables, DashQuery} from "./pages/Dash";
 import Theme from "./Theme";
 import Settings from "./pages/Settings";
 import Profiles from "./pages/Profiles";
+import './App.css';
 
 const Router = createFarceRouter({
   historyProtocol: new BrowserProtocol(),
