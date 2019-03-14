@@ -19,3 +19,7 @@ export function toTitle(key) {
   if (!key) return key;
   return key.replace(/\./g, ' ').replace(/_/g, ' ')
 }
+
+// export function prettify(value) {
+//   switch(typeof)
+// }

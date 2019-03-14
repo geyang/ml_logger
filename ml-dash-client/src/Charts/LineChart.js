@@ -80,6 +80,7 @@ function LineChart({
                      xKey, yKey, yKeys,
                      xFormat, yFormat,
                      xTitle, yTitle,
+                     xAlign,
                      k = 20,
                      color = chartColors.red,
                      ..._props
@@ -103,7 +104,7 @@ function LineChart({
   }
 
   useEffect(() => {
-    if (!lines.length) fetchSeries({metricsFiles, prefix, xKey, yKey, yKeys, k})
+    if (!lines.length) fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k})
         .then(({series}) => setLines([
           {
             mean: seriesToRecords(series),

@@ -64,19 +64,13 @@ export default class Dash extends React.Component {
     console.log(isExperimentView);
     //to change query, do: this.props.router.replace({...location, query: {new_stuff}})
 
-    const columns = isExperimentView ? ['1/2', '1/2'] : ['medium', 'auto'];
-    const areas = isExperimentView ? [
-      {name: "main", start: [0, 0], end: [0, 0]},
-      {name: "side-bar", start: [1, 0], end: [1, 0]}
-    ] : [
-      {name: "nav", start: [0, 0], end: [0, 0]},
-      {name: "main", start: [1, 0], end: [1, 0]},
-    ];
-
-    return <Grid fill={true} rows={['auto']}
-                 gap="none" columns={columns} areas={areas}>
-      {isExperimentView ? null
-          : <Navbar directory={directory} gridArea="nav" animation={["fadeIn", "slideRight"]}/>}
+    return <Box fill={true}
+                direction="row"
+                gap="none"
+                alignContent="stretch">
+      {isExperimentView
+          ? null
+          : <Navbar width="400px" directory={directory} gridArea="nav" animation={["fadeIn", "slideRight"]}/>}
       <Box gridArea="main" background='#e6e6e6' fill={true} animation="fadeIn">
         <ExperimentDash directory={directory} openExperimentDetails={this.openExperimentDetails}/>
       </Box>
@@ -86,6 +80,6 @@ export default class Dash extends React.Component {
             <ChartGrid experiments={this.state.experiments} charts={this.state.charts}/>
           </Box>
           : null}
-    </Grid>;
+    </Box>;
   }
 }

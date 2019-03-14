@@ -7,6 +7,7 @@ import {createFarceRouter, createRender, makeRouteConfig, Route,} from 'found';
 import {Resolver} from 'found-relay';
 import FrontPage from './pages/FrontPage';
 import Profile, {ProfileQuery} from "./pages/Profile";
+import KitchenSink from "./pages/KitchenSink";
 import Dash, {DashPrepareVariables, DashQuery} from "./pages/Dash";
 import Theme from "./Theme";
 import Settings from "./pages/Settings";
@@ -20,6 +21,7 @@ const Router = createFarceRouter({
       <Route path="/">
         <Route Component={FrontPage}/>
         <Route path="profiles" Component={Profiles}/>
+        <Route path="sink" Component={KitchenSink}/>
         <Route path="settings" Component={Settings}/>
         <Route path=":username" Component={Profile} prepareVariables={(params) => params} query={ProfileQuery}/>
         <Route path=":username/:project/:path*"
