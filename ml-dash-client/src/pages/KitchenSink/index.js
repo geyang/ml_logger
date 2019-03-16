@@ -1,6 +1,6 @@
 import React from 'react';
 import Table from 'rc-table';
-import 'rc-table/assets/index.css';
+// import 'rc-table/assets/index.css';
 
 const tableData = [
   {key: 0, a: '123'},

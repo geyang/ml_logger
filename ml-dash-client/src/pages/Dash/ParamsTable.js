@@ -1,4 +1,5 @@
 import React, {Fragment, useState, useRef} from "react";
+import styled from "styled-components";
 import 'resize-observer-polyfill'
 import useComponentSize from '@rehooks/component-size'
 import {
@@ -11,17 +12,84 @@ import ReactDragListView from "react-drag-listview";
 import Table from "rc-table";
 import './table.css';
 import 'react-resizable/css/styles.css';
-import {Eye, EyeOff} from 'react-feather';
+import {Eye, EyeOff, Plus, MinusSquare} from 'react-feather';
 import DataFrame from "dataframe-js";
 import {minus, unique, match, intersect} from "../../lib/sigma-algebra";
 import LineChart from "../../Charts/LineChart";
 import {colorMap} from "../../Charts/chart-theme";
-import {toTitle} from "../../lib/string-sort";
 
 function trueDict(keys = []) {
   let _ = {};
   keys.forEach(k => _[k] = true);
   return _
+}
+
+const StyledCell = styled.div`
+    padding: 12px 6px;
+    overflow: visible;
+    display: block;
+    box-sizing: border-box;
+    margin: 0;
+    border: none;
+    height: 42px;
+`;
+
+function HeaderCell({width, children}) {
+  return (children === null || typeof children === "undefined")
+      ? <StyledCell style={{width: width, color: "#a3a3a3"}}>N/A</StyledCell>
+      : <StyledCell style={{width: width}}>{children}</StyledCell>;
+}
+
+function TableCell({width, children}) {
+  return (children === null || typeof children === "undefined")
+      ? <StyledCell style={{width: width, color: "#a3a3a3"}}>N/A</StyledCell>
+      : <StyledCell style={{width: width}}>{children}</StyledCell>;
+}
+
+
+function Multiple(values) {
+  return <>
+    <strong>{"["}</strong>
+    ...
+    <strong>{"]"}</strong>
+  </>;
+}
+
+const StyledGutterCell = styled.div`
+    overflow: visible;
+    display: inline-block;
+    box-sizing: border-box;
+    margin: 0;
+    border: 0 solid white;
+    text-align: right;
+`;
+
+function GutterCell({width, ..._props}) {
+  return <StyledGutterCell style={{width}} {..._props}/>;
+}
+
+function Expand({expanded, ..._props}) {
+  return <div style={{
+    display: "inline-block",
+    padding: "9px",
+    cursor: "pointer", height: "42px",
+    boxSizing: "border-box",
+    touchCallout: "none", userSelect: "none"
+  }} {..._props}>
+    {expanded ? <MinusSquare size={24}/> : <Plus size={24}/>}
+  </div>
+}
+
+function ShowChart({expanded, ..._props}) {
+  return <div style={{
+    display: "inline-block",
+    padding: "9px",
+    cursor: "pointer", height: "42px",
+    boxSizing: "border-box",
+    touchCallout: "none", userSelect: "none"
+  }} {..._props}>
+    {expanded ? <EyeOff size={24}/> : <Eye size={24}/>}
+  </div>
 }
 
 
@@ -40,36 +108,47 @@ export default function ParamsTable({
                                       onColumnDragEnd,
                                       ..._props
                                     }) {
-  console.log(keys);
 
   keys = typeof keys === 'string' ? [keys] : keys;
   sortBy = typeof sortBy === 'string' ? [sortBy] : sortBy;
   agg = typeof agg === 'string' ? [agg] : agg;
   ignore = typeof ignore === 'string' ? [ignore] : ignore;
 
-  const dragProps = {onDragEnd: onColumnDragEnd, nodeSelector: "th"};
+  // const dragProps = {onDragEnd: onColumnDragEnd, nodeSelector: "th div.drag-handle"};
 
   let containerRef = useRef(null);
-  const {width, height} = useComponentSize(containerRef);
+  let {width, height} = useComponentSize(containerRef);
+
 
   const [selected, setSelected] = useState({});
+  const [rowExpand, setRowExpand] = useState({});
+  const [showChart, setShowChart] = useState({});
+
+  function toggleRowExpand(key) {
+    setRowExpand({...rowExpand, [key]: !rowExpand[key]})
+  }
+
+  function toggleShowChart(key) {
+    setShowChart({...showChart, [key]: !showChart[key]})
+  }
+
   const defaultHidden = {};
   if (inlineCharts.length) //note: default show 3 experiments. Only when charts are available.
-    exps.slice(3).map(({id}) => defaultHidden[id] = true);
+    exps.slice(0).forEach(({id}) => defaultHidden[id] = true);
   const [hidden, setHidden] = useState(defaultHidden);
   const [bySelection, setBySelection] = useState(false);
 
   keys = keys.length ? keys : unique(exps.flatMap(exp => exp.parameters.keys));
   keys = minus(keys, hideKeys);
 
-  console.log(keys);
-  console.log(hidden);
 
   let df = new DataFrame(exps.map(exp => ({
     id: exp.id,
     metricsPath: exp.metrics ? exp.metrics.path : null,
     ...(exp.parameters && exp.parameters.flat || {})
   })));
+
+  //todo: use nested children
 
   const allKeys = df.listColumns();
   const ids = exps.map(exp => exp.id);
@@ -83,11 +162,9 @@ export default function ParamsTable({
   const toggleAllSelected = () => setSelected(someSelected ? {} : trueDict(ids));
 
   let sorted = sortBy.length ? df.sortBy(sortBy) : df;
-  const aggKeys = unique(// note: id is always aggregated
-      ['id', 'metricsPath', ...agg, ...match(allKeys, groupBy), ...ignore]);
+  // note: id is always aggregated
+  const aggKeys = unique(['id', 'metricsPath', ...agg, ...match(allKeys, groupBy), ...ignore]);
   const groupKeys = minus(allKeys, aggKeys);
-
-  console.log(groupKeys);
 
   const grouped = sorted.groupBy(...groupKeys)
       .aggregate(group => group.select(...intersect(aggKeys, allKeys)).toDict());
@@ -97,185 +174,135 @@ export default function ParamsTable({
     ...new DataFrame(grouped.select('aggregation').toDict().aggregation || []).toDict()
   });
 
-  const expList = df.toCollection();
-  // console.log(expList);
+  // const expList = df.toCollection();
+  const expList = grouped.toCollection().map(function ({aggregation, ..._group}, ind) {
 
-  const expandedKeys = expList.map(({id}) => !hidden[id] ? id : null).filter(id => id !== null);
-  // console.log(expandedKeys);
+    const children = [...new DataFrame(aggregation).toCollection()
+        .map(child => ({..._group, ...child, key: child.id}))];
 
-  const columns = keys.map((k, ind) => ({
-    key: k,
-    title: <div style={{
+    let aggShunt = {};
+    Object.keys(aggregation).forEach((k) => aggShunt[k] = <Multiple/>);
+
+    if (children.length === 1) {
+      let _ = {
+        ..._group,
+        ...children[0],
+        key: children[0].id,
+        __className: "single"
+      };
+      _.__leftGutter = [
+        <ShowChart expanded={showChart[_.key]} onClick={() => toggleShowChart(_.key)}/>
+      ];
+      return _;
+    } else {
+      let _ = {
+        ..._group,
+        // ...aggShunt,
+        ...aggregation,
+        key: aggregation.id.join(','),
+        __className: "group",
+      };
+      _.__leftGutter = [
+        <Expand expanded={rowExpand[_.key]} onClick={() => toggleRowExpand(_.key)}/>,
+        <ShowChart expanded={showChart[_.key]} onClick={() => toggleShowChart(_.key)}/>
+      ];
+      return rowExpand[aggregation.id]
+          ? [_, ...children.map(c => ({
+            ..._group, ...c,
+            key: c.id,
+            __className: "child",
+            __leftGutter: [
+              <ShowChart expanded={showChart[c.id]} onClick={() => toggleShowChart(c.id)}/>
+            ]
+          }))] : _;
+    }
+  }).flatten();
+
+  const expandedKeys = Object.keys(showChart).filter(k => showChart[k]);
+
+  const gutterCol = {
+    dataIndex: "__leftGutter",
+    title: <GutterCell width={100}/>, //toTitle
+    width: 100,
+    render: (value, row, index) => <GutterCell width={100}>{value}</GutterCell>
+  };
+  if (!expandedKeys.length)
+    gutterCol.fixed = "left";
+  const columns = [
+    gutterCol,
+    ...keys.map((k, ind) => ({
+      key: k,
+      title: <HeaderCell width={(ind === keys.length - 1) ? 1000 : 50}>{k}</HeaderCell>, //toTitle
+      dataIndex: k,
       width: (ind === keys.length - 1) ? 500 : 50,
-      padding: "12px 6px",
-      overflow: "hidden",
-      display: "inline-block"
-    }}>{toTitle(k)}</div>,
-    dataIndex: k,
-    width: (ind === keys.length - 1) ? 500 : 50,
-    textWrap: 'ellipsis',
-    // fixed: (ind === 0) ? "left" : null
-    render: (value, row, index) =>
-        <div style={{
-          width: (ind === keys.length - 1) ? 500 : 50,
-          padding: "12px 6px",
-          overflow: "hidden",
-          display: "inline-block"
-        }}>{(value === null) ? "None" : (typeof value === 'undefined') ? "N/A" : value}</div>
-  }));
+      textWrap: 'ellipsis',
+      // fixed: (ind === 0) ? "left" : null
+      render: (value, row, index) =>
+          <TableCell width={(ind === keys.length - 1) ? 1000 : 50}>{value}</TableCell>
+    }))];
+
   const totalWidth = columns.map(k => k.width).reduce((a, b) => a + b, 0);
 
   const keyWidth = {};
   columns.forEach(({key, width}) => keyWidth[key] = width);
 
-  // const components = {
-  //   // table: MyTable,
-  //   header: {
-  //     //   wrapper: HeaderWrapper,
-  //     //   row: HeaderRow,
-  //     cell: ({children, ..._props}) => <td
-  //         style={{width: 150, overflow: "hidden", display: "inline-block"}} {..._props}>{children}</td>
-  //   },
-  //   body: {
-  //     // wrapper: BodyWrapper,
-  //     // row: BodyRow,
-  //     cell: ({children, ..._props}) => <td
-  //         style={{width: 150, overflow: "hidden", display: "inline-block"}} {..._props}>{children}</td>
-  //   },
-  // };
-
   return (
       <Box ref={containerRef} {..._props} flex={true}>
-        <ReactDragListView.DragColumn {...dragProps}>
-          <Table
-              // components={{
-              //   header: {
-              //     cell: (value)=> <div style={{}}>{value}</div>,
-              //   }
-              // }}
-              columns={columns}
-              className="bordered fixed"
-              data={expList.map((exp, ind) => ({key: exp.id || ind, ...exp}))}
-              rowSelection={() => null}
-              size="small"
-              bordered
-              scroll={{x: totalWidth, y: height - 55}}
-              // expandIconAsCell
-              onExpand={toggleHidden}
-              expandRowByClick
-              expandedRowKeys={expandedKeys}
-              // onExpandedRowsChange={() => null}
-              expandedRowRender={(exp, expIndex, indent, expanded) =>
-                  expanded
-                      ? <Grid style={{minHeight: "200px"}} colSpan="100%" height="auto" rows="100px"
-                              columns="small" overflow={true}>
-                        {inlineCharts.map((chart, i) => {
-                          switch (chart.type) {
-                            case "series":
-                              return <Box as={LineChart}
-                                          key={i}
-                                          metricsFiles={exp.metricsPath}
-                                          color={colorMap(expIndex)}
-                                          {...chart}/>;
-                            case "img":
-                              return <Box key={i}>
-                                <Image src={chart.path.replace('$range', chart.range.value)}
-                                       style={{maxWidth: 200, maxHeight: 300}}/>
-                                {chart.range ?
-                                    <RangeInput value={chart.range.value} onChange={() => null}/> : null}
-                              </Box>;
-                            case "mov":
-                              return <Box key={i}>
-                                <Video>
-                                  <source key="video" src={chart.path} type="video/mp4"/>
-                                  {/*<track key="cc" label="English" kind="subtitles" srcLang="en" src="/assets/small-en.vtt" default/>*/}
-                                </Video>
-                                {chart.range ?
-                                    <RangeInput value={chart.range.value} onChange={() => null}/> : null}
-                              </Box>;
-                            default:
-                              return null;
-                          }
-                        })}
-                      </Grid>
-                      : null
-              }
-          />
-        </ReactDragListView.DragColumn>
+        {/*<ReactDragListView.DragColumn {...dragProps}>*/}
+        <Table
+            columns={columns}
+            className="bordered fixed"
+            data={expList}
+            // data={expList.map((exp, ind) => ({key: exp.id || ind, ...exp}))}
+            rowSelection={() => null}
+            size="small"
+            bordered
+            scroll={{x: totalWidth + 200, y: height - 42}}
+            // onExpand={toggleHidden}
+            expandRowByClick
+            rowClassName={(row) => row.__className || ""}
+            expandedRowKeys={expandedKeys}
+            expandedRowRender={(exp, expIndex, indent, expanded) =>
+                expanded
+                    ? <Grid style={{minHeight: "200px"}}
+                            height="auto"
+                            rows="100px"
+                            columns="small" overflow={true}>
+                      {inlineCharts.map(({type, ...chart}, i) => {
+                        console.log(type, chart, exp.metricsPath);
+                        switch (type) {
+                          case "series":
+                            return <Box as={LineChart}
+                                        key={i}
+                                        metricsFiles={exp.metricsPath}
+                                        color={colorMap(expIndex)}
+                                        {...chart}/>;
+                          case "img":
+                            return <Box key={i}>
+                              <Image src={chart.path.replace('$range', chart.range.value)}
+                                     style={{maxWidth: 200, maxHeight: 300}}/>
+                              {chart.range ?
+                                  <RangeInput value={chart.range.value} onChange={() => null}/> : null}
+                            </Box>;
+                          case "mov":
+                            return <Box key={i}>
+                              <Video>
+                                <source key="video" src={chart.path} type="video/mp4"/>
+                                {/*<track key="cc" label="English" kind="subtitles" srcLang="en" src="/assets/small-en.vtt" default/>*/}
+                              </Video>
+                              {chart.range ?
+                                  <RangeInput value={chart.range.value} onChange={() => null}/> : null}
+                            </Box>;
+                          default:
+                            return null;
+                        }
+                      })}
+                    </Grid>
+                    : null
+            }
+        />
+        {/*</ReactDragListView.DragColumn>*/}
       </Box>
   )
 }
 
-// function Test() {
-//   return <Table fill="full" flex="auto" scrollable={true}>
-//     <TableHeader>
-//       <TableRow>
-//         <Box as={TableCell} justify="left" pad='small' height="36px" direction='row' align="start"
-//              fill='horizontal' gap='xsmall' height={56}>
-//           <CheckBox alt="Toggle Select All" checked={someSelected} onChange={toggleAllSelected}/>
-//           {someShown
-//               ? <Box as={EyeOff} onClick={toggleAllHidden} style={{cursor: "pointer"}}/>
-//               : <Box as={Eye} onClick={toggleAllHidden} style={{cursor: "pointer"}}/>
-//           }</Box>
-//         {keys.map((key, i) =>
-//             <TableCell scope="col" key={i}>
-//               <strong>{toTitle(key)}</strong>
-//             </TableCell>
-//         )}</TableRow>
-//     </TableHeader>
-//     <TableBody display="block" overflowY="auto">
-//       {expList.map((exp, expIndex) =>
-//           <Fragment key={exp.id.toString()}>
-//             <TableRow pad="small" direction="exp" height="36px" style={{color: "black", background: "white"}}>
-//               <Box as={TableCell} justify="left" pad='small' height="36px" direction='row' align="start"
-//                    fill='horizontal' gap='xsmall' height={56}>
-//                 <CheckBox checked={selected[exp.id]} onChange={() => toggleSelected(exp.id)}/>
-//                 {hidden[exp.id]
-//                     ? <Box as={EyeOff} onClick={() => toggleHidden(exp.id)} style={{cursor: "pointer"}}/>
-//                     : <Box as={Eye} onClick={() => toggleHidden(exp.id)} style={{cursor: "pointer"}}/>}
-//               </Box>
-//               {keys.map((key, i) =>
-//                   <TableCell key={i} scope="exp">{
-//                     exp[key] && exp[key].toString()
-//                   }</TableCell>)} </TableRow>
-//             {inlineCharts.length && !hidden[exp.id] ?
-//                 <TableRow style={{background: "#f8f8f8"}}>
-//                   <Grid as={TableCell} colSpan="100%" height="auto" rows="100px" columns="small"
-//                         style={{minHeight: 200}}
-//                         overflow={true}>
-//                     {inlineCharts.map((chart, i) => {
-//                       switch (chart.type) {
-//                         case "line":
-//                           return <Box as={LineChart}
-//                                       key={i}
-//                                       metricsFiles={exp.metricsPath}
-//                                       color={colorMap(expIndex)}
-//                                       {...chart}/>;
-//                         case "img":
-//                           return <Box key={i}>
-//                             <Image src={chart.path.replace('$range', chart.range.value)}
-//                                    style={{maxWidth: 200, maxHeight: 300}}/>
-//                             {chart.range ?
-//                                 <RangeInput value={chart.range.value} onChange={() => null}/> : null}
-//                           </Box>;
-//                         case "mov":
-//                           return <Box key={i}>
-//                             <Video>
-//                               <source key="video" src={chart.path} type="video/mp4"/>
-//                               {/*<track key="cc" label="English" kind="subtitles" srcLang="en" src="/assets/small-en.vtt" default/>*/}
-//                             </Video>
-//                             {chart.range ?
-//                                 <RangeInput value={chart.range.value} onChange={() => null}/> : null}
-//                           </Box>;
-//                         default:
-//                           return null;
-//                       }
-//                     })}
-//                   </Grid>
-//                 </TableRow> : null}
-//           </Fragment>
-//       )}
-//     </TableBody>
-//   </Table>
-//
-// }

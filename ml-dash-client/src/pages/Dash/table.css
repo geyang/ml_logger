@@ -7,6 +7,46 @@
     overflow: hidden;
 }
 
+.rc-table-body-outer {
+    /*note: this prevents the bottom from chopping off.*/
+    margin: 0 !important;
+}
+
+.rc-table-row.group {
+    /*font-weight: 900;*/
+    background: repeating-linear-gradient(
+            -45deg,
+            #fafafa,
+            #FAFAFA 5px,
+            #ffffff 5px,
+            #ffffff 10px
+    )
+}
+
+.rc-table tr.group.rc-table-row-hover,
+.rc-table tr.rc-table-row.group:hover {
+    background: repeating-linear-gradient(
+            -45deg,
+            #eaf8fe,
+            #eaf8fe 5px,
+            #ffffff 5px,
+            #ffffff 10px
+    )
+}
+
+.rc-table-row.child {
+    background: #FAFAFA
+}
+
+.rc-table-row.single {
+    background: #ffffff
+}
+
+
+.rc-table-body::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+}
+
 .rc-table .rc-table-scroll {
     overflow: auto;
 }
@@ -19,6 +59,7 @@
 .rc-table .rc-table-header {
     overflow: hidden;
     background: #f7f7f7;
+    margin: 0 !important;
 }
 
 .rc-table-fixed-header .rc-table-body {
@@ -28,14 +69,14 @@
 
 .rc-table-fixed-header .rc-table-body-inner {
     height: 100%;
-    overflow: scroll;
+    overflow: hidden !important;
 }
 
 .rc-table-fixed-header .rc-table-scroll .rc-table-header {
-    overflow-x: scroll;
+    /*overflow-x: scroll;*/
     /*padding-bottom: 20px;*/
     /*margin-bottom: -20px;*/
-    overflow-y: scroll;
+    /*overflow-y: scroll;*/
     box-sizing: border-box;
 }
 
@@ -79,19 +120,26 @@
 
 .rc-table table {
     width: 100%;
-    border-collapse: separate;
+    border-collapse: collapse;
     text-align: left;
+    border-spacing: 0;
 }
 
 .rc-table th {
     background: #f7f7f7;
+    border: none;
+    border-right: 1px solid #e9e9e9;
     font-weight: bold;
     transition: background .3s ease;
+    overflow: hidden;
 }
 
 .rc-table td {
+    border-top: none;
+    border-left: none;
     border-bottom: 1px solid #e9e9e9;
     border-right: 1px solid #e9e9e9;
+    overflow: hidden;
 }
 
 .rc-table td:empty:after {
@@ -100,6 +148,7 @@
 }
 
 .rc-table tr {
+    border: none;
     transition: all .3s ease;
 }
 
@@ -113,7 +162,6 @@
 
 .rc-table th,
 .rc-table td {
-    /*padding: 16px 8px;*/
     padding: 0;
     white-space: nowrap;
 }

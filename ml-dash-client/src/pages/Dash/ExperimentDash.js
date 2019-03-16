@@ -114,8 +114,7 @@ function ExperimentDash({
           alignContent="stretch" basis='auto' flex={true}
           direction="column" gap='none' fill={true} {..._props}>
         <Box justify="left" pad='small' height="36px" direction='row' align="start" fill='horizontal' gap='medium'
-             height={56} flex={false}
-        >
+             height={56} flex={false}>
           <Box as="h2">{dashConfig.name}</Box>
           <Button><strong>+</strong></Button>
           <Box as={CheckBox} label="Dash Config" checked={editDash} onChange={() => toggleDashEdit()}/>
