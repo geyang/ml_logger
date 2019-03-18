@@ -12,6 +12,12 @@
     margin: 0 !important;
 }
 
+.rc-table-fixed-left tbody tr:last-child,
+.rc-table-fixed-right tbody tr:last-child {
+    border-bottom: 19px solid #f7f7f7 !important;
+    /*margin-bottom: 19px !important;*/
+}
+
 .rc-table-row.group {
     /*font-weight: 900;*/
     background: repeating-linear-gradient(

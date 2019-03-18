@@ -105,12 +105,12 @@ function LineChart({
 
   useEffect(() => {
     if (!lines.length) fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k})
-        .then(({series}) => setLines([
-          {
-            mean: seriesToRecords(series),
-            quarter: seriesToAreaRecords(series)
-          }
-        ]));
+        .then((data) => {
+          if (data) setLines([{
+            mean: seriesToRecords(data.series),
+            quarter: seriesToAreaRecords(data.series)
+          }])
+        });
   }, [metricsFiles, prefix, xKey, yKey, yKeys, k]);
 
   return <FlexibleXYPlot onMouseLeave={_onMouseLeave} {..._props}>

@@ -12,7 +12,7 @@ import ReactDragListView from "react-drag-listview";
 import Table from "rc-table";
 import './table.css';
 import 'react-resizable/css/styles.css';
-import {Eye, EyeOff, Plus, MinusSquare} from 'react-feather';
+import {Eye, EyeOff, Plus, MinusSquare, Square, CheckSquare} from 'react-feather';
 import DataFrame from "dataframe-js";
 import {minus, unique, match, intersect} from "../../lib/sigma-algebra";
 import LineChart from "../../Charts/LineChart";
@@ -71,7 +71,7 @@ function GutterCell({width, ..._props}) {
 function Expand({expanded, ..._props}) {
   return <div style={{
     display: "inline-block",
-    padding: "9px",
+    padding: "9px 9px 9px 4.5px",
     cursor: "pointer", height: "42px",
     boxSizing: "border-box",
     touchCallout: "none", userSelect: "none"
@@ -83,13 +83,25 @@ function Expand({expanded, ..._props}) {
 function ShowChart({expanded, ..._props}) {
   return <div style={{
     display: "inline-block",
-    padding: "9px",
+    padding: "9px 9px 9px 4.5px",
     cursor: "pointer", height: "42px",
     boxSizing: "border-box",
     touchCallout: "none", userSelect: "none"
   }} {..._props}>
     {expanded ? <EyeOff size={24}/> : <Eye size={24}/>}
   </div>
+}
+
+function SelectRow({checked, ..._props}) {
+  return <div style={{
+    display: "inline-block",
+    padding: "9px 9px 9px 4.5px",
+    cursor: "pointer", height: "42px",
+    boxSizing: "border-box",
+    touchCallout: "none", userSelect: "none"
+  }} {..._props}>{
+    checked ? <CheckSquare size={24}/> : <Square size={24}/>
+  }</div>
 }
 
 
@@ -103,7 +115,8 @@ export default function ParamsTable({
                                       groupBy = null, // regEx: Args.*
                                       onKeyChange,
                                       onClick, // not implemented
-                                      onSelectRow,  //not implemented
+                                      selectedRows,
+                                      onRowSelect, // call with (selections: [], selection: object, select: bool)
                                       inlineCharts,
                                       onColumnDragEnd,
                                       ..._props
@@ -120,7 +133,8 @@ export default function ParamsTable({
   let {width, height} = useComponentSize(containerRef);
 
 
-  const [selected, setSelected] = useState({});
+  // const [selected, setSelected] = useState(trueDict(selectedRows));
+  const selected = trueDict(selectedRows);
   const [rowExpand, setRowExpand] = useState({});
   const [showChart, setShowChart] = useState({});
 
@@ -158,8 +172,29 @@ export default function ParamsTable({
   const toggleAllHidden = () => setHidden(someShown ? trueDict(ids) : {});
 
   const someSelected = !!Object.keys(selected).length;
-  const toggleSelected = id => setSelected({...selected, [id]: !selected[id]});
-  const toggleAllSelected = () => setSelected(someSelected ? {} : trueDict(ids));
+
+  function toggleSelected(id) {
+    let newSelected = {...selected, [id]: !selected[id]};
+    console.log(newSelected);
+    // setSelected(newSelected);
+    if (typeof onRowSelect === 'function')
+      onRowSelect(
+          Object.keys(newSelected).filter(k => newSelected[k]),
+          id,
+          !selected[id]
+      );
+  }
+
+  function toggleAllSelected() {
+    let newSelected = someSelected ? {} : trueDict(ids);
+    // setSelected(newSelected);
+    if (typeof onRowSelect === 'function')
+      onRowSelect(
+          Object.keys(newSelected).filter(k => newSelected[k]),
+          ids,
+          !someSelected
+      );
+  }
 
   let sorted = sortBy.length ? df.sortBy(sortBy) : df;
   // note: id is always aggregated
@@ -191,6 +226,7 @@ export default function ParamsTable({
         __className: "single"
       };
       _.__leftGutter = [
+        <SelectRow checked={selected[_.key]} onClick={() => toggleSelected(_.key)}/>,
         <ShowChart expanded={showChart[_.key]} onClick={() => toggleShowChart(_.key)}/>
       ];
       return _;
@@ -204,7 +240,8 @@ export default function ParamsTable({
       };
       _.__leftGutter = [
         <Expand expanded={rowExpand[_.key]} onClick={() => toggleRowExpand(_.key)}/>,
-        <ShowChart expanded={showChart[_.key]} onClick={() => toggleShowChart(_.key)}/>
+        <SelectRow checked={selected[_.key]} onClick={() => toggleSelected(_.key)}/>,
+        <ShowChart expanded={showChart[_.key]} onClick={() => toggleShowChart(_.key)}/>,
       ];
       return rowExpand[aggregation.id]
           ? [_, ...children.map(c => ({
@@ -212,6 +249,7 @@ export default function ParamsTable({
             key: c.id,
             __className: "child",
             __leftGutter: [
+              <SelectRow checked={selected[c.id]} onClick={() => toggleSelected(c.id)}/>,
               <ShowChart expanded={showChart[c.id]} onClick={() => toggleShowChart(c.id)}/>
             ]
           }))] : _;
@@ -222,9 +260,9 @@ export default function ParamsTable({
 
   const gutterCol = {
     dataIndex: "__leftGutter",
-    title: <GutterCell width={100}/>, //toTitle
-    width: 100,
-    render: (value, row, index) => <GutterCell width={100}>{value}</GutterCell>
+    title: <GutterCell width={120}/>, //toTitle
+    width: 120,
+    render: (value, row, index) => <GutterCell width={120}>{value}</GutterCell>
   };
   if (!expandedKeys.length)
     gutterCol.fixed = "left";
@@ -232,13 +270,13 @@ export default function ParamsTable({
     gutterCol,
     ...keys.map((k, ind) => ({
       key: k,
-      title: <HeaderCell width={(ind === keys.length - 1) ? 1000 : 50}>{k}</HeaderCell>, //toTitle
+      title: <HeaderCell width={(ind === keys.length - 1) ? 2000 : 50}>{k}</HeaderCell>, //toTitle
       dataIndex: k,
       width: (ind === keys.length - 1) ? 500 : 50,
       textWrap: 'ellipsis',
       // fixed: (ind === 0) ? "left" : null
       render: (value, row, index) =>
-          <TableCell width={(ind === keys.length - 1) ? 1000 : 50}>{value}</TableCell>
+          <TableCell width={(ind === keys.length - 1) ? 2000 : 50}>{value}</TableCell>
     }))];
 
   const totalWidth = columns.map(k => k.width).reduce((a, b) => a + b, 0);

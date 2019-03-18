@@ -1,34 +1,35 @@
 import React from 'react';
 import {Box} from "grommet";
-import Link from 'found/lib/Link';
+import styled, {keyframes} from "styled-components";
+import {useTimeout} from "react-use";
+import store from "../../local-storage";
 
-export default class Index extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {username: null};
+const fadeIn = keyframes`
+    from { opacity: 0; }
+    to   { opacity: 1; }
+`;
+
+const FadeIn = styled.span`
+  animation: ${fadeIn} 2s;
+`;
+
+export default function Index() {
+  const ready = useTimeout(2000);
+  if (ready) {
+    if (store.value.profile.username)
+      window.location.href = `/${store.value.profile.username}`;
+    else
+      window.location.href = "/profiles";
   }
 
-  onInput = (e) => {
-    this.setState({username: e.target.value});
-  };
-
-  login = (e) => {
-    console.log(this.state.username);
-  };
-
-  render() {
-    return (
-        <Box fill={true} direction="row" justify='stretch'>
-          <Box alignSelf={'center'} justifySelt={'center'} fill="horizontal" direction="column" align="center">
-            <Box animation="slideDown">
-              <h1>ML-Dash</h1>
-              <p>I have warned you.</p>
-              <input type="text" onInput={this.onInput}/>
-              <button onClick={this.login}>login</button>
-              <br/>
-              <br/>
-              <Link to={"/" + this.state.username}>login:/{this.state.username}</Link>
-            </Box></Box></Box>
-    );
-  }
+  return (
+      <Box fill={true} direction="row" justify='stretch'>
+        <Box alignSelf={'center'} justifySelt={'center'} fill="horizontal" direction="column" align="center">
+          <Box animation={["slideUp", "fadeIn"]}>
+            <h1>ML-Dash</h1>
+            <h2 style={{marginBottom: 100}}>I have warned you. <FadeIn>😈</FadeIn></h2>
+          </Box>
+        </Box>
+      </Box>
+  );
 }

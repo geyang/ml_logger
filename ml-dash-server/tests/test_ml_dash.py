@@ -10,6 +10,28 @@ def log_dir(request):
     return request.config.getoption('--log-dir')
 
 
+def test_delete_text_file(log_dir):
+    from ml_dash.config import Args
+    Args.logdir = log_dir
+    client = Client(schema)
+    query = """
+        mutation AppMutation ($id: ID!) {
+            deleteFile (input: { 
+                            id: $id, 
+                            clientMutationId: "10", 
+             }) { ok }
+        }
+    """
+    path = "/episodeyang/cpc-belief/README.md"
+    r = client.execute(query, variables=dict(id=to_global_id("File", path)))
+
+    if 'errors' in r:
+        raise RuntimeError("\n" + shows(r['errors']))
+    else:
+        print(">>")
+        show(r['data'])
+
+
 def test_mutate_text_file(log_dir):
     from ml_dash.config import Args
     Args.logdir = log_dir

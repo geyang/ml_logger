@@ -3,6 +3,28 @@ schema {
   mutation: Mutation
 }
 
+input DeleteDirectoryInput {
+  id: ID
+  clientMutationId: String
+}
+
+type DeleteDirectoryPayload {
+  ok: Boolean
+  id: ID
+  clientMutationId: String
+}
+
+input DeleteFileInput {
+  id: ID
+  clientMutationId: String
+}
+
+type DeleteFilePayload {
+  ok: Boolean
+  id: ID
+  clientMutationId: String
+}
+
 type Directory implements Node {
   id: ID!
   name: String
@@ -104,6 +126,8 @@ type MutateYamlFilePayload {
 }
 
 type Mutation {
+  deleteFile(input: DeleteFileInput!): DeleteFilePayload
+  deleteDirectory(input: DeleteDirectoryInput!): DeleteDirectoryPayload
   updateText(input: MutateTextFileInput!): MutateTextFilePayload
   updateJson(input: MutateJSONFileInput!): MutateJSONFilePayload
   updateYaml(input: MutateYamlFileInput!): MutateYamlFilePayload

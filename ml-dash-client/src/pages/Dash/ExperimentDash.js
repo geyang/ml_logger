@@ -20,13 +20,14 @@ import MonacoEditor from "react-monaco-editor";
 import {debounce} from "throttle-debounce";
 import {toGlobalId} from "../../lib/relay-helpers";
 import ParamsTable from "./ParamsTable";
+import {ContextMenu} from "./TableContextMenu";
 
 let tempID = 0;
 
 function updateText(environment, fileId, text) {
   return commitMutation(environment, {
     mutation: graphql`
-        mutation ExperimentDashMutation($input: MutateTextFileInput!) {
+        mutation ExperimentDashUpdateMutation($input: MutateTextFileInput!) {
             updateText (input: $input) {
                 file { id name path relPath text yaml}
             }
@@ -35,6 +36,44 @@ function updateText(environment, fileId, text) {
     variables: {
       input: {id: fileId, text, clientMutationId: tempID++},
     }
+  });
+}
+
+function deleteFile(environment, fileId) {
+  return commitMutation(environment, {
+    mutation: graphql`
+        mutation ExperimentDashDeleteMutation(
+        $input: DeleteFileInput!
+        ) {
+            deleteFile (input: $input) { ok id }
+        }
+    `,
+    variables: {
+      input: {id: fileId, clientMutationId: tempID++},
+    },
+    configs: [{
+      type: 'NODE_DELETE',
+      deletedIDFieldName: 'id',
+    }]
+  });
+}
+
+function deleteDirectory(environment, fileId) {
+  return commitMutation(environment, {
+    mutation: graphql`
+        mutation ExperimentDashDeleteDirectoryMutation(
+        $input: DeleteDirectoryInput!
+        ) {
+            deleteDirectory (input: $input) { ok id }
+        }
+    `,
+    variables: {
+      input: {id: fileId, clientMutationId: tempID++},
+    },
+    configs: [{
+      type: 'NODE_DELETE',
+      deletedIDFieldName: 'id',
+    }]
   });
 }
 
@@ -81,10 +120,13 @@ function ExperimentDash({
 
   const {files, fullExperiments, readme, dashConfigs: dC} = directory;
 
-  let dashConfigs = dC.edges.map(({node}) => ({
-    ...node,
-    yaml: node.yaml || {}
-  }));
+  let dashConfigs = dC.edges
+      .map(({node}) => node)
+      .filter(_ => _ !== null)
+      .map(node => ({
+        ...node,
+        yaml: node.yaml || {}
+      }));
 
   const dashConfig = dashConfigs[0] || {yaml: {}};
 
@@ -93,8 +135,6 @@ function ExperimentDash({
       .map(c => (typeof c === 'string') ? {type: "series", yKey: c} : c)
       .filter(c => (!c.prefix && !c.metricsFiles))
       .map(c => ({...c, type: c.type || "series"}));
-
-  console.log(inlineCharts);
 
   const keys = dashConfig.yaml.keys || [];
 
@@ -108,6 +148,9 @@ function ExperimentDash({
     keys.splice(to, 0, keys.splice(from, 1)[0]);
     return keys; // for testing
   }
+
+  const [selected, setSelected] = useState([]);
+  console.log(selected);
 
   return (
       <Box
@@ -136,7 +179,10 @@ function ExperimentDash({
         <ParamsTable
             area="main"
             style={{minHeight: 200}}
-            exps={fullExperiments.edges.map(({node}) => node)}
+            exps={fullExperiments.edges
+                .map(({node}) => node)
+                .filter(_ => _ !== null)
+            }
             keys={dashConfig.yaml.keys || []}
             hideKeys={dashConfig.yaml.hide || []}
             agg={dashConfig.yaml.aggregate || []}
@@ -145,7 +191,16 @@ function ExperimentDash({
             groupBy={false}
             inlineCharts={inlineCharts}
             onColumnDragEnd={reorderKeys}
+            selectedRows={selected}
+            onRowSelect={(selected) => setSelected(selected)}
         />
+        {selected.length
+            ? <ContextMenu selected={selected}
+                           deleteDirectory={(id) => {
+                             deleteDirectory(relay.environment, id);
+                             setSelected([]);
+                           }}/>
+            : null}
         {showReadme ?
             <Box area="readme" overflow="auto" background="white" fill={true}>
               {readme ? <Markdown tag="article" className="markdown-body entry-content">{readme.text}</Markdown> : null}
@@ -160,6 +215,7 @@ function ExperimentDash({
                   onChange={(value) => updateReadme(readme && readme.id, value)}
                   editorDidMount={() => null}/>
             </Box> : null}
+        {}
       </Box>)
 }
 

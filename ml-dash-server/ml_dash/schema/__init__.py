@@ -5,7 +5,7 @@ from ml_dash.schema.schema_helpers import bind, bind_args
 from ml_dash.schema.users import User, get_users, get_user
 from ml_dash.schema.projects import Project
 from ml_dash.schema.directories import Directory, get_directory
-from ml_dash.schema.files import File, MutateTextFile, MutateJSONFile, MutateYamlFile
+from ml_dash.schema.files import File, MutateTextFile, MutateJSONFile, MutateYamlFile, DeleteFile, DeleteDirectory
 # MutateJSONFile, MutateYamlFile
 from ml_dash.schema.experiments import Experiment
 
@@ -85,12 +85,16 @@ class Query(ObjectType):
 
 
 class Mutation(ObjectType):
-    # todo: remove_file
-    # todo: rename_file
-    # todo: edit_file
+    # todo: create_file
+    # done: edit_file
+    # done: remove_file
     # todo: move_file
     # todo: copy_file
 
+    # do we need to have separate deleteDirectory? (look up relay client-side macros)
+
+    delete_file = DeleteFile.Field()
+    delete_directory = DeleteDirectory.Field()
     # update_text = EditText.Field()
     update_text = MutateTextFile.Field()
     update_json = MutateJSONFile.Field()

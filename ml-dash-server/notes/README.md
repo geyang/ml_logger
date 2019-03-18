@@ -10,6 +10,97 @@
 
 ## ToDos
 
+
+- [ ] redirect to profile if no user profile exist
+
+1. show nexted children
+click on row to expand
+
+right now the biggest problem is that we don't know how to render only the row on the right. 
+Can make-do with some kind of DOM away container, but it is not ideal. 
+
+hidden column:
+1. be able to select columns
+2. be able to add those to hide
+3. show hidden columns
+5. select hidden
+4. allow unhide
+- column head: expand hidden (not a good idea b/c )
+
+allow resizing columns:
+1. select column
+2. resize
+or
+1. mouse over
+allow reordering of columns:
+1. move the header on top
+
+group rows:
+1. select row 1
+2. select row 2
+3. panel opens on the right, show keys that are different
+   ```yaml 
+   columns: key, exp1, exp2
+   ```
+
+select multiple rows:
+1. select row 1
+2. select row 2
+3. panel opens on the right showing different keys
+4. select row 3
+5. select row 4
+6. panel on the right changes to 
+    ```yaml
+    key 1, key 2, key 3
+    exp 1, 
+    exp 2, ...
+    ```
+7. panel on the right turn into a parallel coordinate plot
+
+- [ ] add multiple folder selection in the navbar to show experiments from those folders.
+
+feature parity:
+
+multi-key support for the `LineChart`? Need to be able to see all of the lines before selecting one or a few
+
+so this is wild-card support in keys. In the input box, we putin a search query. it finds relevant keys
+in the metric file before generating the plots.
+
+- [ ] show grouped rows, organized by groupBy groupIgnore
+- [ ] show 
+- [x] fixed column width, use `hidden` for horizontal scroll inside cells
+- [x] Drag and Drop column position
+- [ ] organize the state, save column width to configuration.
+    - widths: {key, width}
+- [ ] resize column
+- [ ] hide column
+- [ ] add column (button, click and select/type and select)
+- [ ] 
+- [ ] order by column
+- [ ] need to save column position
+- [ ] minor point: editors need to support folding.
+- [ ] add column width to keys
+- [ ] column drag and drop: 
+    https://github.com/ant-design/ant-design/issues/4639#issuecomment-316351389
+
+- [x] chart row
+- checkbox
+- add and remove columns from table, with dropdown
+- remove front page (redirect to /profiles)
+- add image support
+- compare results
+
+New features:
+- add header
+- remove header
+- order by column
+- group by column
+
+
+- resize
+- row render
+- infinite scroll
+
 - [ ] window for adding the keys
 - [ ] add multiKey support?? does it work now?
     - multi-key support already exist on the backend.
@@ -34,6 +125,13 @@ typical workflow:
 - [x] change toggle to hide first
 
 ### Urgent ToDos
+
+- [ ] RC-table
+    - scrollable support
+    - full colSpan support
+    - header click handle
+    - column width
+    
 
 - allow removal of column names
 - [ ] Need to add `startTime`, `endTime`, `length` to create

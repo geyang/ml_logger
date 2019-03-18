@@ -1,5 +1,6 @@
+import os
 from os.path import split, isabs, realpath, join, basename, dirname
-from graphene import ObjectType, relay, String, Int, Mutation, ID, Field, Node
+from graphene import ObjectType, relay, String, Int, Mutation, ID, Field, Node, Boolean
 from graphene.types.generic import GenericScalar
 from graphql_relay import from_global_id
 from ml_dash.schema.files.file_helpers import find_files
@@ -106,6 +107,23 @@ def save_json_to_file(path, data):
     return get_file(path)
 
 
+def remove_file(path):
+    """remove does not work with directories"""
+    from ml_dash.config import Args
+    assert isabs(path), "the path has to be absolute path."
+    _path = join(Args.logdir, path[1:])
+    os.remove(_path)
+
+
+def remove_directory(path):
+    """rmtree does not work with files"""
+    import shutil
+    from ml_dash.config import Args
+    assert isabs(path), "the path has to be absolute path."
+    _path = join(Args.logdir, path[1:])
+    shutil.rmtree(_path)
+
+
 def save_yaml_to_file(path, data):
     raise NotImplementedError
 
@@ -146,3 +164,37 @@ class MutateJSONFile(relay.ClientIDMutation):
     def mutate_and_get_payload(self, root, info, id, data, client_mutation_id):
         _type, id = from_global_id(client_mutation_id)
         return MutateJSONFile(file=save_json_to_file(id, data))
+
+
+class DeleteFile(relay.ClientIDMutation):
+    class Input:
+        id = ID()
+
+    ok = Boolean()
+    id = ID()
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, id, client_mutation_id):
+        _type, path = from_global_id(id)
+        try:
+            remove_file(path)
+            return DeleteFile(ok=True, id=id)
+        except FileNotFoundError:
+            return DeleteFile(ok=False)
+
+
+class DeleteDirectory(relay.ClientIDMutation):
+    class Input:
+        id = ID()
+
+    ok = Boolean()
+    id = ID()
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, id, client_mutation_id):
+        _type, path = from_global_id(id)
+        try:
+            remove_directory(path)
+            return DeleteDirectory(ok=True, id=id)
+        except FileNotFoundError:
+            return DeleteDirectory(ok=False)

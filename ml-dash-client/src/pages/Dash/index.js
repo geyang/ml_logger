@@ -5,6 +5,8 @@ import {Box, Grid, Markdown} from "grommet";
 import Navbar from "./Navbar";
 import ExperimentDash from "./ExperimentDash";
 import ChartGrid from "./ChartGrid";
+import store from "../../local-storage";
+import ProfileBlock from "../../components/ProfileBlock";
 
 
 export function DashPrepareVariables({username, project, path}) {
@@ -70,8 +72,9 @@ export default class Dash extends React.Component {
                 alignContent="stretch">
       {isExperimentView
           ? null
-          : <Navbar width="400px" directory={directory} gridArea="nav" animation={["fadeIn", "slideRight"]}/>}
+          : <Navbar width="300px" directory={directory} gridArea="nav" animation={["fadeIn", "slideRight"]}/>}
       <Box gridArea="main" background='#e6e6e6' fill={true} animation="fadeIn">
+        <ProfileBlock profile={store.value.profile}/>
         <ExperimentDash directory={directory} openExperimentDetails={this.openExperimentDetails}/>
       </Box>
       {isExperimentView

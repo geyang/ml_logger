@@ -51,7 +51,10 @@ export default class Search extends React.Component {
     const project = user.projects.edges[0].node;
     console.log(project);
 
-    const params = project.experiments.edges.map(({node: experiment}) => experiment.parameters.flat);
+    const params = project.experiments.edges
+        .map(({node})=>node)
+        .filter(_ => _ !== null)
+        .map(experiment => experiment.parameters.flat);
     console.log(params);
 
     const domainKeys = ['Args.lr', 'Args.weight_decay', 'Args.lr', 'Args.env_id', 'Args.seed'];
