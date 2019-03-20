@@ -37,13 +37,17 @@ const StyledCell = styled.div`
 function HeaderCell({width, children}) {
   return (children === null || typeof children === "undefined")
       ? <StyledCell style={{width: width, color: "#a3a3a3"}}>N/A</StyledCell>
-      : <StyledCell style={{width: width}}>{children}</StyledCell>;
+      : <StyledCell title={children} style={{width: width}}>{children}</StyledCell>;
 }
 
 function TableCell({width, children}) {
-  return (children === null || typeof children === "undefined")
-      ? <StyledCell style={{width: width, color: "#a3a3a3"}}>N/A</StyledCell>
-      : <StyledCell style={{width: width}}>{children}</StyledCell>;
+  if (children === null || typeof children === "undefined")
+    return <StyledCell title="value is `null`" style={{width: width, color: "#a3a3a3"}}>N/A</StyledCell>
+  else if (children === true)
+    return <StyledCell title={children} style={{width: width}}>True</StyledCell>;
+  else if (children === false)
+    return <StyledCell title={children} style={{width: width}}>False</StyledCell>;
+  return <StyledCell title={children} style={{width: width}}>{children}</StyledCell>;
 }
 
 

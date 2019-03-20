@@ -24,7 +24,8 @@ class Response:
 class SyncRequests:
     def __init__(self, max_workers=1):
         import urllib3
-        self.pool = urllib3.PoolManager(num_pools=max_workers)
+        retries = urllib3.Retry(connect=5, read=2, redirect=5)
+        self.pool = urllib3.PoolManager(num_pools=max_workers, retries=retries)
 
     def get(self, *args, json, **kwargs):
         _ = self.pool.request('GET', *args, body=dumps(json).encode('utf-8'), **kwargs)

@@ -25,6 +25,9 @@ class Navbar extends React.Component {
 
     return (
         <Box height={"100vh"}
+            //rgba(229, 224, 250, 0.27)
+             style={{boxShadow: "inset -20px 0 20px -8px rgba(245,245,250,0.9)"}}
+             background="rgba(245,245,250,0.27)"
              gap='none'
              direction="column"
              {...props}>
@@ -32,11 +35,11 @@ class Navbar extends React.Component {
             <h1>{directory.name}</h1>
           </Box>
           <Box gap='0.2em' direction="column" fill="vertical" flex={true}>
-            <Box justify="center" pad='small' background='gray' height="36px" flex={false}>
-              <h4 style={{color: "white"}}>Quick Selection</h4>
+            <Box justify="center" pad='small' height="36px" flex={false}>
+              <h4>Quick Selection</h4>
             </Box>
-            <Box justify="center" pad='small' background='gray' height="36px" flex={false}>
-              <h4 style={{color: "white"}}>Directories</h4>
+            <Box justify="center" pad='small' height="36px" flex={false}>
+              <h4>Directories</h4>
             </Box>
             <Box gap='0.2em' direction="column" overflow={{vertical: "scroll"}} flex="shrink">
               {sortedDirectories.map((node) =>
@@ -47,8 +50,8 @@ class Navbar extends React.Component {
                       {node.name}
                     </Box></Button>)}
             </Box>
-            <Box justify="center" pad='small' background='gray' height="36px">
-              <h4 style={{color: "white"}}>Experiments</h4>
+            <Box justify="center" pad='small' height="36px">
+              <h4>Experiments</h4>
             </Box>
             <Box gap='0.2em' direction="column" overflow={{vertical: "scroll"}} flex="shrink">
               {sortedExperiments.map((node) =>

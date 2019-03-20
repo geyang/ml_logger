@@ -73,7 +73,7 @@ export default class Dash extends React.Component {
       {isExperimentView
           ? null
           : <Navbar width="300px" directory={directory} gridArea="nav" animation={["fadeIn", "slideRight"]}/>}
-      <Box gridArea="main" background='#e6e6e6' fill={true} animation="fadeIn">
+      <Box gridArea="main" background='white' fill={true} animation="fadeIn">
         <ProfileBlock profile={store.value.profile}/>
         <ExperimentDash directory={directory} openExperimentDetails={this.openExperimentDetails}/>
       </Box>

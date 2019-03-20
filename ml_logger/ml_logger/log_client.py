@@ -11,14 +11,14 @@ from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, Rem
 
 # noinspection PyPep8Naming
 @contextmanager
-def _SyncContext(logger, clean=False):
+def _SyncContext(logger, clean=False, max_workers=None):
     old_session = logger.session
     if isinstance(old_session, SyncRequests):
         logger.sync_pool = old_session
     if logger.sync_pool:
         logger.session = logger.sync_pool
     else:
-        logger.set_session(False, logger.max_workers)
+        logger.set_session(False, max_workers or logger.max_workers)
         if not clean:
             logger.sync_pool = logger.session
     try:
@@ -28,14 +28,14 @@ def _SyncContext(logger, clean=False):
 
 
 @contextmanager
-def _AsyncContext(logger, clean=False):
+def _AsyncContext(logger, clean=False, max_workers=None):
     old_session = logger.session
     if isinstance(old_session, FuturesSession):
         logger.async_pool = old_session
     if logger.async_pool:
         logger.session = logger.async_pool
     else:
-        logger.set_session(True, logger.max_workers)
+        logger.set_session(True, max_workers or logger.max_workers)
         if not clean:
             logger.async_pool = logger.session
     try:
@@ -90,6 +90,12 @@ class LogClient:
     configure = __init__
 
     def set_session(self, asynchronous, max_workers):
+        """
+        
+        :param asynchronous: bool
+        :param max_workers: int for number of workers
+        :return: 
+        """
         self.max_workers = 10 if max_workers is None else max_workers
         if asynchronous is True:
             self.session = FuturesSession(ThreadPoolExecutor(max_workers=self.max_workers))
@@ -202,7 +208,8 @@ class LogClient:
 
     # appends text
     def log_buffer(self, key, buf):
-        self._log(key, buf, dtype="byte")
+        # defaults to overwrite for binary data.
+        self._log(key, buf, dtype="byte", options=LogOptions(overwrite=True))
 
     def glob(self, query, **kwargs):
         return self._glob(query, **kwargs)

@@ -35,7 +35,8 @@ function updateText(environment, fileId, text) {
     `,
     variables: {
       input: {id: fileId, text, clientMutationId: tempID++},
-    }
+    },
+    configs: []
   });
 }
 
@@ -181,9 +182,8 @@ function ExperimentDash({
             style={{minHeight: 200}}
             exps={fullExperiments.edges
                 .map(({node}) => node)
-                .filter(_ => _ !== null)
-            }
-            keys={dashConfig.yaml.keys || []}
+                .filter(_ => _ !== null)}
+            keys={(dashConfig.yaml.keys || []).filter(k=> k !== null)}
             hideKeys={dashConfig.yaml.hide || []}
             agg={dashConfig.yaml.aggregate || []}
             ignore={dashConfig.yaml.aggIgnore || []}

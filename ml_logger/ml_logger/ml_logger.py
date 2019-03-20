@@ -45,7 +45,7 @@ def metrify(data):
         return str(data)
 
 
-ML_DASH = "http://{host}:3000/experiments/ins-runs/{prefix}"
+ML_DASH = "http://localhost:3001/{prefix}"
 
 
 @contextmanager
@@ -78,7 +78,7 @@ class ML_Logger:
         """
         return _PrefixContext(self, os.path.join(*praefixa))
 
-    def SyncContext(self, clean=False):
+    def SyncContext(self, clean=False, **kwargs):
         """
         Returns a context in which the logger logs synchronously. The new
         synchronous request pool is cached on the logging client, so this
@@ -92,9 +92,9 @@ class ML_Logger:
             used to enforce single-use SyncContexts.
         :return: context object
         """
-        return self.client.SyncContext(clean=clean)
+        return self.client.SyncContext(clean=clean, **kwargs)
 
-    def AsyncContext(self, clean=False):
+    def AsyncContext(self, clean=False, **kwargs):
         """
         Returns a context in which the logger logs [a]synchronously. The new
         asynchronous request pool is cached on the logging client, so this
@@ -108,7 +108,7 @@ class ML_Logger:
             used to enforce single-use AsyncContexts.
         :return: context object
         """
-        return self.client.AsyncContext(clean=clean)
+        return self.client.AsyncContext(clean=clean, **kwargs)
 
     # noinspection PyInitNewSignature
     def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=None,
@@ -242,14 +242,16 @@ class ML_Logger:
         # now register the experiment
         if register_experiment:
             with logger.SyncContext(clean=True):  # single use SyncContext
-                self.log_params(run=self.run_info())
+                self.log_params(run=self.run_info(caller))
 
-    def run_info(self):
+    def run_info(self, **kwargs):
         if self.log_directory.startswith("http://"):
             host, port = self.log_directory[7:].split(":")
             run_info = dict(dashboard=ML_DASH.format(host=host, prefix=self.prefix))
         else:
             run_info = dict(log_directory=self.log_directory)
+        run_info['createTime'] = self.now()
+        run_info.update(kwargs)
         return run_info
 
     @staticmethod
