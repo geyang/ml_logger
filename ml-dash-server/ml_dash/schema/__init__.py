@@ -5,7 +5,8 @@ from ml_dash.schema.schema_helpers import bind, bind_args
 from ml_dash.schema.users import User, get_users, get_user
 from ml_dash.schema.projects import Project
 from ml_dash.schema.directories import Directory, get_directory
-from ml_dash.schema.files import File, MutateTextFile, MutateJSONFile, MutateYamlFile, DeleteFile, DeleteDirectory
+from ml_dash.schema.files import File, FileConnection, MutateTextFile, MutateJSONFile, MutateYamlFile, \
+    DeleteFile, DeleteDirectory, glob_files
 # MutateJSONFile, MutateYamlFile
 from ml_dash.schema.experiments import Experiment
 
@@ -82,6 +83,11 @@ class Query(ObjectType):
     project = relay.Node.Field(Project)
     metrics = relay.Node.Field(Metrics)
     directory = relay.Node.Field(Directory)
+
+    glob = Field(List(File),
+                            cwd=String(required=True),
+                            query=String(),
+                            resolver=bind_args(glob_files))
 
 
 class Mutation(ObjectType):

@@ -57,6 +57,24 @@ def test_mutate_text_file(log_dir):
         show(r['data'])
 
 
+def test_glob_files(log_dir):
+    from ml_dash.config import Args
+    Args.logdir = log_dir
+    client = Client(schema)
+    query = """
+        query AppQuery ($cwd: String!, $query: String) {
+            glob ( cwd: $cwd, query: $query) { id name }
+        }
+    """
+    path = "/episodeyang/playground/mdp/experiment_00/figures"
+    r = client.execute(query, variables=dict(cwd=path, query="*.png"))
+    if 'errors' in r:
+        raise RuntimeError(r['errors'])
+    else:
+        print(">>")
+        show(r['data'])
+
+
 def test_directory(log_dir):
     from ml_dash.config import Args
     Args.logdir = log_dir
@@ -97,6 +115,7 @@ def test_directory(log_dir):
                     edges { node { 
                         id name path
                         parameters {keys flat}
+                        files (first:10) { edges { node { id, name} } }
                     } }
                 }
             }

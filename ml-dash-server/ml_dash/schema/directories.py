@@ -15,13 +15,13 @@ class Directory(ObjectType):
 
     def resolve_readme(self, info, *args, **kwargs):
         # note: keep it simple, just use README for now.
-        readmes = schema.experiments.files.find_files_by_query(cwd=self.id, query="README.md")
+        readmes = schema.files.find_files_by_query(cwd=self.id, query="README.md")
         return readmes[0] if readmes else None
 
     dash_configs = relay.ConnectionField(lambda: schema.files.FileConnection)
 
     def resolve_dash_configs(self, info, *args, **kwargs):
-        return schema.experiments.files.find_files_by_query(cwd=self.id, query="*.dashcfg")
+        return schema.files.find_files_by_query(cwd=self.id, query="*.dashcfg")
 
     experiments = relay.ConnectionField(lambda: schema.experiments.ExperimentConnection)
 
@@ -41,7 +41,7 @@ class Directory(ObjectType):
     def resolve_files(self, info, **kwargs):
         from ml_dash.config import Args
         root_dir = join(Args.logdir, self.id[1:])
-        return [schema.Directory(id=join(self.id, _), name=_)
+        return [schema.files.File(id=join(self.id, _), name=_)
                 for _ in listdir(root_dir) if isfile(join(root_dir, _))]
 
     @classmethod

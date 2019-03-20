@@ -86,6 +86,10 @@ def find_files_by_query(cwd, query="**/*.*", **kwargs):
     ]
 
 
+def glob_files(cwd, query="*.*"):
+    return find_files_by_query(cwd=cwd, query=query)
+
+
 def save_text_to_file(path, text):
     from ml_dash.config import Args
     assert isabs(path), "the path has to be absolute path."
