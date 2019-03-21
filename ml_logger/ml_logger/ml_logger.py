@@ -242,7 +242,7 @@ class ML_Logger:
         # now register the experiment
         if register_experiment:
             with logger.SyncContext(clean=True):  # single use SyncContext
-                self.log_params(run=self.run_info(caller))
+                self.log_params(run=self.run_info())
 
     def run_info(self, **kwargs):
         if self.log_directory.startswith("http://"):
