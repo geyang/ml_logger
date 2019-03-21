@@ -17,6 +17,8 @@ import DataFrame from "dataframe-js";
 import {minus, unique, match, intersect} from "../../lib/sigma-algebra";
 import LineChart from "../../Charts/LineChart";
 import {colorMap} from "../../Charts/chart-theme";
+import InlineFile, {ImageView, VideoView} from "../../Charts/FileViews";
+import {fromGlobalId} from "../../lib/relay-helpers";
 
 function trueDict(keys = []) {
   let _ = {};
@@ -163,6 +165,7 @@ export default function ParamsTable({
   let df = new DataFrame(exps.map(exp => ({
     id: exp.id,
     metricsPath: exp.metrics ? exp.metrics.path : null,
+    expDirectory: fromGlobalId(exp.id).id,
     ...(exp.parameters && exp.parameters.flat || {})
   })));
 
@@ -202,7 +205,7 @@ export default function ParamsTable({
 
   let sorted = sortBy.length ? df.sortBy(sortBy) : df;
   // note: id is always aggregated
-  const aggKeys = unique(['id', 'metricsPath', ...agg, ...match(allKeys, groupBy), ...ignore]);
+  const aggKeys = unique(['id', 'metricsPath', 'expDirectory', ...agg, ...match(allKeys, groupBy), ...ignore]);
   const groupKeys = minus(allKeys, aggKeys);
 
   const grouped = sorted.groupBy(...groupKeys)
@@ -288,6 +291,8 @@ export default function ParamsTable({
   const keyWidth = {};
   columns.forEach(({key, width}) => keyWidth[key] = width);
 
+  console.log(expList);
+
   return (
       <Box ref={containerRef} {..._props} flex={true}>
         {/*<ReactDragListView.DragColumn {...dragProps}>*/}
@@ -306,7 +311,7 @@ export default function ParamsTable({
             expandedRowKeys={expandedKeys}
             expandedRowRender={(exp, expIndex, indent, expanded) =>
                 expanded
-                    ? <Grid style={{minHeight: "200px"}}
+                    ? <Grid style={{height: "224px"}}
                             height="auto"
                             rows="100px"
                             columns="small" overflow={true}>
@@ -314,27 +319,24 @@ export default function ParamsTable({
                         console.log(type, chart, exp.metricsPath);
                         switch (type) {
                           case "series":
+                            //todo: add title
                             return <Box as={LineChart}
                                         key={i}
                                         metricsFiles={exp.metricsPath}
                                         color={colorMap(expIndex)}
                                         {...chart}/>;
-                          case "img":
-                            return <Box key={i}>
-                              <Image src={chart.path.replace('$range', chart.range.value)}
-                                     style={{maxWidth: 200, maxHeight: 300}}/>
-                              {chart.range ?
-                                  <RangeInput value={chart.range.value} onChange={() => null}/> : null}
-                            </Box>;
+                          case "file":
+                          case "video":
                           case "mov":
-                            return <Box key={i}>
-                              <Video>
-                                <source key="video" src={chart.path} type="video/mp4"/>
-                                {/*<track key="cc" label="English" kind="subtitles" srcLang="en" src="/assets/small-en.vtt" default/>*/}
-                              </Video>
-                              {chart.range ?
-                                  <RangeInput value={chart.range.value} onChange={() => null}/> : null}
-                            </Box>;
+                          case "movie":
+                          case "img":
+                          case "image":
+                            return <InlineFile key={i}
+                                               type={type}
+                                               cwd={exp.expDirectory}
+                                               glob={chart.glob}
+                                               src={chart.src}
+                                               {...chart}/>;
                           default:
                             return null;
                         }

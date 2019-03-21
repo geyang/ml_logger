@@ -1,9 +1,9 @@
 export function strOrder(a, b) {
-  a = a.toLowerCase();
-  b = b.toLowerCase();
-  if (a < b) //sort string ascending
+  let a_ = a.toLowerCase();
+  let b_ = b.toLowerCase();
+  if (a_ < b_) //sort string ascending
     return -1;
-  if (a > b)
+  if (a_ > b_)
     return 1;
   return 0; //default return value (no sorting)
 }

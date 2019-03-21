@@ -179,6 +179,7 @@ type Query {
   project(id: ID!): Project
   metrics(id: ID!): Metrics
   directory(id: ID!): Directory
+  glob(cwd: String!, query: String): [File]
 }
 
 type Series implements Node {

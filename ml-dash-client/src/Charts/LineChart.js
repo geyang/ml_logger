@@ -9,9 +9,11 @@ import {
   HorizontalGridLines,
   XAxis,
   YAxis,
-  Crosshair
+  Crosshair,
+  ChartLabel
 } from "react-vis";
 import 'react-vis/dist/style.css';
+import {detect} from "detect-browser";
 import DataFrame from "dataframe-js";
 import {modernEnvironment} from "../data";
 import Color from 'color';
@@ -39,6 +41,15 @@ const seriesQuery = graphql`
         ) {id xKey yKey xData yMean y25 y75}
     }
 `;
+
+const browser = detect();
+
+let labelStyles = {
+  transform: 'rotate(0)',
+  fontWeight: 900,
+};
+if (browser && browser.name !== "safari")
+  labelStyles = {...labelStyles, fill: "black", stroke: "white", strokeWidth: "2px", paintOrder: "stroke",};
 
 function fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k,}) {
   return fetchQuery(modernEnvironment, seriesQuery, {metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k});
@@ -75,6 +86,7 @@ function time(v) {
 }
 
 function LineChart({
+                     title,
                      metricsFiles,
                      prefix,
                      xKey, yKey, yKeys,
@@ -128,13 +140,23 @@ function LineChart({
               : <LineSeriesCanvas data={line.mean} stroke={color} strokeWidth={2} onNearestX={_onNearestX}/>
         ]
     )}
-    <YAxis tickFormat={yFormat === 'time' ? time : null}
-           title={yTitle || yKey}
+    <YAxis tickFormat={yFormat === 'time' ? time : null} top={10}
            style={{text: {background: "white", fontWeight: 800}}}/>
     <XAxis tickLabelAngle={-35}
            tickFormat={xFormat === 'time' ? time : null}
-           title={xTitle || xKey}
            style={{text: {background: "white", fontWeight: 800}}}/>
+    <ChartLabel text={yTitle || yKey}
+                className="alt-y-label"
+                includeMargin={false}
+                xPercent={0.05}
+                yPercent={0.16}
+                style={{...labelStyles, textAnchor: "left"}}/>
+    <ChartLabel text={xTitle || xKey}
+                className="alt-x-label"
+                includeMargin={false}
+                xPercent={0.95}
+                yPercent={1}
+                style={{...labelStyles, textAnchor: "end"}}/>
     {crosshairValues.length
         ? <Crosshair values={crosshairValues.map(_ => _.value)}>
           <div style={{

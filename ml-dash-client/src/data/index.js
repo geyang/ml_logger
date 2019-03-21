@@ -1,9 +1,10 @@
 import {Environment, Network, RecordSource, Store} from 'relay-runtime';
 import JSON5 from 'json5';
 import store from "../local-storage";
+import {pathJoin} from "../lib/path-join";
 
 function fetchQuery(operation, variables) {
-  return fetch(store.value.profile.url, {
+  return fetch(pathJoin(store.value.profile.url, "/graphql"), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
