@@ -63,11 +63,11 @@ def test_glob_files(log_dir):
     client = Client(schema)
     query = """
         query AppQuery ($cwd: String!, $query: String) {
-            glob ( cwd: $cwd, query: $query) { id name }
+            glob ( cwd: $cwd, query: $query) { id name path }
         }
     """
-    path = "/episodeyang/playground/mdp/experiment_00/figures"
-    r = client.execute(query, variables=dict(cwd=path, query="*.png"))
+    path = "/episodeyang/playground/mdp/experiment_00/"
+    r = client.execute(query, variables=dict(cwd=path, query="figures/*.png"))
     if 'errors' in r:
         raise RuntimeError(r['errors'])
     else:
