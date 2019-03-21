@@ -1,4 +1,5 @@
 import React, {useState, useEffect} from "react";
+import {useToggle} from "react-use";
 import styled from "styled-components";
 import graphql from "babel-plugin-relay/macro";
 import {fetchQuery} from 'relay-runtime';
@@ -43,6 +44,8 @@ const StyledTitle = styled.div`
   height: 18px;
   margin: 3px 0;
   text-align: center;
+  cursor: pointer;
+  
   > .title {
     display: inline-block;
     border-radius: 10px;
@@ -64,6 +67,7 @@ const MainContainer = styled.div`
 export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
   const [files, setFiles] = useState([]);
   const [index, setIndex] = useState(-1);
+  const [showConfig, toggleShowConfig] = useToggle();
 
   //does not allow multiple directories
   if (typeof cwd === 'object') return null;
@@ -87,7 +91,7 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
   console.log(src);
   return <>
     <Box>
-      <StyledTitle>
+      <StyledTitle onClick={() => toggleShowConfig(!showConfig)}>
         <div className="title" title={selected && selected.path}>
           {selected ? selected.name : title}
         </div>
@@ -96,28 +100,30 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
         <ImageView src={encodeURI(src)} height={200}/>
       </MainContainer>
     </Box>
-    <div>
-      <Box direction={"row"} gap={'none'} height={30}>
-        <RangeInput value={index}
-                    min={-10} max={files.length - 1}
-                    style={{
-                      margin: 0,
-                      width: 100,
-                      height: "30px",
-                      display: "inline-block"
-                    }}
-                    onChange={e => setIndex(parseInt(e.target.value))}/>
-        <input style={{
-          width: 40, height: "30px", margin: 0, border: 0, boxSizing: "border-box",
-          background: "transparent",
-          marginLeft: "5px",
-          textAlign: "center"
-        }}
-               type="number"
-               value={index}
-               onChange={e => setIndex(parseInt(e.target.value))}/>
-      </Box>
-    </div>
+    {showConfig
+        ? <div>
+          <Box direction={"row"} gap={'none'} height={30}>
+            <RangeInput value={index}
+                        min={-10} max={files.length - 1}
+                        style={{
+                          margin: 0,
+                          width: 100,
+                          height: "30px",
+                          display: "inline-block"
+                        }}
+                        onChange={e => setIndex(parseInt(e.target.value))}/>
+            <input style={{
+              width: 40, height: "30px", margin: 0, border: 0, boxSizing: "border-box",
+              background: "transparent",
+              marginLeft: "5px",
+              textAlign: "center"
+            }}
+                   type="number"
+                   value={index}
+                   onChange={e => setIndex(parseInt(e.target.value))}/>
+          </Box>
+        </div>
+        : null}
   </>
 }
 
