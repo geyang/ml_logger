@@ -187,7 +187,7 @@ def get_series(metrics_files=tuple(),
     all.rank(method='first')
 
     if k is not None:
-        bins = pd.qcut(all.index, k)
+        bins = pd.qcut(all.index, k, duplicates='drop')
         grouped = all.groupby(bins)
     else:
         grouped = all.groupby(level=0)
@@ -208,7 +208,7 @@ def get_series(metrics_files=tuple(),
     else:
         df['__x'] = df.index
 
-    # df.sort_values(by='__x')
+    df.sort_values(by='__x')
 
     return Series(metrics_files,
                   _df=df,
