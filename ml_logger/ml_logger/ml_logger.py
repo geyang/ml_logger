@@ -251,6 +251,7 @@ class ML_Logger:
         else:
             run_info = dict(log_directory=self.log_directory)
         run_info['createTime'] = self.now()
+        run_info['prefix'] = self.prefix
         run_info.update(kwargs)
         return run_info
 
