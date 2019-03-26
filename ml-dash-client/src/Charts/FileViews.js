@@ -93,7 +93,7 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
     <Box>
       <StyledTitle onClick={() => toggleShowConfig(!showConfig)}>
         <div className="title" title={selected && selected.path}>
-          {selected ? selected.name : title}
+          {selected ? selected.name : (title || "N/A")}
         </div>
       </StyledTitle>
       <MainContainer>

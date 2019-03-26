@@ -322,7 +322,9 @@ export default function ParamsTable({
                             //todo: add title
                             return <Box as={LineChart}
                                         key={i}
-                                        metricsFiles={exp.metricsPath}
+                                        metricsFiles={
+                                          typeof exp.metricsPath === 'string' ? [exp.metricsPath]
+                                              : (exp.metricsPath || [])}
                                         color={colorMap(expIndex)}
                                         {...chart}/>;
                           case "file":

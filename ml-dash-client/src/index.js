@@ -1,18 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import store from "./local-storage";
 import {modernEnvironment} from "./data";
 import {BrowserProtocol, queryMiddleware} from 'farce';
 import {createFarceRouter, createRender, makeRouteConfig, Route,} from 'found';
 import {Resolver} from 'found-relay';
 import FrontPage from './pages/FrontPage';
-import Profile, {ProfileQuery} from "./pages/Profile";
+import Profile, {ProfileQuery, render as ProfileRender} from "./pages/Profile";
 import KitchenSink from "./pages/KitchenSink";
 import Dash, {DashPrepareVariables, DashQuery} from "./pages/Dash";
 import Theme from "./Theme";
 import Settings from "./pages/Settings";
 import Profiles from "./pages/Profiles";
 import './App.css';
+import store from "./local-storage";
 
 const Router = createFarceRouter({
   historyProtocol: new BrowserProtocol(),
@@ -23,7 +23,9 @@ const Router = createFarceRouter({
         <Route path="profiles" Component={Profiles}/>
         <Route path="sink" Component={KitchenSink}/>
         <Route path="settings" Component={Settings}/>
-        <Route path=":username" Component={Profile} prepareVariables={(params) => params} query={ProfileQuery}/>
+        <Route path=":username" Component={Profile}
+               prepareVariables={(params) => params} query={ProfileQuery}
+               render={ProfileRender}/>
         <Route path=":username/:project/:path*"
                Component={Dash}
                query={DashQuery}

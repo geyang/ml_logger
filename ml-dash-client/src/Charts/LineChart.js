@@ -52,7 +52,10 @@ if (browser && browser.name !== "safari")
   labelStyles = {...labelStyles, fill: "black", stroke: "white", strokeWidth: "2px", paintOrder: "stroke",};
 
 function fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k,}) {
-  return fetchQuery(modernEnvironment, seriesQuery, {metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k});
+  return fetchQuery(modernEnvironment, seriesQuery, {
+    metricsFiles: metricsFiles.filter(_ => !!_),
+    prefix, xKey, xAlign, yKey, yKeys, k
+  });
 }
 
 function seriesToRecords(series) {

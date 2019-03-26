@@ -11,13 +11,13 @@ class Navbar extends React.Component {
     console.log(directory, props);
     const {directories, experiments} = directory;
 
-    const sortedDirectories = directories.edges
+    const sortedDirectories = (directories && directories.edges || [])
         .map(({node}) => node)
         .filter(_ => _ !== null)
         .sort(by(strOrder, "name"))
         .reverse();
 
-    const sortedExperiments = experiments.edges
+    const sortedExperiments = (experiments && experiments.edges || [])
         .map(({node}) => node)
         .filter(_ => _ !== null)
         .sort(by(strOrder, "name"))

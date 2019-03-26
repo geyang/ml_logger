@@ -121,7 +121,7 @@ function ExperimentDash({
 
   const {files, fullExperiments, readme, dashConfigs: dC} = directory;
 
-  let dashConfigs = dC.edges
+  let dashConfigs = (dC && dC.edges || [])
       .map(({node}) => node)
       .filter(_ => _ !== null)
       .map(node => ({
@@ -180,10 +180,10 @@ function ExperimentDash({
         <ParamsTable
             area="main"
             style={{minHeight: 200}}
-            exps={fullExperiments.edges
+            exps={(fullExperiments && fullExperiments.edges || [])
                 .map(({node}) => node)
                 .filter(_ => _ !== null)}
-            keys={(dashConfig.yaml.keys || []).filter(k=> k !== null)}
+            keys={(dashConfig.yaml.keys || []).filter(k => k !== null)}
             hideKeys={dashConfig.yaml.hide || []}
             agg={dashConfig.yaml.aggregate || []}
             ignore={dashConfig.yaml.aggIgnore || []}
