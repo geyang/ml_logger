@@ -208,10 +208,8 @@ def get_series(metrics_files=tuple(),
     else:
         df['__x'] = df.index
 
-    df.sort_values(by='__x')
-
     return Series(metrics_files,
-                  _df=df,
+                  _df=df.sort_values(by="__x"),
                   metrics_files=metrics_files,
                   prefix=prefix,
                   x_key=x_key,
