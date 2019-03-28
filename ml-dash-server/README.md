@@ -2,27 +2,44 @@
 
 [![Downloads](http://pepy.tech/badge/ml-dash)](http://pepy.tech/project/ml-dash)
 
-<img alt="hyperparameter column demo" src="figures/hyperparameter-column.gif" align="right" width="50%"/>
+<img alt="hyperparameter column demo" src="figures/ml-dash-v0.1.0.png" align="right" width="50%"/>
 
-ML-dash replaces visdom and tensorboard. It is the single real-time job visualization dashboard for machine learning.
+ML-dash replaces visdom and tensorboard. It allows you to see real-time updates, review 1000+ of experiments quickly, and dive in-depth into indivisual experiments with minimum mental effort.
 
-**Parallel Coordinates**
-**Aggregating Over Multiple Runs**
-**Create Movies out of images**
+- **Parallel Coordinates**
+- **Aggregating Over Multiple Runs (with differetn seeds)**
+- **Preview Videos, figures, and images.**
 
 ## Usage
 
-To **install** `ml_dash`, do:
+To make sure you **install** the newest version of `ml_dash`:
 ```bash
-pip install ml-dash
+pip install ml-dash --upgrade --no-cache
 ```
 
-**Note: the server accepts requests from `localhost` only, by default.** In order to 
+There are two servers: 
+1. a server that serves the static web-application files `ml_dash.app`
 
-```bash
-python -m ml_dash.main --log-dir=<your-log-dir> --host=0.0.0.0 --port=<your-port-number> --workers=4
-```
-It is the easiest if you setup a long-lived instrument server with a public ip for yourself or the entire lab.
+    This is just a static server that serves the web application client.
+    
+    To run this:
+    
+    ```bash
+    python -m ml_dash.app
+    ```
+    
+2. the visualization backend `ml_dash.server`
+
+    This server usually lives on your logging server. It offers a `graphQL`
+    API backend for the dashboard client.
+
+    ```bash
+    python -m ml_dash.server
+    ```
+    
+    **Note: the server accepts requests from `localhost` only by default
+     for safety reasons.**
+
 
 ### Implementation Notes
 
