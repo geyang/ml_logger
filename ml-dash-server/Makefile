@@ -38,16 +38,3 @@ start: # dev start: use sanic to bootstrap.
 	source activate playground && python -m ml_dash.main --host=0.0.0.0 --port=8081 --workers=4 --logdir="tests/runs"
 test:
 	python -m pytest tests --capture=no --log-dir="../runs"
-
-# older scripts
-#start-test-server:
-#	python -m ml_dash.server --log-dir /tmp/ml-logger-debug
-#test-with-server:
-#	python -m pytest tests --capture=no --log-dir http://0.0.0.0:8081
-#deploy-vis-app:
-#	git subtree push --prefix ml-vis-app/build ml-vis-ghpage gh-pages
-#deploy-vis-app-force:
-#	git push ml-vis-ghpage `git subtree split --prefix ml-vis-app/build`:gh-pages --force
-#build-vis-app:
-#	cd ml-vis-app && yarn build
-

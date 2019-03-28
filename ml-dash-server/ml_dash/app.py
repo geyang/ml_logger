@@ -6,7 +6,7 @@ from params_proto import cli_parse, Proto
 
 # gets current directory
 BASE = os.path.realpath(__file__)
-build_path = os.path.join(os.path.dirname(BASE), "../ml-dash-client-build")
+build_path = os.path.join(os.path.dirname(BASE), "../ml-dash-client-dist")
 print(build_path)
 
 app = Sanic()
