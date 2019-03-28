@@ -1,1 +1,2 @@
-recursive-include app-build/ *
+include app-build/*
+recursive-include app-build *
