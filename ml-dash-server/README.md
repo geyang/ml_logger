@@ -18,6 +18,7 @@ pip install ml-dash --upgrade --no-cache
 ```
 
 There are two servers: 
+
 1. a server that serves the static web-application files `ml_dash.app`
 
     This is just a static server that serves the web application client.
