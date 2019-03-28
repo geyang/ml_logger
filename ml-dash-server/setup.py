@@ -33,7 +33,7 @@ setup(name="ml-dash",
           "Programming Language :: Python :: 3"
       ],
       packages=[p for p in find_packages() if p != "tests"] + ["ml-dash-client-build"],
-      package_data={"ml-dash-client-build": ["**/*"], "ml-dash": ['VERSION']},
+      package_data={"ml-dash-client-build": ["**/*"]},
       install_requires=["typing",
                         "numpy",
                         "termcolor",

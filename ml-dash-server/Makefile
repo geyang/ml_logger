@@ -1,3 +1,4 @@
+.PHONY: build
 # shell option to use extended glob from from https://stackoverflow.com/a/6922447/1560241
 SHELL:=/bin/bash -O extglob
 
@@ -8,11 +9,11 @@ author_email=$(yangge1987@gmail.com)
 
 # notes on python packaging: http://python-packaging.readthedocs.io/en/latest/minimal.html
 default: ;
-wheel:
+build:
 	rm -rf dist
 	python setup.py sdist
 dev:
-	make wheel
+	make build
 	pip install --ignore-installed dist/ml_dash*.whl
 convert-rst:
 	pandoc -s README.md -o README --to=rst
@@ -31,7 +32,7 @@ release:
 	git push origin --tags
 publish: convert-rst
 	make test
-	make wheel
+	make build
 	twine upload dist/*
 start: # dev start: use sanic to bootstrap.
 	source activate playground && python -m ml_dash.main --host=0.0.0.0 --port=8081 --workers=4 --logdir="tests/runs"
