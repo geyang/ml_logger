@@ -2,12 +2,10 @@ import os
 from sanic import Sanic
 from sanic.exceptions import FileNotFound
 from sanic.response import file
+from params_proto import cli_parse, Proto
 
 # gets current directory
 BASE = os.path.realpath(__file__)
-print(BASE)
-print(os.path.dirname(BASE))
-
 build_path = os.path.join(os.path.dirname(BASE), "../app-build")
 print(build_path)
 
@@ -16,8 +14,6 @@ app = Sanic()
 app.static('/', build_path)
 
 
-# app.static('/main.js', './app-build/main.js', name='main.js')
-
 @app.route('/')
 @app.exception(FileNotFound)
 async def index(request, exception=None):
@@ -25,9 +21,40 @@ async def index(request, exception=None):
     return await file(build_path + '/index.html')
 
 
+@cli_parse
+class AppServerArgs:
+    """
+    Configuration Arguments for the Sanic App that serves
+    the static web-application.
+
+    [Usage]
+
+    To launch the web-app client, do
+
+    python -m ml_dash.app port=3001 host=0.0.0.0 workers=4 debug=True
+    """
+    host = Proto("", help="use 0.0.0.0 if you want external clients to be able to access this.")
+    port = Proto(3001, help="the port")
+    workers = Proto(1, help="the number of worker processes")
+    debug = False
+    access_log = True
+
+
 if __name__ == '__main__':
-    app.run(
-        host='0.0.0.0',
-        port=int(os.environ.get('PORT', 3002)),
-        workers=int(os.environ.get('WEB_CONCURRENCY', 1)),
-        debug=bool(os.environ.get('DEBUG', '')))
+    import socket
+    from termcolor import cprint, colored as c
+
+    hostname = socket.gethostname()
+    host_ip = socket.gethostbyname(hostname)
+
+    print(f"""
+    You can now view {c('ml-dash client', 'white')} in the browser.
+
+      Local:            {c(f'http://localhost:{AppServerArgs.port}/', 'green')}
+      On Your Network:  {c(f'http://{host_ip}:{AppServerArgs.port}/', 'green')}
+
+    To update to the newer version, do 
+    {c('~>','blue')} {c('pip install --upgrade ml-dash', 'red')}
+        
+    """)
+    app.run(**vars(AppServerArgs))
