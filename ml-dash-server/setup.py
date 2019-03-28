@@ -32,7 +32,7 @@ setup(name="ml-dash",
           "Intended Audience :: Science/Research",
           "Programming Language :: Python :: 3"
       ],
-      packages=[p for p in find_packages() if p != "tests"] + ["ml_dash_client_dist"],
+      packages=[p for p in find_packages() if p != "tests"] + ["ml-dash-client-dist"],
       package_data={"ml_dash_client_dist": ["**/*"]},
       install_requires=["typing",
                         "numpy",
