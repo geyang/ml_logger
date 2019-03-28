@@ -10,7 +10,7 @@ author_email=$(yangge1987@gmail.com)
 default: ;
 wheel:
 	rm -rf dist
-	python setup.py bdist_wheel
+	python setup.py sdist bdist_wheel
 dev:
 	make wheel
 	pip install --ignore-installed dist/ml_dash*.whl
