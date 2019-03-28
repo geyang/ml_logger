@@ -6,7 +6,7 @@ from params_proto import cli_parse, Proto
 
 # gets current directory
 BASE = os.path.realpath(__file__)
-build_path = os.path.join(os.path.dirname(BASE), "../app.build")
+build_path = os.path.join(os.path.dirname(BASE), "../app-build")
 print(build_path)
 
 app = Sanic()
