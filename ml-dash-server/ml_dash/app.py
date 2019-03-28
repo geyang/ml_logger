@@ -6,7 +6,7 @@ from params_proto import cli_parse, Proto
 
 # gets current directory
 BASE = os.path.realpath(__file__)
-build_path = os.path.join(os.path.dirname(BASE), "../app-build")
+build_path = os.path.join(os.path.dirname(BASE), "../ml-dash-client-build")
 print(build_path)
 
 app = Sanic()
@@ -54,7 +54,7 @@ if __name__ == '__main__':
       On Your Network:  {c(f'http://{host_ip}:{AppServerArgs.port}/', 'green')}
 
     To update to the newer version, do 
-    {c('~>','blue')} {c('pip install --upgrade ml-dash', 'red')}
+    {c('~>', 'blue')} {c('pip install --upgrade ml-dash', 'red')}
         
     """)
     app.run(**vars(AppServerArgs))
