@@ -1,2 +1,3 @@
 include VERSION
+include ml-dash-client-dist/*
 recursive-include ml-dash-client-dist **/*
