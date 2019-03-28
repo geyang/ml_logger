@@ -33,6 +33,7 @@ setup(name="ml-dash",
           "Programming Language :: Python :: 3"
       ],
       packages=[p for p in find_packages() if p != "tests"],
+      package_data={'app-build': ['*'], },
       install_requires=["typing",
                         "numpy",
                         "termcolor",
