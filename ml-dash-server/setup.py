@@ -32,7 +32,7 @@ setup(name="ml-dash",
           "Intended Audience :: Science/Research",
           "Programming Language :: Python :: 3"
       ],
-      packages=[p for p in find_packages() if p != "tests"] + ["app.build"],
+      packages=[p for p in find_packages() if p != "tests"] + ["app-build"],
       package_data={"app-build": ["*"]},
       install_requires=["typing",
                         "numpy",
