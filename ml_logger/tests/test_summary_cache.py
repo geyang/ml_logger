@@ -10,7 +10,8 @@ def save_mock_data(cache: SummaryCache):
             reward=(1 - np.exp(i)) + 0.1 * np.random.rand(),
             activations=np.random.normal(5, 0.5),
             actions=np.random.normal(50, 0.5),
-            scalar=np.random.rand(1)[0]
+            scalar=np.random.rand(1)[0],
+            uneven_length=np.array([1] * np.random.randint(0, 5))
         )
 
 

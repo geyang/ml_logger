@@ -163,8 +163,11 @@ class SummaryCache:
 def flatten(array):
     r = []
     for i in array:
-        if isinstance(array, np.ndarray):
-            r += list(array.flatten())
+        if isinstance(i, np.ndarray):
+            r += list(i.flatten())
         else:
-            r += list(array)
+            try:
+                r += list(i)
+            except TypeError:
+                r += [i]
     return r
