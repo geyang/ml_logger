@@ -1,13 +1,14 @@
 from collections import defaultdict, deque
 import numpy as np
 from scipy import stats
+import more_itertools as mit
 
 AVERAGE_MODES = ["rolling", 'tiled']
 STAT_MODES = ["mean", "min_max", "std_dev", "quantile", "histogram"]
 
 
 class SummaryCache:
-    def __init__(self, mode="tiled", default_stats="std_dev", window: int = None):
+    def __init__(self, mode="tiled", default_stats="mean", window: int = None):
         """
 
         :param mode:
@@ -132,18 +133,20 @@ class SummaryCache:
                 continue
             else:
                 # this converts the None to np.nan that can be properly handled.
-                d = np.array(self.data[k], dtype=np.float).flatten()
+                d = np.concatenate(self.data[k]).flatten()
                 d = d[~np.isnan(d)]
+                if len(d) == 0:
+                    continue
                 if stats_type.startswith("mean"):
                     metrics[k + "/mean"] = d.mean()
                 elif stats_type.startswith("min_max"):
                     metrics[k + "/min"] = d.min()
                     metrics[k + "/max"] = d.max()
-                    metrics[k + "/mean"] = d.mean(0)
+                    metrics[k + "/mean"] = d.mean()
                 elif stats_type.startswith("std_dev"):
                     metrics[k + "/stddev"] = d.std()
                     metrics[k + "/mean"] = d.mean()
-                    mode = stats.mode(d)[0][0]
+                    mode = mit.first(stats.mode(d, axis=None)[0], np.nan)
                     metrics[k + "/mode"] = mode
                 elif stats_type.startswith("quantile"):
                     metrics[k + "/0"] = np.percentile(d, 0)

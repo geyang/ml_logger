@@ -439,10 +439,10 @@ class ML_Logger:
         Log namespaced parameters in a list.
 
         Examples:
-        
+
             ::
                 logger.log_params(some_namespace=dict(layer=10, learning_rate=0.0001))
-            
+
             generates a table that looks like:
 
             ::
