@@ -133,7 +133,7 @@ class SummaryCache:
                 continue
             else:
                 # this converts the None to np.nan that can be properly handled.
-                d = np.concatenate(self.data[k]).flatten()
+                d = np.array(flatten(self.data[k]))
                 d = d[~np.isnan(d)]
                 if len(d) == 0:
                     continue
@@ -158,3 +158,13 @@ class SummaryCache:
                     # note: need make bin number configurable
                     metrics[k + "/hist"], metrics[k + "/divs"] = np.histogram(d, bins=10)
         return metrics
+
+
+def flatten(array):
+    r = []
+    for i in array:
+        if isinstance(array, np.ndarray):
+            r += list(array.flatten())
+        else:
+            r += list(array)
+    return r
