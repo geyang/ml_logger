@@ -4,7 +4,7 @@
 
 <img alt="hyperparameter column demo" src="https://github.com/episodeyang/ml_logger/tree/master/ml-dash-server/figures/ml-dash-v0.1.0.png" align="right" width="50%"/>
 
-ML-dash replaces visdom and tensorboard. It allows you to see real-time updates, review 1000+ of experiments quickly, and dive in-depth into indivisual experiments with minimum mental effort.
+ML-dash replaces visdom and tensorboard. It allows you to see real-time updates, review 1000+ of experiments quickly, and dive in-depth into individual experiments with minimum mental effort.
 
 - **Parallel Coordinates**
 - **Aggregating Over Multiple Runs (with differetn seeds)**

@@ -84,10 +84,7 @@ class Query(ObjectType):
     metrics = relay.Node.Field(Metrics)
     directory = relay.Node.Field(Directory)
 
-    glob = Field(List(File),
-                            cwd=String(required=True),
-                            query=String(),
-                            resolver=bind_args(glob_files))
+    glob = Field(List(File), cwd=String(required=True), query=String(), resolver=bind_args(glob_files))
 
 
 class Mutation(ObjectType):

@@ -20,18 +20,17 @@ To make sure you **install** the newest version of ``ml_dash``:
 
    pip install ml-dash --upgrade --no-cache
 
-There are two servers: 1. a server that serves the static
-web-application files ``ml_dash.app``
+There are two servers:
 
-::
+1. a server that serves the static web-application files ``ml_dash.app``
 
    This is just a static server that serves the web application client.
 
    To run this:
 
-   ```bash
-   python -m ml_dash.app
-   ```
+   .. code-block:: bash
+
+      python -m ml_dash.app
 
 2. the visualization backend ``ml_dash.server``
 
@@ -48,4 +47,4 @@ web-application files ``ml_dash.app``
 Implementation Notes
 ~~~~~~~~~~~~~~~~~~~~
 
-See `https://github.com/episodeyang/ml_dash/blob/master/notes/README.md <https://github.com/episodeyang/ml_dash/blob/master/notes/README.md>`__
+See `https://github.com/episodeyang/ml_logger/tree/master/ml-dash-server/notes/README.md <https://github.com/episodeyang/ml_logger/tree/master/ml-dash-server/notes/README.md>`__

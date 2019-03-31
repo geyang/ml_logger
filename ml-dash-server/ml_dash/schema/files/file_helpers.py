@@ -32,7 +32,7 @@ def find_files(cwd, query, start=None, stop=None):
     """
     from itertools import islice
     with cwdContext(cwd):
-        file_paths = list(islice(iglob(query, recursive=True), start or 0, stop or 200))
+        file_paths = list(islice(iglob(query, recursive=True), start, stop))
         files = [file_stat(_) for _ in file_paths]
         return files
 
