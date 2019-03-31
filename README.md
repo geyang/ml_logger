@@ -61,6 +61,10 @@ for i in range(1):
 python -m ml_logger.server
 ```
 Use ssh tunnel if you are running on a managed cluster (with SLURM for instance).
+**Important**: to set allow remote logging, you need to pass in `--host=0.0.0.0` so that the server accepts non-localhost connections.
+```bash
+python -m ml_logger.server --host=0.0.0.0
+```
 
 ### Asynchronously log the summary of LOTs of training metrics
 
