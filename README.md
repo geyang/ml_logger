@@ -111,7 +111,7 @@ make test
 
 To test with a live server, first run (in a separate console)
 ```
-python -m ml_logger.server --log-dir /tmp/ml-logger-debug
+python -m ml_logger.server --data-dir /tmp/ml-logger-debug
 ```
 or do:
 ```bash
@@ -120,7 +120,7 @@ make start-test-server
 
 Then run this test script with the option:
 ```bash
-python -m pytest tests --capture=no --log-dir http://0.0.0.0:8081
+python -m pytest tests --capture=no --data-dir http://0.0.0.0:8081
 ```
 or do
 ```bash
