@@ -75,7 +75,7 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
   useEffect(() => {
     globFiles({cwd, glob}).then(data => {
       if (data && data.glob)
-        setFiles([...data.glob].sort(by(strOrder, "name")));
+        setFiles([...data.glob].sort(by(strOrder, "path")));
     });
   }, [cwd, glob]);
   console.log(cwd);
