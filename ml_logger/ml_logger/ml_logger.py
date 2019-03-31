@@ -803,6 +803,14 @@ class ML_Logger:
         data = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
         self.log_data(data=data, path=path, overwrite=True)
 
+    def load_module(self, module, path="weights.pkl"):
+        import torch
+        data, = self.load_pkl(path)
+        module.load_state_dict({
+            k: torch.tensor(data[k], dtype=p.dtype).to(p.device)
+            for k, p in module.state_dict().items()
+        })
+
     def save_modules(self, path="modules.pkl", modules=None, **_modules):
         """
         Save torch modules in a dictionary. Overwrites existing file.
