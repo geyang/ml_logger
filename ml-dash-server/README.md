@@ -35,7 +35,7 @@ There are two servers:
     API backend for the dashboard client.
 
     ```bash
-    python -m ml_dash.server
+    python -m ml_dash.server --logdir=my/folder
     ```
     
     **Note: the server accepts requests from `localhost` only by default
