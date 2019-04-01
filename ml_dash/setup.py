@@ -22,7 +22,18 @@ setup(name="ml-dash",
           "Programming Language :: Python :: 3"
       ],
       packages=["ml_dash"],
-      install_requires=["typing", "numpy", "termcolor", "params_proto", "cloudpickle",
-                        "requests", "requests_futures", 'hachiko', 'sanic',
-                        'sanic-cors', 'dill', 'ruamel.yaml']
-      )
+      install_requires=[
+          "cloudpickle",
+          "dill",
+          "hachiko",
+          "numpy",
+          "pandas",
+          "params_proto",
+          "requests",
+          "requests_futures",
+          "ruamel.yaml",
+          "sanic",
+          "sanic-cors",
+          "termcolor",
+          "typing",
+      ])
