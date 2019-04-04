@@ -2,25 +2,16 @@ import React, {Fragment, useRef, useState, useEffect} from "react";
 import {useToggle, useMount} from "react-use";
 import {commitMutation, createFragmentContainer} from "react-relay";
 import graphql from "babel-plugin-relay/macro";
-import {
-  Grid,
-  Box,
-  Tabs,
-  Tab,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableCell,
-  Markdown,
-  CheckBox,
-  Button
-} from "grommet";
+import {Box, Markdown, CheckBox, Button} from "grommet";
 import MonacoEditor from "react-monaco-editor";
 import {debounce} from "throttle-debounce";
 import {toGlobalId} from "../../lib/relay-helpers";
 import ParamsTable from "./ParamsTable";
 import {ContextMenu} from "./TableContextMenu";
+import {DataFrame} from "dataframe-js";
+import {ParallelCoordinates} from "../../components/ParallelCoordiantes";
+import isGlob from "is-glob";
+import minimatch from "minimatch";
 
 let tempID = 0;
 
@@ -106,6 +97,7 @@ function ExperimentDash({
   const [editDash, toggleDashEdit] = useToggle(false);
   const [showReadme, toggleReadme] = useToggle(false);
   const [editReadme, toggleReadmeEdit] = useToggle(false);
+  const [showParallelCoord, toggleParallelCoord] = useToggle(false);
 
   const updateDashConfig = debounce(1000, (id, text) => {
     if (!id)
@@ -128,6 +120,47 @@ function ExperimentDash({
         ...node,
         yaml: node.yaml || {}
       }));
+
+  let experiments = (fullExperiments && fullExperiments.edges || [])
+      .map(({node}) => node)
+      .filter(_ => _ !== null);
+  let parameters = experiments.map(exp => exp.parameters.flat);
+
+  function matchKeys(k, patterns) {
+    //todo: factor out the glob ones, use two list for matching.
+    if (patterns.indexOf(k))
+      return true;
+    for (let p of patterns) {
+      if (isGlob(p) && minimatch(k, p))
+        return true
+    }
+    return false;
+  }
+
+  let includeKeys = ["Args.*"];
+  let ignoreKeys = [''];
+  let domains = Object.entries(new DataFrame(parameters).toDict())
+      .filter(([k, v]) => matchKeys(k, includeKeys) && ignoreKeys.indexOf(k) === -1)
+      .map(([k, v]) => ({
+        name: k,
+        values: [...new Set(v)],
+      })).map(d => ({
+        domain: [0, d.values.length],
+        tickFormat: v => d.values[Math.floor(v)],
+        ...d
+      }));
+  let domainMap = Object.fromEntries(
+      domains.map(d => [d.name, d.values]));
+  let pcData = parameters.map(p => ({
+    ...Object.fromEntries(Object.entries(p)
+        .map(([k, v]) => {
+              console.log(k, domainMap[k]);
+              if (typeof domainMap[k] === 'undefined')
+                window.domains = domains;
+              return [k, domainMap[k] ? domainMap[k].indexOf(v) : -1]
+            }
+        ))
+  }));
 
   const dashConfig = dashConfigs[0] || {yaml: {}};
 
@@ -162,10 +195,20 @@ function ExperimentDash({
           <Box as="h2">{dashConfig.name}</Box>
           <Button><strong>+</strong></Button>
           <Box as={CheckBox} label="Dash Config" checked={editDash} onChange={() => toggleDashEdit()}/>
-          {/*<Box flex="grow"/>*/}
+          <Box as={CheckBox} label="Hyper-parameters" checked={showParallelCoord}
+               onChange={() => toggleParallelCoord()}/>
           <Box as={CheckBox} label="Readme" checked={showReadme} onChange={() => toggleReadme()}/>
           <Box as={CheckBox} label="Edit" checked={editReadme} onChange={() => toggleReadmeEdit()}/>
         </Box>
+        {showParallelCoord ?
+            <Box area='dash-config' height={200} flex={false}>
+              <ParallelCoordinates
+                  height={200}
+                  width={2000}
+                  data={pcData}
+                  domains={domains}
+              /></Box>
+            : null}
         {editDash ?
             <Box area='dash-config' height={200} flex={false}>
               <MonacoEditor
@@ -180,9 +223,7 @@ function ExperimentDash({
         <ParamsTable
             area="main"
             style={{minHeight: 200}}
-            exps={(fullExperiments && fullExperiments.edges || [])
-                .map(({node}) => node)
-                .filter(_ => _ !== null)}
+            exps={experiments}
             keys={(dashConfig.yaml.keys || []).filter(k => k !== null)}
             hideKeys={dashConfig.yaml.hide || []}
             agg={dashConfig.yaml.aggregate || []}

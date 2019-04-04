@@ -43,7 +43,7 @@ class Navbar extends React.Component {
             </Box>
             <Box gap='0.2em' direction="column" overflow={{vertical: "scroll"}} flex="shrink">
               {sortedDirectories.map((node) =>
-                  <Button as={Link} to={node.path}>
+                  <Button as={Link} to={node.path} key={node.path}>
                     <Box justify="center" pad='small'
                          key={node.id}
                          height="36px">

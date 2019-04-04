@@ -28,6 +28,14 @@
 
 ---
 
+- [ ] Need to offer a good way for people to explore the folder.
+1. User comes in, with a few filter options available. These are
+- date
+- time (to minute)
+- run script
+
+The left bar should show these things. Where should we save it?
+
 - [ ] Experiment View (Originally List View)
     0. default view:
         - left nav bar collapses into 56 px wide, also being used as selection bar

@@ -11,6 +11,8 @@
 ## ToDos
 
 
+### Parallel Coordinates
+
 - [ ] redirect to profile if no user profile exist
 
 1. show nexted children

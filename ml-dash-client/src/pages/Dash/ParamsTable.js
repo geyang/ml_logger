@@ -36,10 +36,32 @@ const StyledCell = styled.div`
     height: 42px;
 `;
 
+const StyledHeader = styled.div`
+    padding: 12px 6px;
+    overflow: visible;
+    display: block;
+    box-sizing: border-box;
+    margin: 0;
+    border: none;
+    height: 42px;
+    position: relative;
+    .root {
+      font-weight: normal;
+      position: absolute;
+      top: 3px;
+      left: 6px;
+      font-size: 9px;
+    }
+`;
+
 function HeaderCell({width, children}) {
-  return (children === null || typeof children === "undefined")
-      ? <StyledCell style={{width: width, color: "#a3a3a3"}}>N/A</StyledCell>
-      : <StyledCell title={children} style={{width: width}}>{children}</StyledCell>;
+  if (children === null || typeof children === "undefined")
+    return <StyledHeader style={{width: width, color: "#a3a3a3"}}>N/A</StyledHeader>;
+  const [root, ...rest] = children.split('.');
+  return <StyledHeader title={children} style={{width: width}}>
+    <span className="root">{root}</span>
+    .{rest.join('.')}
+  </StyledHeader>;
 }
 
 function TableCell({width, children}) {
