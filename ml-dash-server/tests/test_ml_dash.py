@@ -66,7 +66,7 @@ def test_glob_files(log_dir):
             glob ( cwd: $cwd, query: $query) { id name path }
         }
     """
-    path = "/episodeyang/playground/mdp/experiment_00/"
+    path = "/episodeyang/cpc-belief/mdp/experiment_00/"
     r = client.execute(query, variables=dict(cwd=path, query="figures/*.png"))
     if 'errors' in r:
         raise RuntimeError(r['errors'])
@@ -121,7 +121,7 @@ def test_directory(log_dir):
             }
         }
     """
-    path = "/episodeyang/playground/mdp"
+    path = "/episodeyang/cpc-belief/mdp"
     r = client.execute(query, variables=dict(id=to_global_id("Directory", path)))
     if 'errors' in r:
         raise RuntimeError(r['errors'])
@@ -150,7 +150,7 @@ def test_series_2(log_dir):
     }
     """
     variables = {"prefix": None, "xKey": "epoch", "yKey": "slow_sine", "yKeys": None,
-                 "metricsFiles": ["/episodeyang/playground/mdp/experiment_04/metrics.pkl"]}
+                 "metricsFiles": ["/episodeyang/cpc-belief/mdp/experiment_04/metrics.pkl"]}
 
     from ml_dash.config import Args
     Args.logdir = log_dir
@@ -172,8 +172,8 @@ def test_series(log_dir):
             series (
                 k:30
                 tail: 100
-                prefix:"/episodeyang/playground"
-                metricsFiles:["experiment_05/metrics.pkl", "experiment_06/metrics.pkl", "experiment_07/metrics.pkl"]
+                prefix:"/episodeyang/cpc-belief/mdp"
+                metricsFiles:["experiment_00/metrics.pkl", "experiment_01/metrics.pkl", "experiment_02/metrics.pkl"]
                 # xKey: "__timestamp"
                 xKey: "epoch"
                 # yKey: "sine"
@@ -210,7 +210,7 @@ def test_metric(log_dir):
     client = Client(schema)
     query = """
         query AppQuery {
-            metrics(id:"TWV0cmljczovZXBpc29kZXlhbmcvcGxheWdyb3VuZC9leHBlcmltZW50XzA1L21ldHJpY3MucGts" ) { 
+            metrics(id:"TWV0cmljczovZXBpc29kZXlhbmcvY3BjLWJlbGllZi9tZHAvZXhwZXJpbWVudF8wMC9tZXRyaWNzLnBrbA==" ) { 
                 id
                 keys
                 path
