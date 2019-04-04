@@ -44,14 +44,26 @@ if __name__ == '__main__':
     import socket
     from termcolor import cprint, colored as c
 
-    hostname = socket.gethostname()
-    host_ip = socket.gethostbyname(hostname)
+    if AppServerArgs.host:
+        from requests import get
+
+        host_ip = get('https://api.ipify.org').text
+        del get
+        ip_string = f"""
+      Local:       {c(f'http://localhost:{AppServerArgs.port}/', 'green')}
+      External Ip: {c(f'http://{host_ip}:{AppServerArgs.port}/', 'green')}"""
+    else:
+        ip_string = f"""
+      Local: {c(f'http://localhost:{AppServerArgs.port}/', 'green')}"""
+    # try:
+    #     hostname = socket.gethostname()
+    #     host_ip = socket.gethostbyname(hostname)
+    # except Exception as e:
+    #     host_ip = "<not available>"
 
     print(f"""
     You can now view {c('ml-dash client', 'white')} in the browser.
-
-      Local:            {c(f'http://localhost:{AppServerArgs.port}/', 'green')}
-      On Your Network:  {c(f'http://{host_ip}:{AppServerArgs.port}/', 'green')}
+{ip_string}
 
     To update to the newer version, do 
     {c('~>', 'blue')} {c('pip install --upgrade ml-dash', 'red')}
