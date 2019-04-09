@@ -28,7 +28,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(cwd, '../../')))
 project = 'ml-logger'
 copyright = '2019, Ge Yang'
 author = 'Ge Yang'
-master_doc = os.path.abspath(os.path.join(cwd, "index"))
 
 print(os.path.join(cwd, "../../VERSION"))
 print(os.path.abspath("../../VERSION"))
@@ -54,7 +53,7 @@ extensions = [
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["./", '_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
