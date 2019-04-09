@@ -53,7 +53,7 @@ extensions = [
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['/home/docs/checkouts/readthedocs.org/user_builds/ml-logger/checkouts/latest/ml_logger/docs/', '_templates']
+templates_path = ['/home/docs/checkouts/readthedocs.org/user_builds/ml-logger/checkouts/latest/ml_logger/docs/source', '_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
