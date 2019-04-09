@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(cwd, '../../')))
 project = 'ml-logger'
 copyright = '2019, Ge Yang'
 author = 'Ge Yang'
-master_doc = os.path.abspath(os.path.join(cwd, "index.rst"))
+master_doc = os.path.abspath(os.path.join(cwd, "index"))
 
 print(os.path.join(cwd, "../../VERSION"))
 print(os.path.abspath("../../VERSION"))
