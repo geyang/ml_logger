@@ -17,7 +17,11 @@ import os, sys
 
 # --- configure the python environment for autodoc ---
 cwd = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(cwd, '../../'))
+
+print(os.path.join(cwd, "../../"))
+# print(os.path.abspath("../../"))
+sys.path.insert(0, os.path.abspath(os.path.join(cwd, '../../')))
+# sys.path.insert(0, '../../')
 
 # -- Project information -----------------------------------------------------
 
@@ -25,7 +29,10 @@ project = 'ml-logger'
 copyright = '2019, Ge Yang'
 author = 'Ge Yang'
 
-with open(os.path.join(cwd,  '../../VERSION'), encoding='utf-8') as f:
+print(os.path.join(cwd, "../../VERSION"))
+print(os.path.abspath("../../VERSION"))
+with open(os.path.abspath(os.path.join(cwd, '../../VERSION')), encoding='utf-8') as f:
+    # with open('../../VERSION', encoding='utf-8') as f:
     version = f.read()  # the short semver string
     release = version  # the release name (with beta/rc etc)
 
