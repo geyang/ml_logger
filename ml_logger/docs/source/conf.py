@@ -16,7 +16,7 @@
 import os, sys
 
 # --- configure the python environment for autodoc ---
-sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 # -- Project information -----------------------------------------------------
 
@@ -24,7 +24,7 @@ project = 'ml-logger'
 copyright = '2019, Ge Yang'
 author = 'Ge Yang'
 
-with open(os.path.abspath('../../VERSION'), encoding='utf-8') as f:
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VERSION')), encoding='utf-8') as f:
     version = f.read()  # the short semver string
     release = version  # the release name (with beta/rc etc)
 
