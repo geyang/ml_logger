@@ -6,3 +6,6 @@ dist/
 downloads/
 eggs/
 .eggs/
+
+# sphinx doc build
+/docs/builds

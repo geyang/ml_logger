@@ -60,6 +60,13 @@ def _PrefixContext(logger, new_prefix):
 
 # noinspection PyPep8Naming
 class ML_Logger:
+    """
+    ML_Logger, a logging utility for ML training.
+    ---
+
+
+
+    """
     client = None
     log_directory = None
 
