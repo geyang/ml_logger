@@ -28,6 +28,9 @@ Why did we built this, you might ask? Because we want to make it easy
 for people in ML to use the same logging code-block in all of they projects,
 so that it is easy to get started with someone else’s baseline.
 
+Table of Contents
+-----------------
+
 .. toctree::
    :maxdepth: 3
    :glob:
