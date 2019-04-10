@@ -106,13 +106,13 @@ html_theme_options = {
     # "projectlink": "http://myproject.url",
     #
     # # Visible levels of the global TOC; -1 means unlimited
-    # "globaltoc_depth": 3,
+    "globaltoc_depth": 2,
     #
     # # If False, expand all TOC entries
-    # "globaltoc_collapse": False,
+    "globaltoc_collapse": True,
     #
     # # If True, show hidden TOC entries
-    # "globaltoc_includehidden": False,
+    "globaltoc_includehidden": True,
 }
 
 # import sphinx_readable_theme
@@ -160,7 +160,8 @@ html_static_path = ['_static']
 # html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-# html_sidebars = {}
+# 'sourcelink.html',
+html_sidebars = {'**': ['searchbox.html', 'localtoc.html', 'relations.html', ]}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -272,4 +273,3 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
-
