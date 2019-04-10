@@ -1,6 +1,5 @@
-============
-Installation
-============
+Getting Started
+===============
 
 Install the package with pip
 

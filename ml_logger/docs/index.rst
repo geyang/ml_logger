@@ -39,4 +39,5 @@ Table of Contents
    installation
    usage
    modindex
+   develop
 

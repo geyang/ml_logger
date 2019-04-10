@@ -1,47 +1,32 @@
-========
-Usage
-========
+Usage Examples
+==============
 
-Getting Started!
-----------------
-
-To **install** ``ml_logger``, do:
-
-.. code-block:: bash
-
-   pip install ml-logger
-
-Now you can rock!
+.. contents::
+   :local:
 
 .. code-block:: python
 
    from ml_logger import logger
-   logger.configure('/tmp/ml-logger-debug')
    # ~> logging data to /tmp/ml-logger-debug
+   logger.configure('/tmp/ml-logger-debug')
 
-Log key/value pairs, and metrics:
-
-.. code-block:: python
-
-   for i in range(1):
-       logger.log(metrics={'some_val/smooth': 10, 'status': f"step ({i})"}, reward=20, timestep=i)
-       ### flush the data, otherwise the value would be overwritten with new values in the next iteration.
-       logger.flush()
+   logger.log(metrics={'some_val/smooth': 10, 'status': f"step ({i})"}, reward=20, timestep=i)
+   ### flush the data, otherwise the value would be overwritten with new values in the next iteration.
+   logger.flush()
 
 .. code-block:: text
 
-   # outputs ~>
-   # ╒════════════════════╤════════════════════════════╕
-   # │       reward       │             20             │
-   # ├────────────────────┼────────────────────────────┤
-   # │      timestep      │             0              │
-   # ├────────────────────┼────────────────────────────┤
-   # │  some val/smooth   │             10             │
-   # ├────────────────────┼────────────────────────────┤
-   # │       status       │          step (0)          │
-   # ├────────────────────┼────────────────────────────┤
-   # │      timestamp     │'2018-11-04T11:37:03.324824'│
-   # ╘════════════════════╧════════════════════════════╛
+   ╒════════════════════╤════════════════════════════╕
+   │       reward       │             20             │
+   ├────────────────────┼────────────────────────────┤
+   │      timestep      │             0              │
+   ├────────────────────┼────────────────────────────┤
+   │  some val/smooth   │             10             │
+   ├────────────────────┼────────────────────────────┤
+   │       status       │          step (0)          │
+   ├────────────────────┼────────────────────────────┤
+   │      timestamp     │'2018-11-04T11:37:03.324824'│
+   ╘════════════════════╧════════════════════════════╛
 
 Logging to a Server
 ~~~~~~~~~~~~~~~~~~~
@@ -89,15 +74,16 @@ metrics. A pattern that @jachiam uses is the following:
    # you can peak what's inside the cache and print out a table like this:
    logger.peek_stored_metrics(len=4)
 
+outputs ~>
+
 .. code-block:: text
 
-   # outputs ~>
-   #      some      |   timestep    |some_val/smooth
-   # ━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━
-   #       20       |       0       |      10
-   #       20       |       1       |      10
-   #       20       |       2       |      10
-   #       20       |       3       |      10
+        some      |   timestep    |some_val/smooth
+   ━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━
+         20       |       0       |      10
+         20       |       1       |      10
+         20       |       2       |      10
+         20       |       3       |      10
 
 .. code-block:: python
 
@@ -105,74 +91,20 @@ metrics. A pattern that @jachiam uses is the following:
    logger.log_metrics_summary(silent=True)
    # outputs ~> . (data is now logged to the server)
 
-Table of Contents
------------------
-
--  logging ``matplotlib.pyplot`` figures on an headless server
--  [documentation under construction]
-
-How to Develop
---------------
-
-First clone repo, install dev dependencies, and install the module under
-evaluation mode.
-
-.. code-block:: bash
-
-   git clone https://github.com/episodeyang/ml_logger.git
-   cd ml_logger && cd ml_logger && pip install -r requirements-dev.txt
-   pip install -e .
-
-Testing local-mode (without a server)
--------------------------------------
-
-You should be inside ml_logger/ml_logger folder
-
-.. code-block:: bash
-
-   pwd # ~> ml_logger/ml_logger
-   make test
-
-Testing with a server (You need to do both for an PR)
------------------------------------------------------
-
-To test with a live server, first run (in a separate console)
-
-::
-
-   python -m ml_logger.server --log-dir /tmp/ml-logger-debug
-
-or do:
-
-.. code-block:: bash
-
-   make start-test-server
-
-Then run this test script with the option:
-
-.. code-block:: bash
-
-   python -m pytest tests --capture=no --log-dir http://0.0.0.0:8081
-
-or do
-
-.. code-block:: bash
-
-   make test-with-server
-
-Your PR should have both of these two tests working. ToDo: add CI to
-this repo.
-
-To Publish
-~~~~~~~~~~
-
-You need ``twine``, ``rst-lint`` etc, which are included in the
-``requirements-dev.txt`` file.
-
---------------
 
 Logging Matplotlib pyplots
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   import numpy as np
+   import matplotlib.pyplot as plt
+
+   fig = plt.figure(figsize=(4, 2))
+   xs = np.linspace(0, 5, 1000)
+   plt.plot(xs, np.cos(xs))
+   logger.savefig("face_02.png", fig=fig)
+
 
 Configuring The Experiment Folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -211,8 +143,8 @@ colored output: (where the values are yellow)
    │        some        │       85.0%        │
    ╘════════════════════╧════════════════════╛
 
-Logging Matplotlib Figures
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Logging Matplotlib `pyplot` Figures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We have optimized ML-Logger, so it supports any format that ``pyplot``
 supports. To save a figure locally or remotely,
@@ -226,6 +158,16 @@ supports. To save a figure locally or remotely,
 
    plt.plot(xs, np.cos(xs), label='Cosine Func')
    logger.savefig('cosine_function.pdf')
+
+Logging Images
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   import scipy.misc
+
+   face = scipy.misc.face()
+   logger.log_image(face, "face.png")
 
 Logging Videos
 ~~~~~~~~~~~~~~
@@ -265,11 +207,16 @@ weights to your code-block repository.
 
 .. code-block:: python
 
-   # save a module
-   logger.save_module(FastCNN=cnn)
+   from ml_logger import logger
 
-   # load a module
-   state_dict, = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
+   # save a module
+   logger.save_module(fastCNN, "models/fastCNN.pkl")
+
+   # You can inspect the data saved.
+   state_dict, = logger.load_pkl("models/fastCNN.pkl")
+
+   # To load the data back to a module,
+   logger.load_module(FastCNN, "models/fastCNN.pkl")
 
 Saving Tensorflow Models
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -297,8 +244,7 @@ and load from checkpoints saved in this format:
    trainables = tf.trainable_variables()
    logger.save_variables(trainables, path="variables.pkl", namespace="checkpoints")
 
-which creates a file ``checkpoints/variables.pkl`` under
-``/tmp/ml-logger-demos``.
+which creates a file ``checkpoints/variables.pkl`` under ``/tmp/ml-logger-demos``.
 
 Visualization
 -------------
