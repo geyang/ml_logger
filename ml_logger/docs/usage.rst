@@ -2,6 +2,8 @@
 Usage
 ========
 
-To use this template, simply update it::
+To use this template, simply update it
 
-	import read-the-docs-template
+.. code-block:: python
+
+    from ml_logger import logger
