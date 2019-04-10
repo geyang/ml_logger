@@ -50,6 +50,8 @@ templates_path = [
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 # add_function_parentheses = True
+for i in  range(10):
+     print()
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
@@ -60,7 +62,7 @@ templates_path = [
 # show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+# pygments_style = 'monokai'
 
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []

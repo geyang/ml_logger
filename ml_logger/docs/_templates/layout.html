@@ -1,0 +1,15 @@
+{# Import the theme's layout. #}
+{% extends "!layout.html" %}
+
+{# Add custom things to the head HTML tag #}
+{%- block extrahead %}
+<style>
+    .highlight pre {
+        color: #cdcdcd;
+        background: #404040;
+    }
+
+    .highlight-text pre { line-height: 1em; } .highlight .n { color: #bfbfbf; } .highlight .k, .highlight .ow { font-weight: 400; color: #d39e13; }  .highlight .nx { color: white; }  .highlight .p { color: white; }  .highlight .o { color: #D8D8D8; }  .highlight .c, .highlight .cm, .highlight .c1 { color: #666; font-style: italic; }  .highlight .bp, .highlight .cp, .highlight .cs, .highlight .gh { color: #cc7832; }  .highlight .cp, .highlight .cs { font-weight: bold; }  .highlight .cs { font-style: italic; }  .highlight .gd { color: #000000; background-color: #ffdddd; }  .highlight .gd .x { background-color: #ffaaaa; }  .highlight .ge { font-style: italic; }  .highlight .gr, .highlight .gt { color: #aa0000; }  .highlight .gi { color: #000000; background-color: #ddffdd; }  .highlight .gi .x { background-color: #aaffaa; }  .highlight .kn { color: #ff8400; }  .highlight .go { color: #888888; }  .highlight .gp, .highlight .nn { color: #b2b2b2; }  .highlight .gs { font-weight: bold; }  .highlight .gu { color: #aaaaaa; }  .highlight .kc, .highlight .kd, .highlight .kp, .highlight .kr, .highlight .kt { font-weight: bold; }  .highlight .nc, .highlight .kt { color: #FFF; }  .highlight .na { color: #FFC66D; }  .highlight .no, .highlight .ni, .highlight .nv, .highlight .vc, .highlight .vg, .highlight .vi { color: #7878ab; }  .highlight .nb { color: #7c7cb3; }  .highlight .ne { color: #990000; font-weight: bold; }  .highlight .nf { color: #c69e04; }  .highlight .nt { color: #ffc66d; }  .highlight .w { color: #bbbbbb; }  .highlight .m, .highlight .mf, .highlight .mh, .highlight .mi, .highlight .mo, .highlight .il { color: #6897bb; }  .highlight .s, .highlight .sb, .highlight .s1, .highlight .sx, .highlight .si, .highlight .sh, .highlight .se, .highlight .s2, .highlight .sd, .highlight .sc { color: #6a8759; }  .highlight .sr { color: #6a8759; }  .highlight .ss { color: #6a8759; }
+</style>
+{%- endblock %}
+
