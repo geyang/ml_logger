@@ -524,17 +524,3 @@ outputs the following
    │    replay beta     │        0.41        │
    ╘════════════════════╧════════════════════╛
 
-
-User Guide
-==========
-
-.. toctree::
-    :maxdepth: 2
-
-    overview
-    quickstart
-    request-options
-    psr7
-    handlers-and-middleware
-    testing
-    faq
