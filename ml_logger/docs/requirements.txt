@@ -10,8 +10,6 @@ PyPrind
 numpy
 scipy
 python_dateutil
-requests_futures
-cloudpickle
 cloudpickle
 dill
 hachiko
