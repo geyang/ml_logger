@@ -2,7 +2,7 @@ Module Index
 ============
 
 
-.. automodule:: ml_logger.ml_logger
+.. autoclass:: ml_logger.ML_Logger
     :members:
 
 
