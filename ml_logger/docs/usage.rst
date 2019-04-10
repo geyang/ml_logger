@@ -92,20 +92,6 @@ outputs ~>
    # outputs ~> . (data is now logged to the server)
 
 
-Logging Matplotlib pyplots
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   import numpy as np
-   import matplotlib.pyplot as plt
-
-   fig = plt.figure(figsize=(4, 2))
-   xs = np.linspace(0, 5, 1000)
-   plt.plot(xs, np.cos(xs))
-   logger.savefig("face_02.png", fig=fig)
-
-
 Configuring The Experiment Folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -151,13 +137,23 @@ supports. To save a figure locally or remotely,
 
 .. code-block:: python
 
-   import matplotlib.pyplot as plt
    import numpy as np
+   import matplotlib.pyplot as plt
 
    xs = np.linspace(-5, 5)
 
    plt.plot(xs, np.cos(xs), label='Cosine Func')
+   # saves current figure
    logger.savefig('cosine_function.pdf')
+
+   fig = plt.figure(figsize=(4, 2))
+   xs = np.linspace(0, 5, 1000)
+   plt.plot(xs, np.cos(xs))
+   # saves a particular figure
+   logger.savefig("face_02.png", fig=fig)
+   # close the figure to release the memory
+   plt.close()
+
 
 Logging Images
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -168,6 +164,11 @@ Logging Images
 
    face = scipy.misc.face()
    logger.log_image(face, "face.png")
+
+   # to log a grid of images
+   logger.log_image([face] * 20,  key="face.png", n_rows=4, n_cols=5)
+
+For details, please refer to the detailed API doc.
 
 Logging Videos
 ~~~~~~~~~~~~~~
