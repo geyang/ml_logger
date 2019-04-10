@@ -4,8 +4,8 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath('.'))
-extensions = []
-templates_path = ['_templates']
+# extensions = []
+# templates_path = ['_templates']
 source_suffix = '.rst'
 # source_encoding = 'utf-8-sig'
 master_doc = 'index'
@@ -213,3 +213,20 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
+
+extensions = [
+    # 'recommonmark',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.viewcode',
+    # 'sphinx.ext.githubpages',
+    'sphinx.ext.napoleon'
+]
+
+# Add any paths that contain templates here, relative to this directory.
+templates_path = [
+    '_templates'
+]
+# html_theme = 'alabaster'
