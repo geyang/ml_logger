@@ -33,8 +33,7 @@ extensions = [
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = [
-    '/home/docs/checkouts/readthedocs.org/readthedocs/templates/sphinx',
-    # '/home/docs/checkouts/readthedocs.org/user_builds/ml-logger/checkouts/latest/ml_logger/docs/source/',
+    '/home/docs/checkouts/readthedocs.org/user_builds/ml-logger/checkouts/latest/docs/source/',
     '_templates'
 ]
 exclude_patterns = ['build']
