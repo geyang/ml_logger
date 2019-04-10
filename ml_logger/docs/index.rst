@@ -50,6 +50,9 @@ Log key/value pairs, and metrics:
        logger.log(metrics={'some_val/smooth': 10, 'status': f"step ({i})"}, reward=20, timestep=i)
        ### flush the data, otherwise the value would be overwritten with new values in the next iteration.
        logger.flush()
+
+.. code-block:: text
+
    # outputs ~>
    # ╒════════════════════╤════════════════════════════╕
    # │       reward       │             20             │
@@ -108,6 +111,8 @@ metrics. A pattern that @jachiam uses is the following:
        logger.store_metrics(metrics={'some_val/smooth': 10}, some=20, timestep=i)
    # you can peak what's inside the cache and print out a table like this:
    logger.peek_stored_metrics(len=4)
+
+.. code-block:: text
    # outputs ~>
    #      some      |   timestep    |some_val/smooth
    # ━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━
@@ -116,6 +121,7 @@ metrics. A pattern that @jachiam uses is the following:
    #       20       |       2       |      10
    #       20       |       3       |      10
 
+.. code-block:: python
    # The metrics are stored in-memory. Now we need to actually log the summaries:
    logger.log_metrics_summary(silent=True)
    # outputs ~> . (data is now logged to the server)
@@ -517,61 +523,6 @@ outputs the following
    ├────────────────────┼────────────────────┤
    │    replay beta     │        0.41        │
    ╘════════════════════╧════════════════════╛
-
-TODO:
------
-
-Visualization (Preview):boom:
------------------------------
-
-In addition, ml-logger also comes with a powerful visualization
-dashboard that beats tensorboard in every aspect.
-
-.. figure:: https://github.com/episodeyang/ml_logger/blob/master/figures/ml_visualization_dashboard_preview.png?raw=true
-   :alt: ml visualization dashboard
-
-   ml visualization dashboard
-
-An Example Log from ML-Logger
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A common pain that comes after getting to launch ML training jobs on AWS
-is a lack of a good way to manage and visualize your data. So far, a
-common practice is to upload your experiment data to aws s3 or google
-cloud buckets. Then one quickly realizes that downloading data from s3
-can be slow. s3 does
-
-not offer diffsync like gcloud-cli’s ``g rsync``. This makes it hard to
-sync a large collection of data that is constantly appended to.
-
-So far the best way we have found for organizing experimental data is to
-have a centralized instrumentation server. Compared with managing your
-data on S3, a centralized instrumentation server makes it much easier to
-move experiments around, run analysis that is co-located with your data,
-and hosting visualization dashboards on the same machine. To download
-data locally, you can use ``sshfs``, ``smba``, ``rsync`` or a variety of
-remote disks. All faster than s3.
-
-ML-Logger is the logging utility that allows you to do this. To make
-ML_logger easy to use, we made it so that you can use ml-logger with
-zero configuration, logging to your local hard-drive by default. When
-the logging directory field
-``logger.configure(log_directory= <your directory>)`` is an http end
-point, the logger will instantiate a fast, future based logging client
-that launches http requests in a separate thread. We optimized the
-client so that it won’t slow down your training code-block.
-
-API wise, ML-logger makes it easy for you to log textual printouts,
-simple scalars, numpy tensors, image tensors, and ``pyplot`` figures.
-Because you might also want to read data from the instrumentation
-server, we also made it possible to load numpy, pickle, text and binary
-files remotely.
-
-In the future, we will start building an integrated dashboard with fast
-search, live figure update and markdown-based reporting/dashboarding to
-go with ml-logger.
-
-Now give this a try, and profit!
 
 
 User Guide
