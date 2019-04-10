@@ -27,6 +27,23 @@ today_fmt = '%Y %B. %d'
 # directories to ignore when looking for source files.
 exclude_patterns = ['_build']
 
+extensions = [
+    # 'recommonmark',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.viewcode',
+    # 'sphinx.ext.githubpages',
+    'sphinx.ext.napoleon'
+]
+
+# Add any paths that contain templates here, relative to this directory.
+templates_path = [
+    '_templates'
+]
+# html_theme = 'alabaster'
+
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
 # default_role = None
@@ -52,24 +69,58 @@ pygments_style = 'sphinx'
 # keep_warnings = False
 
 
-# -- Options for HTML output ----------------------------------------------
-
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
 # html_theme = 'default'
-# html_theme = 'readable'
-# import foundation_sphinx_theme
+import guzzle_sphinx_theme
+
+html_theme_path = guzzle_sphinx_theme.html_theme_path()
+html_theme = 'guzzle_sphinx_theme'
+
+# Register the theme as an extension to generate a sitemap.xml
+extensions.append("guzzle_sphinx_theme")
+
+# Guzzle theme options (see theme.conf for more information)
+html_theme_options = {
+
+    # Set the path to a special layout to include for the homepage
+    "index_template": "special_index.html",
+
+    # Set the name of the project to appear in the left sidebar.
+    "project_nav_name": "Project Name",
+
+    # Set your Disqus short name to enable comments
+    "disqus_comments_shortname": "my_disqus_comments_short_name",
+
+    # Set you GA account ID to enable tracking
+    "google_analytics_account": "my_ga_account",
+
+    # Path to a touch icon
+    "touch_icon": "",
+
+    # Specify a base_url used to generate sitemap.xml links. If not
+    # specified, then no sitemap will be built.
+    "base_url": "",
+
+    # Allow a separate homepage from the master_doc
+    "homepage": "index",
+
+    # # Allow the project link to be overriden to a custom URL.
+    # "projectlink": "http://myproject.url",
+    #
+    # # Visible levels of the global TOC; -1 means unlimited
+    # "globaltoc_depth": 3,
+    #
+    # # If False, expand all TOC entries
+    # "globaltoc_collapse": False,
+    #
+    # # If True, show hidden TOC entries
+    # "globaltoc_includehidden": False,
+}
+
+# import sphinx_readable_theme
 #
-# html_theme = 'foundation_sphinx_theme'
-# html_theme_path = foundation_sphinx_theme.HTML_THEME_PATH
-import sphinx_readable_theme
+# html_theme_path = [sphinx_readable_theme.get_html_theme_path()]
+# html_theme = 'readable'
 
-html_theme_path = [sphinx_readable_theme.get_html_theme_path()]
-html_theme = 'readable'
-
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
 # html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -223,19 +274,3 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
 
-extensions = [
-    # 'recommonmark',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.coverage',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.viewcode',
-    # 'sphinx.ext.githubpages',
-    'sphinx.ext.napoleon'
-]
-
-# Add any paths that contain templates here, relative to this directory.
-templates_path = [
-    '_templates'
-]
-# html_theme = 'alabaster'

@@ -26,5 +26,6 @@ sanic-cors
 termcolor
 typing
 urllib3
-sphinx-readable-theme
+# sphinx-readable-theme
+guzzle_sphinx_theme
 
