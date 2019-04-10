@@ -15,7 +15,7 @@ sphinx:
 #  configuration: mkdocs.yml
 
 # Optionally build your docs in additional formats such as PDF and ePub
-formats: html
+formats: ['html']
 
 python:
   version: 3.7
