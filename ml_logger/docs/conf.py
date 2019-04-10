@@ -50,9 +50,6 @@ templates_path = [
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 # add_function_parentheses = True
-for i in  range(10):
-     print()
-
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
 # add_module_names = True
