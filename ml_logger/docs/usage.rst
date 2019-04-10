@@ -48,8 +48,8 @@ The default ``host`` is set to ``127.0.0.1``. This would prevent
 external requests from being accepted. To allow requests from a
 non-localhost client, set ``host`` to ``0.0.0.0``.
 
-Full Readme on the Server
-~~~~~~~~~~~~~~~~~~~~~~~~~
+How to run the Logging Server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``ml-logger`` uses ``params-proto`` to declaratively define the cli
 interface. To view the help document, you can simply type
@@ -57,6 +57,23 @@ interface. To view the help document, you can simply type
 .. code-block:: bash
 
    python -m ml_logger.server --help
+
+.. code-block:: text
+
+    (plan2vec) ➜  ~ python -m ml_logger.server --help
+
+    usage: -m [-h] [--data-dir DATA_DIR] [--port PORT] [--host HOST]
+              [--workers WORKERS] [--debug]
+
+    optional arguments:
+      -h, --help           show this help message and exit
+      --data-dir DATA_DIR  The directory for saving the logs
+      --port PORT          port for the logging server
+      --host HOST          IP address for running the server. Default only allows
+                           localhost from making requests. If you want to allow
+                           all ip, set this to '0.0.0.0'.
+      --workers WORKERS    Number of workers to run in parallel
+      --debug              boolean flag for printing out debug traces
 
 Asynchronously log the summary of LOTs of training metrics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
