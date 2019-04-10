@@ -39,24 +39,7 @@ extensions = [
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = [
-    '_templates'
-]
-# html_theme = 'alabaster'
-
-# The reST default role (used for this markup: `text`) to use for all
-# documents.
-# default_role = None
-
-# If true, '()' will be appended to :func: etc. cross-reference text.
-# add_function_parentheses = True
-# If true, the current module name will be prepended to all description
-# unit titles (such as .. function::).
-# add_module_names = True
-
-# If true, sectionauthor and moduleauthor directives will be shown in the
-# output. They are ignored by default.
-# show_authors = False
+templates_path = ['_templates']
 
 # The name of the Pygments (syntax highlighting) style to use.
 # pygments_style = 'monokai'
@@ -64,11 +47,6 @@ templates_path = [
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
 
-# If true, keep warnings as "system message" paragraphs in the built documents.
-# keep_warnings = False
-
-
-# html_theme = 'default'
 import guzzle_sphinx_theme
 
 html_theme_path = guzzle_sphinx_theme.html_theme_path()
@@ -79,89 +57,19 @@ extensions.append("guzzle_sphinx_theme")
 
 # Guzzle theme options (see theme.conf for more information)
 html_theme_options = {
-
-    # # Set the path to a special layout to include for the homepage
-    # "index_template": "special_index.html",
-
-    # Set the name of the project to appear in the left sidebar.
-    "project_nav_name": "Project Name",
-
-    # # Set your Disqus short name to enable comments
-    # "disqus_comments_shortname": "my_disqus_comments_short_name",
-    #
-    # # Set you GA account ID to enable tracking
-    # "google_analytics_account": "my_ga_account",
-    #
-    # # Path to a touch icon
-    # "touch_icon": "",
-    #
-    # # Specify a base_url used to generate sitemap.xml links. If not
-    # # specified, then no sitemap will be built.
-    # "base_url": "",
-    #
-    # # Allow a separate homepage from the master_doc
-    # "homepage": "index",
-
-    # # Allow the project link to be overriden to a custom URL.
-    # "projectlink": "http://myproject.url",
-    #
-    # # Visible levels of the global TOC; -1 means unlimited
-    "globaltoc_depth": 2,
-    #
-    # # If False, expand all TOC entries
-    "globaltoc_collapse": True,
-    #
-    # # If True, show hidden TOC entries
-    "globaltoc_includehidden": True,
+    "project_nav_name": "ML-Logger",
 }
 
-# import sphinx_readable_theme
-#
-# html_theme_path = [sphinx_readable_theme.get_html_theme_path()]
-# html_theme = 'readable'
-
-# html_theme_options = {}
-
-# Add any paths that contain custom themes here, relative to this directory.
-# html_theme_path = []
-
-# The name for this set of Sphinx documents.  If None, it defaults to
-# "<project> v<release> documentation".
-# html_title = None
-
-# A shorter title for the navigation bar.  Default is the same as html_title.
-# html_short_title = None
-
-# The name of an image file (relative to this directory) to place at the top
-# of the sidebar.
-# html_logo = None
-
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-# html_favicon = None
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-# Add any extra paths that contain custom files (such as robots.txt or
-# .htaccess) here, relative to this directory. These files are copied
-# directly to the root of the documentation.
-# html_extra_path = []
-
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
 # html_last_updated_fmt = '%b %d, %Y'
 
-# If true, SmartyPants will be used to convert quotes and dashes to
-# typographically correct entities.
-# html_use_smartypants = True
+html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
 # 'sourcelink.html',
-html_sidebars = {'**': ['searchbox.html', 'localtoc.html', 'relations.html', ]}
+html_sidebars = {'**': ['searchbox.html', 'globaltoc.html', 'relation.html']}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.

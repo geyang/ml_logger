@@ -9,3 +9,4 @@ Install the package with pip::
 To make sure you use the newest version:
 
     $ pip install ml-logger --upgrade --no-cache
+

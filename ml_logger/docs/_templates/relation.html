@@ -1,0 +1,16 @@
+{% if prev %}
+<div class="sidebar-block">
+    <div class="sidebar-wrapper">
+        <h2>Previous</h2>
+        <a href="{{ prev.link|e }}">{{ prev.title }}</a>
+    </div>
+</div>
+{% endif %}
+{% if next %}
+<div class="sidebar-block">
+    <div class="sidebar-wrapper">
+        <h2>Next</h2>
+        <a href="{{ next.link|e }}">{{ next.title }}</a>
+    </div>
+</div>
+{% endif %}
