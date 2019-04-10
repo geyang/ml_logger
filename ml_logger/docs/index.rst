@@ -1,15 +1,6 @@
 Welcome to ML-Logger!
 =====================================
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-
 |Downloads|
 
 .. |Downloads| image:: http://pepy.tech/badge/ml-logger
