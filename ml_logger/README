@@ -1,7 +1,7 @@
 ML-Logger, A Simple and Scalable Logging Utility With a Beautiful Visualization Dashboard
 =========================================================================================
 
-`Downloads <http://pepy.tech/project/ml-logger>`__
+|Downloads|
 
 ML-Logger makes it easy to:
 
@@ -569,3 +569,6 @@ search, live figure update and markdown-based reporting/dashboarding to
 go with ml-logger.
 
 Now give this a try, and profit!
+
+.. |Downloads| image:: http://pepy.tech/badge/ml-logger
+   :target: http://pepy.tech/project/ml-logger
