@@ -58,6 +58,16 @@ def _PrefixContext(logger, new_prefix):
         logger.prefix = old_prefix
 
 
+# @contextmanager
+# def _LocalContext(logger, new_prefix=None):
+#     old_client = logger.client
+#     logger.prefix = new_prefix
+#     try:
+#         yield
+#     finally:
+#         logger.prefix = old_prefix
+
+
 # noinspection PyPep8Naming
 class ML_Logger:
     """
@@ -166,9 +176,9 @@ class ML_Logger:
 
     def configure(self,
                   log_directory: str = None,
+                  prefix=None,
                   asynchronous=None,
                   max_workers=None,
-                  prefix=None,
                   buffer_size=None,
                   summary_cache_opts: dict = None,
                   register_experiment=True
@@ -658,21 +668,16 @@ class ML_Logger:
         raise NotImplementedError
 
     def log_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None):
-        """
-        log_images in a composite on a grid. Images input as a 4-D stack.
-
-        fixit: greyscale image?
+        """Log images as a composite of a grid. Images input as a 4-D stack.
 
         :param stack: Size(n, w, h, c)
         :param key: the filename for the composite image.
         :param n_rows: number of rows
         :param n_cols: number of columns
-        :param namespace:
-        :param fstring:
-        :param cmap: OneOf[str, matplotlib.cm.ColorMap]
+        :param cmap: OneOf([str, matplotlib.cm.ColorMap])
         :param normalize: defaul None. OneOf[None, 'indivisual', 'row', 'column', 'grid']. Only 'grid' and
                           'individual' are implemented.
-        :return:
+        :return: None
         """
         stack = stack if hasattr(stack, 'dtype') else np.array(stack)
 
@@ -713,13 +718,12 @@ class ML_Logger:
 
         self.client.send_image(key=os.path.join(self.prefix, key), data=composite)
 
-    def log_image(self, image, key, cmap=None, normalize=None):
-        """
-        Logs an image via the summary writer.
-        TODO: add support for PIL images etc.
-        reference: https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
+    def log_image(self, image, key: str, cmap=None, normalize=None):
+        """Log a single image.
 
-        value: numpy object Size(w, h, 3)
+        :param image: numpy object Size(w, h, 3)
+        :param key: example: "figures/some_fig_name.png", the file key to which the
+            image is saved.
         """
         self.log_images([image], key, n_rows=1, n_cols=1, cmap=cmap, normalize=normalize)
 
