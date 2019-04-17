@@ -28,6 +28,3 @@ typing
 urllib3
 # sphinx-readable-theme
 guzzle_sphinx_theme
-restructuredtext_lint
-pygments
-pytest
