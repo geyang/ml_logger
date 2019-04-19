@@ -682,6 +682,7 @@ class ML_Logger:
         stack = stack if hasattr(stack, 'dtype') else np.array(stack)
 
         n_cols = n_cols or len(stack)
+        n_rows = n_rows or 1
 
         if np.issubdtype(stack.dtype, np.uint8):
             pass
