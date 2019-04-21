@@ -1040,9 +1040,10 @@ class ML_Logger:
         while True:
             chunks = self.client.read_pkl(path, i, i + 1)
             i += 1
-            if chunks is None:
+            if chunks:
+                yield from chunks
+            else:
                 break
-            yield from chunks
 
     def load_np(self, key):
         """ load a np file
