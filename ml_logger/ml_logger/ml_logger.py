@@ -808,24 +808,36 @@ class ML_Logger:
         """
         Save torch module. Overwrites existing file.
 
-        :param show_progress: boolean flag, default to False. Displays a progress bar when trueful.
+        When the model is large, this function uploads the weight dictionary (state_dict) in
+        chunks. You can specify the size for the chunks, measured in number of tensors.
+
+        The conversion convention for the upload chunks is roughly 32bit, or 8 bytes for each
+        `np.float32` entry. so the upload size for chunk = 100,000 is roughly
+
+            100_000 * 8 * <base56 encoding ration> ~ 960k.
+
         :param module: the PyTorch module to be saved.
         :param path: filename to which we save the module.
-        :param chunk: chunk size for the tensor
+        :param chunk: chunk size for the tensor, measured in number of tensor entries.
+        :param show_progress: boolean flag, default to False. Displays a progress bar when trueful. If the type
+            is string, then use this as the description for the progress bar.
+
+            Default progress description text is the file key to which we are writing.
+
         :return: None
         """
         # todo: raise error if particular weight file is too big
         _ = module.state_dict().items()
         if show_progress:
             from tqdm import tqdm
-            _ = tqdm(_)
+            _ = tqdm(_, desc=show_progress if isinstance(show_progress, str) else path[-24:])
 
         size, data_chunk = 0, {}
         for k, _v in _:
             v = _v.detach().cpu().numpy()
             assert v.size < chunk, "individual weight tensors need to be smaller than the chunk size"
             if size + v.size > chunk:
-                self.log_data(data=data_chunk, path=path, overwrite=False)
+                self.log_data(data=data_chunk, path=path, overwrite=False if size else True)
                 size = v.size
                 data_chunk = {k: v}
             else:
