@@ -120,11 +120,11 @@ class LogClient:
         """
         return _AsyncContext(self, **kwargs)
 
-    def _get(self, key, dtype):
+    def _get(self, key, dtype, **options):
         if self.local_server:
-            return self.local_server.load(key, dtype)
+            return self.local_server.load(key, dtype, **options)
         else:
-            json = LoadEntry(key, dtype)._asdict()
+            json = LoadEntry(key, dtype, **options)._asdict()
             # note: reading stuff from the server is always synchronous via the result call.
             res = self.session.get(self.url, json=json).result()
             # todo: better error handling.
@@ -183,8 +183,8 @@ class LogClient:
         return self._get(key, dtype="read_text")
 
     # Reads binary data
-    def read_pkl(self, key):
-        return self._get(key, dtype="read_pkl")
+    def read_pkl(self, key, start=None, stop=None):
+        return self._get(key, dtype="read_pkl", start=start, stop=stop)
 
     def read_np(self, key):
         return self._get(key, dtype="read_np")

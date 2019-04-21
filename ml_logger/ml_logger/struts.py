@@ -14,7 +14,13 @@ class LogEntry(NamedTuple):
     options: LogOptions = None
 
 
-LoadEntry = namedtuple("LoadEntry", ['key', 'type'])
+class LoadEntry(NamedTuple):
+    key: str
+    type: str
+    start: Any = None
+    stop: Any = None
+
+
 RemoveEntry = namedtuple("RemoveEntry", ['key'])
 
 

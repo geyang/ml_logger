@@ -14,7 +14,7 @@ setup(name="ml_logger",
       author="Ge Yang",
       author_email="yangge1987@gmail.com",
       license=None,
-      keywords=["ml_logger", "vis_server" "logging", "debug", "debugging"],
+      keywords=["ml_logger", "visualization", "logging", "debug", "debugging"],
       classifiers=[
           "Development Status :: 4 - Beta",
           "Intended Audience :: Science/Research",
@@ -24,7 +24,7 @@ setup(name="ml_logger",
           "ml_logger",
           "ml_logger.caches",
           "ml_logger.helpers",  # ml_dash is now in a different package
-          "vis_server"],
+      ],
       install_requires=[
           "cloudpickle",
           "dill",

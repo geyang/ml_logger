@@ -2,7 +2,7 @@ import os
 from contextlib import contextmanager
 
 import numpy as np
-from collections import Sequence
+from collections.abc import Sequence
 from io import BytesIO
 from numbers import Number
 from typing import Any
@@ -689,7 +689,7 @@ class ML_Logger:
         elif len(stack.shape) == 3:
             from matplotlib import cm
             map_fn = cm.get_cmap(cmap or 'Greys')
-            # todo: this needs to happen for each individual image
+            # todo: this needs to happen for each individual imagedata
             if normalize is None:
                 pass
             elif normalize == 'individual':
@@ -804,28 +804,66 @@ class ML_Logger:
         """ This method emulates `matplotlib.pyplot.savefig` method. Requires key string for the file name. """
         self.log_pyplot(path=key, fig=fig, format=format, **kwargs)
 
-    def save_module(self, module, path="weights.pkl"):
+    def save_module(self, module, path="weights.pkl", chunk=100_000, show_progress=False):
         """
         Save torch module. Overwrites existing file.
 
+        :param show_progress: boolean flag, default to False. Displays a progress bar when trueful.
         :param module: the PyTorch module to be saved.
         :param path: filename to which we save the module.
+        :param chunk: chunk size for the tensor
         :return: None
         """
-        data = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
-        self.log_data(data=data, path=path, overwrite=True)
+        # todo: raise error if particular weight file is too big
+        _ = module.state_dict().items()
+        if show_progress:
+            from tqdm import tqdm
+            _ = tqdm(_)
 
-    def load_module(self, module, path="weights.pkl"):
+        size, data_chunk = 0, {}
+        for k, _v in _:
+            v = _v.detach().cpu().numpy()
+            assert v.size < chunk, "individual weight tensors need to be smaller than the chunk size"
+            if size + v.size > chunk:
+                self.log_data(data=data_chunk, path=path, overwrite=False)
+                size = v.size
+                data_chunk = {k: v}
+            else:
+                size += v.size
+                data_chunk[k] = v
+
+        self.log_data(data=data_chunk, path=path, overwrite=False)
+        # data = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
+        # self.log_data(data=data, path=path, overwrite=True)
+
+    def load_module(self, module, path="weights.pkl", stream=True):
+        """
+        Load torch module from file.
+
+        :param module: target torch module you want to load
+        :param path: the weight file containing the weights
+        :return: None
+        """
         import torch
-        data, = self.load_pkl(path)
+        d = {}
+        for chunk in (self.iload_pkl if stream else self.load_pkl)(path):
+            d.update(chunk)
+
         module.load_state_dict({
-            k: torch.tensor(data[k], dtype=p.dtype).to(p.device)
+            k: torch.tensor(d[k], dtype=p.dtype).to(p.device)
             for k, p in module.state_dict().items()
         })
 
     def save_modules(self, path="modules.pkl", modules=None, **_modules):
         """
-        Save torch modules in a dictionary. Overwrites existing file.
+        Save torch modules in a dictionary, keyed by the keys.
+
+        *Overwrites existing file*.
+
+        This function is only used to save a collection of modules that can be
+        sent over in a single post request. When the modules are large, we use
+        the `logger.save_module` method, to send chunks of weight tensors one-
+        by-one.
 
         :param path: filename to be saved.
         :param modules: dictionary/namespace for the modules.
@@ -934,9 +972,20 @@ class ML_Logger:
         """
         return self.client.read_text(os.path.join(self.prefix, key))
 
-    def load_pkl(self, key):
+    def load_pkl(self, key, start=None, stop=None):
         """
-        load a pkl file (as a tuple)
+        load a pkl file *as a tuple*. By default, each file would contain 1 data item.
+
+        .. code:: python
+
+            data, = logger.load_pkl("episodeyang/weights.pkl")
+
+        You could also load a particular data chunk by index:
+
+        .. code:: python
+
+            data_chunks = logger.load_pkl("episodeyang/weights.pkl", start=10)
+
 
         when key starts with a single slash as in "/debug/some-run", the leading slash is removed
         and the remaining path is pathJoin'ed with the data_dir of the server.
@@ -949,9 +998,51 @@ class ML_Logger:
         "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
 
         :param key: a path string
+        :param start: Starting index for the chunks None means from the beginning.
+        :param stop: Stop index for the chunks. None means to the end of the file.
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        return self.client.read_pkl(os.path.join(self.prefix, key))
+        path = os.path.join(self.prefix, key)
+        return self.client.read_pkl(path, start, stop)
+
+    def iload_pkl(self, key):
+        """
+        load a pkl file as *an iterator*.
+
+        .. code:: python
+
+            for chunk in logger.iload_pkl("episodeyang/weights.pkl")
+                print(chunk)
+
+         or alternatively just read a single data file:
+
+        .. code:: python
+
+            data, = logger.iload_pkl("episodeyang/weights.pkl")
+
+        when key starts with a single slash as in "/debug/some-run", the leading slash is removed
+        and the remaining path is pathJoin'ed with the data_dir of the server.
+
+        So if you want to access absolute path of the filesystem that the logging server is in,
+        you should append two leadning slashes. This way, when the leanding slash is removed,
+        the remaining path is still an absolute value and joining with the data_dir would post
+        no effect.
+
+        "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
+
+        :param key: path string.
+        :param start: Starting index for the chunks None means from the beginning.
+        :param stop: Stop index for the chunks. None means to the end of the file.
+        :return: a iterator.
+        """
+        path = os.path.join(self.prefix, key)
+        i = 0
+        while True:
+            chunks = self.client.read_pkl(path, i, i + 1)
+            i += 1
+            if chunks is None:
+                break
+            yield from chunks
 
     def load_np(self, key):
         """ load a np file

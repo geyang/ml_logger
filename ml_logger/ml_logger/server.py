@@ -80,7 +80,7 @@ class LoggingServer:
             return sanic.response.text(msg)
         load_entry = LoadEntry(**req.json)
         print("loading: {} type: {}".format(load_entry.key, load_entry.type))
-        res = self.load(load_entry.key, load_entry.type)
+        res = self.load(load_entry.key, load_entry.type, load_entry.start, load_entry.stop)
         data = serialize(res)
         return sanic.response.text(data)
 
@@ -129,7 +129,7 @@ class LoggingServer:
             file_paths = list(islice(iglob(query, recursive=recursive), start, stop))
             return file_paths
 
-    def load(self, key, dtype):
+    def load(self, key, dtype, start=None, stop=None):
         """
         when key starts with a single slash as in "/debug/some-run", the leading slash is removed
         and the remaining path is pathJoin'ed with the data_dir of the server.
@@ -152,7 +152,9 @@ class LoggingServer:
 
         :param key: a path string
         :param dtype: (str), one of "read", "read_text", "read_pickle", "read_np"
-        :return: None, or a tuple of each one of the data chunck logged into the file.
+        :param start: end index
+        :param stop: start index
+        :return: None, or a tuple of each one of the data chunks logged into the file.
         """
         key = key[1:] if key.startswith("/") else key
         abs_path = os.path.join(self.data_dir, key)
@@ -171,7 +173,7 @@ class LoggingServer:
         elif dtype == 'read_pkl':
             from .helpers import load_from_pickle
             try:
-                return list(load_from_pickle(abs_path))
+                return list(load_from_pickle(abs_path))[start:stop]
             except FileNotFoundError as e:
                 return None
         elif dtype == 'read_np':

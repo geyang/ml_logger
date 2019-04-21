@@ -168,37 +168,6 @@ def test_video_gif(setup):
     logger.log_video(frames, "test_video.gif")
 
 
-class FakeTensor:
-    def cpu(self):
-        return self
-
-    def detach(self):
-        return self
-
-    def numpy(self):
-        import numpy as np
-        return np.ones([100, 2])
-
-
-class FakeModule:
-    @staticmethod
-    def state_dict():
-        return dict(var_1=FakeTensor())
-
-
-@pytest.fixture
-def test_module(setup):
-    logger.save_module(FakeModule, "modules/test_module.pkl")
-    sleep(1.0)
-    logger.save_modules(fake=FakeModule, fake_2=FakeModule, path="modules/test_modules.pkl")
-
-
-def test_load_module(setup, test_module):
-    result, = logger.load_pkl(f"modules/test_module.pkl")
-    import numpy as np
-    assert (result['var_1'] == np.ones([100, 2])).all(), "should be the same as test data"
-
-
 def test_load_params(setup):
     pass
 

@@ -1,4 +1,4 @@
-from collections import Sequence
+from collections.abc import Sequence
 from itertools import zip_longest
 import numpy as np
 
