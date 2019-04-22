@@ -12,6 +12,14 @@ from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, Rem
 # noinspection PyPep8Naming
 @contextmanager
 def _SyncContext(logger, clean=False, max_workers=None):
+    """
+    Context function for Synchronous network sessions
+
+    :param logger: logger object
+    :param clean: remove sync_pool after __exit__()
+    :param max_workers: urllib3 max_workers field
+    :return:
+    """
     old_session = logger.session
     if isinstance(old_session, SyncRequests):
         logger.sync_pool = old_session
@@ -29,6 +37,14 @@ def _SyncContext(logger, clean=False, max_workers=None):
 
 @contextmanager
 def _AsyncContext(logger, clean=False, max_workers=None):
+    """
+    Context function for Asynchronous network sessions
+
+    :param logger: logger object
+    :param clean: remove sync_pool after __exit__()
+    :param max_workers: urllib3 max_workers field
+    :return:
+    """
     old_session = logger.session
     if isinstance(old_session, FuturesSession):
         logger.async_pool = old_session
@@ -105,8 +121,10 @@ class LogClient:
     # noinspection PyPep8Naming
     def SyncContext(self, **kwargs):
         """
-        Returns a context in which the logger logs synchronously.
+        Returns a context object in which the logger logs synchronously.
 
+        :param clean: remove sync_pool after __exit__()
+        :param max_workers: urllib3 max_workers field
         :return: context object
         """
         return _SyncContext(self, **kwargs)
@@ -114,8 +132,10 @@ class LogClient:
     # noinspection PyPep8Naming
     def AsyncContext(self, **kwargs):
         """
-        Returns a context in which the logger logs asynchronously.
+        Returns a context object in which the logger logs asynchronously.
 
+        :param clean: remove sync_pool after __exit__()
+        :param max_workers: future_request.Session max_workers field
         :return: context object
         """
         return _AsyncContext(self, **kwargs)

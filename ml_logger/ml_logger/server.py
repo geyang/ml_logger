@@ -79,7 +79,8 @@ class LoggingServer:
             print(msg)
             return sanic.response.text(msg)
         load_entry = LoadEntry(**req.json)
-        print("loading: {} type: {}".format(load_entry.key, load_entry.type))
+        print("loading: {} type: {}: start: {}, stop: {}".format(
+            load_entry.key, load_entry.type, load_entry.start, load_entry.stop))
         res = self.load(load_entry.key, load_entry.type, load_entry.start, load_entry.stop)
         data = serialize(res)
         return sanic.response.text(data)

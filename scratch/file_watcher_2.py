@@ -1,6 +1,4 @@
-from collections import deque, OrderedDict
 from watchdog.observers import Observer
-from watchdog.events import LoggingEventHandler
 
 
 class Handler:

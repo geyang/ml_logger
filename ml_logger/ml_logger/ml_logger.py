@@ -107,6 +107,7 @@ class ML_Logger:
 
         :param clean: boolean flag for removing the thead pool after __exit__.
             used to enforce single-use SyncContexts.
+        :param max_workers: `urllib3` session pool `max_workers` field
         :return: context object
         """
         return self.client.SyncContext(clean=clean, **kwargs)
@@ -123,6 +124,7 @@ class ML_Logger:
 
         :param clean: boolean flag for removing the thead pool after __exit__.
             used to enforce single-use AsyncContexts.
+        :param max_workers: `future_sessions.Session` pool `max_workers` field
         :return: context object
         """
         return self.client.AsyncContext(clean=clean, **kwargs)
@@ -337,20 +339,51 @@ class ML_Logger:
 
     def diff(self, diff_directory=".", diff_filename="index.diff", silent=False):
         """
-        example usage: M.diff('.')
-        :param diff_directory: The root directory to call `git diff`.
-        :param log_directory: The overriding log directory to save this diff index file
-        :param diff_filename: The filename for the diff file.
+        example usage:
+        --------------
+
+        .. code:: python
+
+            from ml_logger import logger
+
+            logger.diff()  # => this writes a diff file to the root of your logging directory.
+
+        :param diff_directory: The root directory to call `git diff`, default to current directory.
+        :param diff_filename: The file key for saving the diff file.
         :return: None
         """
         import subprocess
         try:
-            cmd = f'cd "{os.path.realpath(diff_directory)}" && git add . && git --no-pager diff HEAD'
+            cmd = f'cd "{os.path.realpath(diff_directory)}" && git status -vv'
             if not silent: self.log_line(cmd)
             p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
-            self.log_text(p.decode('utf-8').strip(), diff_filename, silent=silent)
+            patch = p.decode('utf-8').strip()
+            self.log_text(patch, diff_filename, silent=silent)
+            return patch
         except subprocess.CalledProcessError as e:
             self.log_line("not storing the git diff due to {}".format(e))
+
+    @property
+    def __status__(self):
+        """
+        example usage:
+        --------------
+
+        .. code:: python
+
+            from ml_logger import logger
+
+            diff = logger.__status__  # => this writes a diff file to the root of your logging directory.
+
+        :return: the diff string for the current git repo.
+        """
+        import subprocess
+        try:
+            cmd = f'cd "{os.path.getcwd()}" && git status -vv'
+            p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
+            return p.decode('utf-8').strip()
+        except subprocess.CalledProcessError as e:
+            return e
 
     @property
     def __current_branch__(self):
@@ -369,7 +402,9 @@ class ML_Logger:
 
     def git_rev(self, branch):
         """
-        returns the git revision hash of the branch that you pass in.
+        Helper function **used by `logger.__head__`** that returns the git revision hash of the
+        branch that you pass in.
+
         full reference here: https://stackoverflow.com/a/949391
         the `show-ref` and the `for-each-ref` commands both show a list of refs. We only need to get the
         ref hash for the revision, not the entire branch of by tag.
@@ -377,7 +412,7 @@ class ML_Logger:
         import subprocess
         try:
             cmd = ['git', 'rev-parse', branch]
-            p = subprocess.check_output(cmd)  # Save git diff to experiment directory
+            p = subprocess.check_output(cmd)
             return p.decode('utf-8').strip()
         except subprocess.CalledProcessError:
             return None
@@ -861,6 +896,8 @@ class ML_Logger:
         for chunk in (self.iload_pkl if stream else self.load_pkl)(path):
             d.update(chunk)
 
+        assert d, f"the datafile can not be empty: [d == {{{d.keys()}...}}]"
+
         module.load_state_dict({
             k: torch.tensor(d[k], dtype=p.dtype).to(p.device)
             for k, p in module.state_dict().items()
@@ -1052,10 +1089,9 @@ class ML_Logger:
         while True:
             chunks = self.client.read_pkl(path, i, i + 1)
             i += 1
-            if chunks:
-                yield from chunks
-            else:
+            if not chunks:
                 break
+            yield from chunks
 
     def load_np(self, key):
         """ load a np file
