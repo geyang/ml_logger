@@ -12,12 +12,13 @@ class Metrics(ObjectType):
 
     path = String(description="path to the file")
     name = String(description="path to the file")
-
-    def resolve_name(self, info):
-        return splitext(basename(self.id))[0]
+    stem = String(description="stem of the file name")
 
     def resolve_path(self, info):
         return self.id
+
+    def resolve_stem(self, info, ):
+        return self.name.split('.')[0]
 
     keys = List(String, description="list of keys for the metrics")
 
@@ -47,7 +48,7 @@ class Metrics(ObjectType):
 
     @classmethod
     def get_node(cls, info, id):
-        return Metrics(id)
+        return Metrics(id, )
 
 
 class MetricsConnection(relay.Connection):
@@ -56,8 +57,7 @@ class MetricsConnection(relay.Connection):
 
 
 def get_metrics(id):
-    # note: this is where the key finding happens.
-    return Metrics(id=id)
+    return Metrics(id=id, name=basename(id[1:]))
 
 
 def find_metrics(cwd, **kwargs):

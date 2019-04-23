@@ -16,7 +16,7 @@ class File(ObjectType):
     stem = String(description="stem of the file name")
 
     def resolve_stem(self, info, ):
-        return self.name.split("/")[-1].split('.')[0]
+        return self.name.split('.')[0]
 
     path = String(description='path to the file')
     rel_path = String(description='relative path to the file')
@@ -67,8 +67,7 @@ class FileConnection(relay.Connection):
 
 
 def get_file(id):
-    # path = os.path.join(Args.logdir, id[1:])
-    return File(id=id, name=split(id[1:])[1])
+    return File(id=id, name=basename(id[1:]))
 
 
 def find_files_by_query(cwd, query="**/*.*", **kwargs):
