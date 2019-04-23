@@ -1,5 +1,5 @@
 from os import listdir
-from os.path import isfile, join, basename, realpath, isabs
+from os.path import isfile, join, basename, realpath, isabs, split
 
 from graphene import ObjectType, relay, String, Field
 from ml_dash import schema
@@ -14,6 +14,7 @@ class Experiment(ObjectType):
 
     name = String(description='name of the directory')
     path = String(description="path to the experiment")
+
     readme = Field(lambda: schema.files.File)
     parameters = Field(lambda: files.parameters.Parameters, )
     metrics = Field(lambda: files.metrics.Metrics)
@@ -48,7 +49,7 @@ class Experiment(ObjectType):
 
     @classmethod
     def get_node(cls, info, id):
-        return Experiment(id=id)
+        return get_experiment(id)
 
 
 class ExperimentConnection(relay.Connection):
@@ -69,3 +70,8 @@ def find_experiments(cwd, **kwargs):
                    parameters=join(cwd.rstrip('/'), p['path']), )
         for p in parameter_files
     ]
+
+
+def get_experiment(id):
+    _id = id.rstrip('/')
+    return Experiment(id=_id, name=split(_id[1:])[-1], path=_id)

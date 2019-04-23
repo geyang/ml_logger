@@ -165,6 +165,27 @@ def test_directory(log_dir):
         show(r['data'])
 
 
+# todo: add chunked loading for the text field. Necessary for long log files.
+def test_reac_text_file(log_dir):
+    from ml_dash.config import Args
+    Args.logdir = log_dir
+    client = Client(schema)
+    query = """
+        query AppQuery ($id: ID!) {
+            file ( id:  $id) { 
+                id name text
+            }
+        }
+    """
+    path = "/episodeyang/cpc-belief/README.md"
+    r = client.execute(query, variables=dict(id=to_global_id("File", path)))
+    if 'errors' in r:
+        raise RuntimeError(r['errors'])
+    else:
+        print(">>")
+        show(r['data'])
+
+
 def test_series_2(log_dir):
     query = """
     query LineChartsQuery(

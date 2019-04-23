@@ -84,6 +84,7 @@ class Query(ObjectType):
     experiment = relay.Node.Field(Experiment)
     metrics = relay.Node.Field(Metrics)
     directory = relay.Node.Field(Directory)
+    file = relay.Node.Field(File)
 
     glob = Field(List(File), cwd=String(required=True), query=String(), resolver=bind_args(glob_files))
 

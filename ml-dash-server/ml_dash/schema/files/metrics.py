@@ -1,4 +1,4 @@
-from os.path import split, realpath, join
+from os.path import split, realpath, join, splitext, basename
 from graphene import relay, ObjectType, String, List, JSONString, Int
 from graphene.types.generic import GenericScalar
 from graphql_relay import from_global_id
@@ -11,6 +11,10 @@ class Metrics(ObjectType):
         interfaces = relay.Node,
 
     path = String(description="path to the file")
+    name = String(description="path to the file")
+
+    def resolve_name(self, info):
+        return splitext(basename(self.id))[0]
 
     def resolve_path(self, info):
         return self.id
@@ -61,4 +65,4 @@ def find_metrics(cwd, **kwargs):
     _cwd = realpath(join(Args.logdir, cwd[1:]))
     parameter_files = find_files(_cwd, "**/metrics.pkl", **kwargs)
     for p in parameter_files:
-        yield Metrics(id=join(cwd, p['path']))
+        yield Metrics(id=join(cwd, p['path']), name="metrics.pkl")
