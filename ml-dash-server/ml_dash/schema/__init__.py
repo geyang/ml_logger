@@ -81,6 +81,7 @@ class Query(ObjectType):
     series = Field(Series, resolver=bind_args(get_series), **SeriesArguments)
 
     project = relay.Node.Field(Project)
+    experiment = relay.Node.Field(Experiment)
     metrics = relay.Node.Field(Metrics)
     directory = relay.Node.Field(Directory)
 

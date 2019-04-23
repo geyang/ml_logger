@@ -14,8 +14,14 @@ class Experiment(ObjectType):
 
     name = String(description='name of the directory')
     path = String(description="path to the experiment")
+    readme = Field(lambda: schema.files.File)
     parameters = Field(lambda: files.parameters.Parameters, )
     metrics = Field(lambda: files.metrics.Metrics)
+
+    def resolve_readme(self, info, *args, **kwargs):
+        # note: keep it simple, just use README for now.
+        readmes = schema.files.find_files_by_query(cwd=self.id, query="README.md")
+        return readmes[0] if readmes else None
 
     def resolve_parameters(self, info):
         return files.parameters.get_parameters(self.parameters)

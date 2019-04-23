@@ -75,6 +75,41 @@ def test_glob_files(log_dir):
         show(r['data'])
 
 
+def test_experiment(log_dir):
+    from ml_dash.config import Args
+    Args.logdir = log_dir
+    client = Client(schema)
+    query = """
+        query AppQuery ($id: ID!) {
+            experiment ( id:  $id ) { 
+                id
+                name 
+                files (first:10) {
+                    edges {
+                        node {
+                            id name path
+                        }
+                    }
+                }
+                directories (first:10) {
+                    edges {
+                        node {
+                            id name path
+                        }
+                    }
+                }
+            }
+        }
+    """
+    path = "/episodeyang/playground/mdp/experiment_04"
+    r = client.execute(query, variables=dict(id=to_global_id("Experiment", path)))
+    if 'errors' in r:
+        raise RuntimeError(r['errors'])
+    else:
+        print(">>")
+        show(r['data'])
+
+
 def test_directory(log_dir):
     from ml_dash.config import Args
     Args.logdir = log_dir
@@ -241,6 +276,7 @@ def test_schema(log_dir):
                         id
                         name
                         experiments(first:10) { edges { node { 
+                            id
                             name
                             parameters {value keys flat raw} 
                             metrics {
