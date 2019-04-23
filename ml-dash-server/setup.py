@@ -32,19 +32,8 @@ setup(name="ml-dash",
           "Intended Audience :: Science/Research",
           "Programming Language :: Python :: 3"
       ],
-      packages=[p for p in find_packages() if p != "tests"] + [
-          "ml-dash-client-dist",
-          "ml-dash-client-dist.static",
-          "ml-dash-client-dist.static.css",
-          "ml-dash-client-dist.static.js",
-      ],
+      packages=[p for p in find_packages() if p != "tests"],
       include_package_data=True,
-      # package_data={
-      #     "ml-dash-client-dist": ["*"],
-      #     "ml-dash-client-dist.static": ["*"],
-      #     "ml-dash-client-dist.static.css": ["*"],
-      #     "ml-dash-client-dist.static.js": ["*"],
-      # },
       install_requires=[
           "cloudpickle",
           'dill',
