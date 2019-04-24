@@ -1144,19 +1144,22 @@ class ML_Logger:
         .. code:: python
 
             n = 10
-            logger.log_line("mary", "has", n, "sheep.", color="green")
+            logger.log_line("Mary", "has", n, "sheep.", color="green")
+
+        This outputs:
 
         ::
 
-            >>> "mary has 10 sheep" (colored green)
+            >>> "Mary has 10 sheep" (colored green)
 
         :param *args: List of object to be converted to string and printed out.
         :param sep: Same as the `sep` kwarg in regular print statements
         :param end: Same as the `end` kwarg in regular print statements
         :param flush: bool, whether the output is flushed. Default to True
-        :param file: file object to whitch the line is written
-        :param color: str, color of the line
-        :return:
+        :param file: file object to which the line is written
+        :param color: str, color of the line. We use `termcolor.colored` as our color library. See list of
+            colors here: _`termcolor`: https://pypi.org/project/termcolor/
+        :return: None
         """
         text = sep.join([str(a) for a in args]) + end
         if color:
