@@ -1141,6 +1141,15 @@ class ML_Logger:
         """
         this is similar to the print function. It logs *args with a default EOL postfix in the end.
 
+        .. code:: python
+
+            n = 10
+            logger.log_line("mary", "has", n, "sheep.", color="green")
+
+        ::
+
+            >>> "mary has 10 sheep" (colored green)
+
         :param *args: List of object to be converted to string and printed out.
         :param sep: Same as the `sep` kwarg in regular print statements
         :param end: Same as the `end` kwarg in regular print statements
@@ -1151,6 +1160,7 @@ class ML_Logger:
         """
         text = sep.join([str(a) for a in args]) + end
         if color:
+            from termcolor import colored
             text = colored(text, color)
         self.print_buffer += text
         if flush or file or len(self.print_buffer) > self.print_buffer_size:
