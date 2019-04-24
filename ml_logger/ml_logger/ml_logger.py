@@ -492,18 +492,20 @@ class ML_Logger:
 
         Examples:
 
-            ::
-                logger.log_params(some_namespace=dict(layer=10, learning_rate=0.0001))
+        .. code:: python
 
-            generates a table that looks like:
+            logger.log_params(some_namespace=dict(layer=10, learning_rate=0.0001))
 
-            ::
-                ══════════════════════════════════════════
-                   some_namespace
-                ────────────────────┬─────────────────────
-                       layer        │ 10
-                   learning_rate    │ 0.0001
-                ════════════════════╧═════════════════════
+        generates a table that looks like:
+
+        ::
+
+            ══════════════════════════════════════════
+               some_namespace
+            ────────────────────┬─────────────────────
+                   layer        │ 10
+               learning_rate    │ 0.0001
+            ════════════════════╧═════════════════════
 
         :param path: the file to which we save these parameters
         :param kwargs: list of key/value pairs, each key representing the name of the namespace,
@@ -1135,18 +1137,21 @@ class ML_Logger:
     def log_json(self):
         raise NotImplementedError
 
-    def log_line(self, *args, sep=' ', end='\n', flush=True, file=None):
+    def log_line(self, *args, sep=' ', end='\n', flush=True, file=None, color=None):
         """
         this is similar to the print function. It logs *args with a default EOL postfix in the end.
 
-        :param args:
-        :param sep:
-        :param end:
-        :param flush:
-        :param file:
+        :param *args: List of object to be converted to string and printed out.
+        :param sep: Same as the `sep` kwarg in regular print statements
+        :param end: Same as the `end` kwarg in regular print statements
+        :param flush: bool, whether the output is flushed. Default to True
+        :param file: file object to whitch the line is written
+        :param color: str, color of the line
         :return:
         """
         text = sep.join([str(a) for a in args]) + end
+        if color:
+            text = colored(text, color)
         self.print_buffer += text
         if flush or file or len(self.print_buffer) > self.print_buffer_size:
             self.flush_print_buffer(file=file)
