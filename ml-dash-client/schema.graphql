@@ -50,6 +50,7 @@ type Experiment implements Node {
   id: ID!
   name: String
   path: String
+  readme: File
   parameters: Parameters
   metrics: Metrics
   directories(before: String, after: String, first: Int, last: Int): DirectoryConnection
@@ -92,6 +93,7 @@ scalar GenericScalar
 type Metrics implements Node {
   id: ID!
   path: String
+  name: String
   keys: [String]
   value(keys: [String], k: Int, last: Int, window: Int): GenericScalar
 }
@@ -177,8 +179,10 @@ type Query {
   user(username: String): User
   series(metricsFiles: [String]!, prefix: String, head: Int, tail: Int, xLow: Float, xHigh: Float, k: Int, xAlign: String, xKey: String, yKey: String, yKeys: [String], label: String): Series
   project(id: ID!): Project
+  experiment(id: ID!): Experiment
   metrics(id: ID!): Metrics
   directory(id: ID!): Directory
+  file(id: ID!): File
   glob(cwd: String!, query: String): [File]
 }
 

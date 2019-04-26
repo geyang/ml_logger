@@ -18,7 +18,9 @@ import {minus, unique, match, intersect} from "../../lib/sigma-algebra";
 import LineChart from "../../Charts/LineChart";
 import {colorMap} from "../../Charts/chart-theme";
 import InlineFile, {ImageView, VideoView} from "../../Charts/FileViews";
-import {fromGlobalId} from "../../lib/relay-helpers";
+import {fromGlobalId, toGlobalId} from "../../lib/relay-helpers";
+import {by, firstItem, strOrder} from "../../lib/string-sort";
+import ExperimentView from "../../Charts/ExperimentView";
 
 function trueDict(keys = []) {
   let _ = {};
@@ -55,7 +57,7 @@ const StyledHeader = styled.div`
 `;
 
 function HeaderCell({width, children}) {
-  if (children === null || typeof children === "undefined")
+  if (children === null || typeof children === "undefined" || typeof children === "object")
     return <StyledHeader style={{width: width, color: "#a3a3a3"}}>N/A</StyledHeader>;
   const [root, ...rest] = children.split('.');
   return <StyledHeader title={children} style={{width: width}}>
@@ -116,7 +118,7 @@ function ShowChart({expanded, ..._props}) {
     boxSizing: "border-box",
     touchCallout: "none", userSelect: "none"
   }} {..._props}>
-    {expanded ? <EyeOff size={24}/> : <Eye size={24}/>}
+    {expanded ? <Eye size={24}/> : <EyeOff size={24}/>}
   </div>
 }
 
@@ -146,6 +148,9 @@ export default function ParamsTable({
                                       selectedRows,
                                       onRowSelect, // call with (selections: [], selection: object, select: bool)
                                       inlineCharts,
+                                      //addInlineCharts,
+                                      shownInlineCharts,
+                                      showInlineCharts, // call with (shownRows: [], shownRows: object, show: bool)
                                       onColumnDragEnd,
                                       ..._props
                                     }) {
@@ -160,25 +165,18 @@ export default function ParamsTable({
   let containerRef = useRef(null);
   let {width, height} = useComponentSize(containerRef);
 
-
   // const [selected, setSelected] = useState(trueDict(selectedRows));
+  // const [showChart, setShowChart] = useState({});
   const selected = trueDict(selectedRows);
   const [rowExpand, setRowExpand] = useState({});
-  const [showChart, setShowChart] = useState({});
 
   function toggleRowExpand(key) {
     setRowExpand({...rowExpand, [key]: !rowExpand[key]})
   }
 
-  function toggleShowChart(key) {
-    setShowChart({...showChart, [key]: !showChart[key]})
-  }
-
   const defaultHidden = {};
   if (inlineCharts.length) //note: default show 3 experiments. Only when charts are available.
     exps.slice(0).forEach(({id}) => defaultHidden[id] = true);
-  const [hidden, setHidden] = useState(defaultHidden);
-  const [bySelection, setBySelection] = useState(false);
 
   keys = keys.length ? keys : unique(exps.flatMap(exp => exp.parameters.keys));
   keys = minus(keys, hideKeys);
@@ -196,33 +194,28 @@ export default function ParamsTable({
   const allKeys = df.listColumns();
   const ids = exps.map(exp => exp.id);
 
-  const someShown = Object.keys(hidden).length !== exps.length;
-  const toggleHidden = (expanded, {id}) => setHidden({...hidden, [id]: !expanded});
-  const toggleAllHidden = () => setHidden(someShown ? trueDict(ids) : {});
+  function toggleSelected(id) {
+    let _ = {...selected, [id]: !selected[id]};
+    onRowSelect(Object.keys(_).filter(k => _[k]));
+  }
 
   const someSelected = !!Object.keys(selected).length;
 
-  function toggleSelected(id) {
-    let newSelected = {...selected, [id]: !selected[id]};
-    console.log(newSelected);
-    // setSelected(newSelected);
-    if (typeof onRowSelect === 'function')
-      onRowSelect(
-          Object.keys(newSelected).filter(k => newSelected[k]),
-          id,
-          !selected[id]
-      );
+  function toggleAllSelected() {
+    let _ = someSelected ? {} : trueDict(ids);
+    onRowSelect(Object.keys(_).filter(k => _[k]));
   }
 
-  function toggleAllSelected() {
-    let newSelected = someSelected ? {} : trueDict(ids);
-    // setSelected(newSelected);
-    if (typeof onRowSelect === 'function')
-      onRowSelect(
-          Object.keys(newSelected).filter(k => newSelected[k]),
-          ids,
-          !someSelected
-      );
+  function toggleInlineChart(id) {
+    let _ = new Set(shownInlineCharts);
+    if (_.has(id)) _.delete(id);
+    else _.add(id);
+    showInlineCharts(_);
+  }
+
+  function toggleAllShowInlineCharts() {
+    let _ = shownInlineCharts.size ? [] : ids;
+    showInlineCharts(new Set(_));
   }
 
   let sorted = sortBy.length ? df.sortBy(sortBy) : df;
@@ -241,8 +234,9 @@ export default function ParamsTable({
   // const expList = df.toCollection();
   const expList = grouped.toCollection().map(function ({aggregation, ..._group}, ind) {
 
-    const children = [...new DataFrame(aggregation).toCollection()
-        .map(child => ({..._group, ...child, key: child.id}))];
+    const children = [...new DataFrame(aggregation).toCollection().map(child => ({
+      ..._group, ...child, key: child.id
+    }))];
 
     let aggShunt = {};
     Object.keys(aggregation).forEach((k) => aggShunt[k] = <Multiple/>);
@@ -256,7 +250,7 @@ export default function ParamsTable({
       };
       _.__leftGutter = [
         <SelectRow checked={selected[_.key]} onClick={() => toggleSelected(_.key)}/>,
-        <ShowChart expanded={showChart[_.key]} onClick={() => toggleShowChart(_.key)}/>
+        <ShowChart expanded={shownInlineCharts.has(_.key)} onClick={() => toggleInlineChart(_.key)}/>,
       ];
       return _;
     } else {
@@ -270,7 +264,7 @@ export default function ParamsTable({
       _.__leftGutter = [
         <Expand expanded={rowExpand[_.key]} onClick={() => toggleRowExpand(_.key)}/>,
         <SelectRow checked={selected[_.key]} onClick={() => toggleSelected(_.key)}/>,
-        <ShowChart expanded={showChart[_.key]} onClick={() => toggleShowChart(_.key)}/>,
+        <ShowChart expanded={shownInlineCharts.has(_.key)} onClick={() => toggleInlineChart(_.key)}/>,
       ];
       return rowExpand[aggregation.id]
           ? [_, ...children.map(c => ({
@@ -279,21 +273,25 @@ export default function ParamsTable({
             __className: "child",
             __leftGutter: [
               <SelectRow checked={selected[c.id]} onClick={() => toggleSelected(c.id)}/>,
-              <ShowChart expanded={showChart[c.id]} onClick={() => toggleShowChart(c.id)}/>
+              <ShowChart expanded={shownInlineCharts.has(c.id)} onClick={() => toggleInlineChart(c.id)}/>
             ]
           }))] : _;
     }
-  }).flatten();
-
-  const expandedKeys = Object.keys(showChart).filter(k => showChart[k]);
+  })
+      .sort(by((a, b) => (typeof a === 'string' && typeof b === 'string') ? strOrder(a, b) : 0, "expDirectory"))
+      .reverse()
+      .flatten();
 
   const gutterCol = {
     dataIndex: "__leftGutter",
-    title: <GutterCell width={120}/>, //toTitle
+    title: <GutterCell width={120}>
+      <SelectRow checked={someSelected} onClick={toggleAllSelected}/>
+      <ShowChart expanded={shownInlineCharts.size} onClick={toggleAllShowInlineCharts}/>
+    </GutterCell>, //toTitle
     width: 120,
     render: (value, row, index) => <GutterCell width={120}>{value}</GutterCell>
   };
-  if (!expandedKeys.length)
+  if (!shownInlineCharts.size)
     gutterCol.fixed = "left";
   const columns = [
     gutterCol,
@@ -312,9 +310,6 @@ export default function ParamsTable({
 
   const keyWidth = {};
   columns.forEach(({key, width}) => keyWidth[key] = width);
-
-  console.log(expList);
-
   return (
       <Box ref={containerRef} {..._props} flex={true}>
         {/*<ReactDragListView.DragColumn {...dragProps}>*/}
@@ -330,7 +325,7 @@ export default function ParamsTable({
             // onExpand={toggleHidden}
             expandRowByClick
             rowClassName={(row) => row.__className || ""}
-            expandedRowKeys={expandedKeys}
+            expandedRowKeys={[...shownInlineCharts]}
             expandedRowRender={(exp, expIndex, indent, expanded) =>
                 expanded
                     ? <Grid style={{height: "224px"}}
@@ -365,6 +360,9 @@ export default function ParamsTable({
                             return null;
                         }
                       })}
+                      <ExperimentView id={exp.id}
+                                      showHidden={true}
+                                      onClick={() => null}/>
                     </Grid>
                     : null
             }

@@ -18,11 +18,11 @@ let tempID = 0;
 function updateText(environment, fileId, text) {
   return commitMutation(environment, {
     mutation: graphql`
-        mutation ExperimentDashUpdateMutation($input: MutateTextFileInput!) {
-            updateText (input: $input) {
-                file { id name path relPath text yaml}
-            }
+      mutation ExperimentDashUpdateMutation($input: MutateTextFileInput!) {
+        updateText (input: $input) {
+          file { id name path relPath text yaml}
         }
+      }
     `,
     variables: {
       input: {id: fileId, text, clientMutationId: tempID++},
@@ -34,11 +34,11 @@ function updateText(environment, fileId, text) {
 function deleteFile(environment, fileId) {
   return commitMutation(environment, {
     mutation: graphql`
-        mutation ExperimentDashDeleteMutation(
+      mutation ExperimentDashDeleteMutation(
         $input: DeleteFileInput!
-        ) {
-            deleteFile (input: $input) { ok id }
-        }
+      ) {
+        deleteFile (input: $input) { ok id }
+      }
     `,
     variables: {
       input: {id: fileId, clientMutationId: tempID++},
@@ -53,11 +53,11 @@ function deleteFile(environment, fileId) {
 function deleteDirectory(environment, fileId) {
   return commitMutation(environment, {
     mutation: graphql`
-        mutation ExperimentDashDeleteDirectoryMutation(
+      mutation ExperimentDashDeleteDirectoryMutation(
         $input: DeleteDirectoryInput!
-        ) {
-            deleteDirectory (input: $input) { ok id }
-        }
+      ) {
+        deleteDirectory (input: $input) { ok id }
+      }
     `,
     variables: {
       input: {id: fileId, clientMutationId: tempID++},
@@ -153,12 +153,7 @@ function ExperimentDash({
       domains.map(d => [d.name, d.values]));
   let pcData = parameters.map(p => ({
     ...Object.fromEntries(Object.entries(p)
-        .map(([k, v]) => {
-              console.log(k, domainMap[k]);
-              if (typeof domainMap[k] === 'undefined')
-                window.domains = domains;
-              return [k, domainMap[k] ? domainMap[k].indexOf(v) : -1]
-            }
+        .map(([k, v]) => [k, domainMap[k] ? domainMap[k].indexOf(v) : -1]
         ))
   }));
 
@@ -184,7 +179,7 @@ function ExperimentDash({
   }
 
   const [selected, setSelected] = useState([]);
-  console.log(selected);
+  const [inlineChartRows, setInlineChartRows] = useState(new Set());
 
   return (
       <Box
@@ -232,8 +227,8 @@ function ExperimentDash({
             groupBy={false}
             inlineCharts={inlineCharts}
             onColumnDragEnd={reorderKeys}
-            selectedRows={selected}
-            onRowSelect={(selected) => setSelected(selected)}
+            selectedRows={selected} onRowSelect={setSelected}
+            shownInlineCharts={inlineChartRows} showInlineCharts={setInlineChartRows}
         />
         {selected.length
             ? <ContextMenu selected={selected}
@@ -263,30 +258,30 @@ function ExperimentDash({
 
 export default createFragmentContainer(ExperimentDash, {
   directory: graphql`
-      fragment ExperimentDash_directory on Directory {
-          name
-          path
-          files ( first:5 ) @connection(key: "ExperimentDash_files"){
-              edges {
-                  cursor
-                  node { id name }
-              }
-          }
-          readme { id name path relPath text }
-          dashConfigs (first:10) {
-              edges{
-                  cursor
-                  node {id name text stem relPath yaml}
-              }
-          }
-          fullExperiments: experiments (first:50) @connection(key: "ExperimentDash_fullExperiments") {
-              edges { node {
-                  id name path
-                  parameters { keys flat}
-                  metrics {id keys path}
-              } }
-          }
+    fragment ExperimentDash_directory on Directory {
+      name
+      path
+      files ( first:5 ) @connection(key: "ExperimentDash_files"){
+        edges {
+          cursor
+          node { id name }
+        }
       }
+      readme { id name path relPath text }
+      dashConfigs (first:10) {
+        edges{
+          cursor
+          node {id name text stem relPath yaml}
+        }
+      }
+      fullExperiments: experiments (first:50) @connection(key: "ExperimentDash_fullExperiments") {
+        edges { node {
+          id name path
+          parameters { keys flat}
+          metrics {id keys name path}
+        } }
+      }
+    }
   `
 });
 

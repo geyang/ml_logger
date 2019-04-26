@@ -4,18 +4,19 @@ import styled from "styled-components";
 import graphql from "babel-plugin-relay/macro";
 import {fetchQuery} from 'relay-runtime';
 import {Box, Image, Video, RangeInput} from "grommet";
+import Ansi from "ansi-to-react";
 
 import {modernEnvironment} from "../data";
-import {by, strOrder} from "../lib/string-sort";
+import {by, commonPrefix, strOrder, subPrefix} from "../lib/string-sort";
 import {pathJoin} from "../lib/path-join";
 import store from "../local-storage";
 
 const globQuery = graphql`
-    query FileViewsQuery ($cwd: String!, $glob: String) {
-        glob ( cwd: $cwd, query: $glob) {
-            id name path
-        }
+  query FileViewsQuery ($cwd: String!, $glob: String) {
+    glob ( cwd: $cwd, query: $glob) {
+      id name path
     }
+  }
 `;
 
 
@@ -23,16 +24,41 @@ function globFiles({cwd, glob}) {
   return fetchQuery(modernEnvironment, globQuery, {cwd, glob});
 }
 
-export function ImageView({title, height, src}) {
+//todo: add chunked loading
+const textFileQuery = graphql`
+  query FileViewsTextFileQuery ($id: ID!) {
+    file (id: $id) { text }
+  }
+`;
+
+function fetchFile(id) {
+  return fetchQuery(modernEnvironment, textFileQuery, {id})
+}
+
+const StyledText = styled.pre`
+  overflow: auto
+`;
+
+export function TextView({id, ansi = false, width = "100%", height = "100%"}) {
+  //todo: add scroll bar
+  const [text, setText] = useState("");
+  useEffect(() => {
+    fetchFile(id).then(({file, errors}) => setText(file.text))
+  }, [id]);
+  return <StyledText>{ansi ? <Ansi>{text}</Ansi> : text}</StyledText>;
+}
+
+
+export function ImageView({width = "100%", height = "100%", src}) {
   //todo: add scroll bar
   return <Image src={src} style={{
-    maxWidth: 200, maxHeight: height,
+    maxWidth: width, maxHeight: height,
     objectFit: "contain",
     borderRadius: 10
   }}/>;
 }
 
-export function VideoView({title, src}) {
+export function VideoView({src}) {
   //todo: add scroll bar
   return <Video>
     <source key="video" src={src} type="video/mp4"/>
@@ -40,7 +66,7 @@ export function VideoView({title, src}) {
   </Video>
 }
 
-const StyledTitle = styled.div`
+export const StyledTitle = styled.div`
   height: 18px;
   margin: 3px 0;
   text-align: center;
@@ -57,7 +83,7 @@ const StyledTitle = styled.div`
 `;
 
 const MainContainer = styled.div`
-  height: 200px
+  height: 200px; 
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -78,17 +104,14 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
         setFiles([...data.glob].sort(by(strOrder, "path")));
     });
   }, [cwd, glob]);
-  console.log(cwd);
-  console.log(files);
   const selected = files[index >= 0 ? index : (files.length + index)];
-  console.log(selected);
-  console.log(index >= 0 ? index : (files.length + index));
+  const pathPrefix = commonPrefix(files.map(({path}) => path));
 
-  src = src ||
-      (selected
-          ? pathJoin(store.value.profile.url + "/files", selected.path.slice(1))
-          : null);
-  console.log(src);
+  src = src || (selected
+      ? pathJoin(store.value.profile.url + "/files", selected.path.slice(1))
+      : null);
+
+  console.log(selected);
   return <>
     <Box>
       <StyledTitle onClick={() => toggleShowConfig(!showConfig)}>
@@ -97,7 +120,7 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
         </div>
       </StyledTitle>
       <MainContainer>
-        <ImageView src={encodeURI(src)} height={200}/>
+        <ImageView src={encodeURI(src)}/>
       </MainContainer>
     </Box>
     {showConfig
@@ -122,6 +145,19 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
                    value={index}
                    onChange={e => setIndex(parseInt(e.target.value))}/>
           </Box>
+          {selected
+              ?
+              <>
+                <p direction={"row"} gap={'none'} height={30}>
+                  <strong>glob</strong>: <span style={{display: "inlineBlock"}}>{glob}</span>
+                </p>
+                <p direction={"row"} gap={'none'} height={30}>
+                  <strong>file</strong>:
+                  <span style={{display: "inlineBlock"}}>{
+                    subPrefix(selected.path, pathPrefix)}</span>
+                </p>
+              </>
+              : null}
         </div>
         : null}
   </>
