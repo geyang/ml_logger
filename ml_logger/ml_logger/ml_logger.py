@@ -328,14 +328,34 @@ class ML_Logger:
         now = datetime.now()
         return now.strftime(fmt) if fmt else now
 
-    def stem(self, path):
+    def stem(self, path, depth=-1):
         """
-        returns the stem of the filename in the path.
+        returns the stem of the filename in the path, truncates parent directories w.r.t. given depth.
+
+        .. code:: python
+
+            path = "/Users/geyang/some-proj/experiments/rope-cnn.py"
+            logger.stem(path, -1)
+
+        ::
+
+            "rope-cnn"
+
+        .. code:: python
+
+            logger.stem(path, 4)
+
+        ::
+
+            "experiments/rope-cnn"
+
+        This is useful for saving the *relative* path of your main script.
 
         :param path: "learning-to-learn/experiments/run.py"
+        :param depth: 1, 2... when 1 it picks only the file name.
         :return: "run"
         """
-        return os.path.splitext(os.path.basename(path))[0]
+        return "/".join(os.path.splitext(path)[0].split('/')[depth:])
 
     def diff(self, diff_directory=".", diff_filename="index.diff", silent=False):
         """
@@ -804,15 +824,16 @@ class ML_Logger:
 
     def log_pyplot(self, path="plot.png", fig=None, format=None, **kwargs):
         """
-        Now also handles pdf and svg file formats!
+        Saves matplotlib figure. The interface of this method emulates `matplotlib.pyplot.savefig`
+            method.
 
-        ref: see this link https://stackoverflow.com/a/8598881/1560241
-
-        :param path:
-        :param fig:
-        :param format:
-        :param kwargs:
-        :return:
+        :param key: (str) file name to which the plot is saved.
+        :param fig: optioanl matplotlib figure object. When omitted just saves the current figure.
+        :param format: One of the output formats ['pdf', 'png', 'svg' etc]. Default to the extension
+            given by the ``key`` argument in :func:`savefig`.
+        :param `**kwargs`: other optional arguments that are passed into
+            _matplotlib.pyplot.savefig: https://matplotlib.org/api/_as_gen/matplotlib.pyplot.savefig.html
+        :return: (str) path to which the figure is saved to.
         """
         # can not simplify the logic, because we can't pass the filename to pyplot. A buffer is passed in instead.
         if format:  # so allow key with dots in it: metric_plot.text.plot + ".png". Because user intention is clear
@@ -838,8 +859,19 @@ class ML_Logger:
         return path
 
     def savefig(self, key, fig=None, format=None, **kwargs):
-        """ This method emulates `matplotlib.pyplot.savefig` method. Requires key string for the file name. """
-        self.log_pyplot(path=key, fig=fig, format=format, **kwargs)
+        """
+        Saves matplotlib figure. The interface of this method emulates `matplotlib.pyplot.savefig`
+            method.
+
+        :param key: (str) file name to which the plot is saved.
+        :param fig: optioanl matplotlib figure object. When omitted just saves the current figure.
+        :param format: One of the output formats ['pdf', 'png', 'svg' etc]. Default to the extension
+            given by the ``key`` argument in :func:`savefig`.
+        :param `**kwargs`: other optional arguments that are passed into
+            _matplotlib.pyplot.savefig: https://matplotlib.org/api/_as_gen/matplotlib.pyplot.savefig.html
+        :return: (str) path to which the figure is saved to.
+        """
+        return self.log_pyplot(path=key, fig=fig, format=format, **kwargs)
 
     def save_module(self, module, path="weights.pkl", chunk=100_000, show_progress=False):
         """
@@ -1168,6 +1200,8 @@ class ML_Logger:
         self.print_buffer += text
         if flush or file or len(self.print_buffer) > self.print_buffer_size:
             self.flush_print_buffer(file=file)
+
+    print = log_line
 
     def flush_print_buffer(self, file=None):
         if self.print_buffer:
