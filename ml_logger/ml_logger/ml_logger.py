@@ -506,7 +506,7 @@ class ML_Logger:
         abs_path = os.path.join(self.prefix, path)
         self.client._delete(abs_path)
 
-    def log_params(self, path="parameters.pkl", **kwargs):
+    def log_params(self, path="parameters.pkl", silent=False, **kwargs):
         """
         Log namespaced parameters in a list.
 
@@ -1055,7 +1055,7 @@ class ML_Logger:
         """
         return self.client.read_text(os.path.join(self.prefix, key))
 
-    def load_pkl(self, key, start=None, stop=None):
+    def load_pkl(self, key, start=None, stop=None, tries=1, delay=1):
         """
         load a pkl file *as a tuple*. By default, each file would contain 1 data item.
 
@@ -1086,6 +1086,14 @@ class ML_Logger:
         :return: a tuple of each one of the data chunck logged into the file.
         """
         path = os.path.join(self.prefix, key)
+        while retries > 1:
+            try:
+                return self.client.read_pkl(path, start, stop)
+            except:
+                import time, random
+                time.sleep(random.random() * delay)
+                retries -= 1
+        # last one does not catch.
         return self.client.read_pkl(path, start, stop)
 
     def iload_pkl(self, key):
@@ -1118,10 +1126,9 @@ class ML_Logger:
         :param stop: Stop index for the chunks. None means to the end of the file.
         :return: a iterator.
         """
-        path = os.path.join(self.prefix, key)
         i = 0
         while True:
-            chunks = self.client.read_pkl(path, i, i + 1)
+            chunks = self.client.load_pkl(key, i, i + 1)
             i += 1
             if not chunks:
                 break
@@ -1198,6 +1205,7 @@ class ML_Logger:
             from termcolor import colored
             text = colored(text, color)
         self.print_buffer += text
+        # todo: print_buffer is not keyed by file. This is a bug.
         if flush or file or len(self.print_buffer) > self.print_buffer_size:
             self.flush_print_buffer(file=file)
 
