@@ -1086,13 +1086,13 @@ class ML_Logger:
         :return: a tuple of each one of the data chunck logged into the file.
         """
         path = os.path.join(self.prefix, key)
-        while retries > 1:
+        while tries > 1:
             try:
                 return self.client.read_pkl(path, start, stop)
             except:
                 import time, random
                 time.sleep(random.random() * delay)
-                retries -= 1
+                tries -= 1
         # last one does not catch.
         return self.client.read_pkl(path, start, stop)
 
