@@ -1128,7 +1128,7 @@ class ML_Logger:
         """
         i = 0
         while True:
-            chunks = self.client.load_pkl(key, i, i + 1)
+            chunks = self.load_pkl(key, i, i + 1)
             i += 1
             if not chunks:
                 break
