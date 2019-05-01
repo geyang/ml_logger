@@ -1080,9 +1080,22 @@ class ML_Logger:
 
         "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
 
+        Because loading is usually synchronous, we can encounter connection errors. We don't want
+        to halt our training session b/c of these errors without retrying a few times.
+
+        For this reason, `logger.load_pkl` (and `iload_pkl` to equal measure) both takes a `tries`
+        argument and a `delay` argument. The delay argument is multipled by a random number,
+        to avoid synchronized DDoS attach on your instrumentation server.
+
+
+        tries
+
         :param key: a path string
         :param start: Starting index for the chunks None means from the beginning.
         :param stop: Stop index for the chunks. None means to the end of the file.
+        :param tries: (int) The number of ties for the request. The last one does not catch error.
+        :param delay: (float) the delay multiplier between the retries. Multiplied (in seconds) with
+            a random float in [0, 1).
         :return: a tuple of each one of the data chunck logged into the file.
         """
         path = os.path.join(self.prefix, key)
@@ -1096,7 +1109,7 @@ class ML_Logger:
         # last one does not catch.
         return self.client.read_pkl(path, start, stop)
 
-    def iload_pkl(self, key):
+    def iload_pkl(self, key, **kwargs):
         """
         load a pkl file as *an iterator*.
 
@@ -1124,11 +1137,14 @@ class ML_Logger:
         :param key: path string.
         :param start: Starting index for the chunks None means from the beginning.
         :param stop: Stop index for the chunks. None means to the end of the file.
+        :param tries: (int) The number of ties for the request. The last one does not catch error.
+        :param delay: (float) the delay multiplier between the retries. Multiplied (in seconds) with
+            a random float in [0, 1).
         :return: a iterator.
         """
         i = 0
         while True:
-            chunks = self.load_pkl(key, i, i + 1)
+            chunks = self.load_pkl(key, i, i + 1, **kwargs)
             i += 1
             if not chunks:
                 break
