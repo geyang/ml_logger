@@ -382,7 +382,7 @@ export default function ParamsTable({
     ...keys.map((k, ind) => ({
       key: k,
       title: (typeof k === "object"
-          ? <HeaderCell width={(ind === keys.length - 1) ? 2000 : 6 * (7 + (k.metrics || []).length)}
+          ? <HeaderCell width={(ind === keys.length - 1) ? 2000 : 8.5 * (k.metrics || []).length}
                         onAscend={() => setSort({order: 1, by: k})}
                         onDescend={() => setSort({order: -1, by: k})}
                         disable={true}
@@ -397,7 +397,7 @@ export default function ParamsTable({
       textWrap: 'ellipsis',
       render: (value, row, index) => (typeof k === "object"
           ? <MetricsCell
-              width={(ind === keys.length - 1) ? 2000 : 6 * (7 + (k.metrics || []).length)}
+              width={(ind === keys.length - 1) ? 2000 : 8.5 * (k.metrics || []).length}
               metricKey={k.metrics}
               last={k.last}
               selected={selected[row.key]}
