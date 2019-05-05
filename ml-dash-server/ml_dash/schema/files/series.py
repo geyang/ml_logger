@@ -193,8 +193,10 @@ def get_series(metrics_files=tuple(),
     else:
         grouped = all.groupby(level=0)
 
-    df = pd.merge(grouped[y_keys].agg(['count', 'mean', 'min', 'max']).reset_index(),
-                  grouped[y_keys].describe(percentiles=[0.25, 0.75, 0.5, 0.05, 0.95]))
+    df = pd.merge(
+        grouped[y_keys].agg(['count', 'mean', 'min', 'max']).reset_index(),
+        grouped[y_keys].describe(percentiles=[0.25, 0.75, 0.5, 0.05, 0.95]).reset_index()
+    )
 
     if k is not None:
         if x_edge == "right" or x_edge is None:

@@ -8,7 +8,7 @@ import {
 import Table from "rc-table";
 import './table.css';
 import 'react-resizable/css/styles.css';
-import {Eye, EyeOff, Plus, MinusSquare, Square, CheckSquare} from 'react-feather';
+import {Eye, EyeOff, Plus, MinusSquare, Square, CheckSquare, ChevronUp, ChevronDown} from 'react-feather';
 import DataFrame from "dataframe-js";
 import {minus, unique, match, intersect} from "../../lib/sigma-algebra";
 import LineChart from "../../Charts/LineChart";
@@ -53,15 +53,47 @@ const StyledHeader = styled.div`
       left: 6px;
       font-size: 9px;
     }
+    .order-button {
+      cursor: pointer;
+      font-weight: normal;
+      position: absolute;
+      right: 3px;
+      border-radius: 1px;
+      opacity: 0;
+      &.up { top: 3px; }
+      &.down { bottom: 3px; }
+      polyline {
+        transform: translate(1px, 0);
+      }
+      &:hover {
+        box-shadow: 0 0 6px #23aaff;
+        color: white !important;
+        background: #23aaff;
+        opacity: 1;
+      }
+      &.active {
+        color: white !important;
+        background: #23aaff;
+        opacity: 1;
+      }
+    }
 `;
 
-function HeaderCell({width, children}) {
+function HeaderCell({width, children, onAscend, onDescend, sortOrder, disable}) {
   if (children === null || typeof children === "undefined" || typeof children === "object")
     return <StyledHeader style={{width: width, color: "#a3a3a3"}}>N/A</StyledHeader>;
   const [root, ...rest] = children.split('.');
   return <StyledHeader title={children} style={{width: width}}>
     <span className="root">{root}</span>
     .{rest.join('.')}
+    {disable ? null : <>
+      <ChevronUp width={11} height={11}
+                 className={"order-button up" + (sortOrder === 1 ? " active" : "")}
+                 onClick={onAscend}/>
+      <ChevronDown width={11} height={11}
+                   className={"order-button down" + (sortOrder === -1 ? " active" : "")}
+                   onClick={onDescend}/>
+    </>}
   </StyledHeader>;
 }
 
@@ -105,10 +137,12 @@ function MetricsCell({width, metricKey, precision = 2, metricsFiles, prefix, las
     if (!state.value) fetchMetrics({metricsFiles, prefix, yKey: metricKey, tail: last})
         .then(({series, errors}) => setState({value: series, errors}));
   }, [...metricsFiles, metricKey]);
+  if (!state)
+    return <StyledCell title={"loading..."} style={{width: width}}>loading...</StyledCell>;
   try {
     let x = state.value.yMean[0].toFixed(precision);
     let range = (state.value.y75[0] / 2 - state.value.y25[0] / 2).toFixed(precision);
-    return <StyledCell title={'Metric:' + metricKey} style={{width: width}}>{x}±{range}</StyledCell>;
+    return <StyledCell title={`Metric.${metricKey}: ${x}±${range}`} style={{width: width}}>{x}±{range}</StyledCell>;
   } catch {
     return <StyledCell title={'Metric:' + metricKey} style={{width: width}}>qCut Error</StyledCell>;
   }
@@ -172,18 +206,14 @@ function SelectRow({checked, ..._props}) {
   }</div>
 }
 
-function childMetric(child) {
-  console.log(child);
-  return child;
-}
-
+//todo: this requires re-work
 function order(a, b) {
   if (typeof a === "string" && typeof b === "string") {
     return strOrder(a, b);
-    // fixit: this is terrible
   } else if (typeof a === "number" && typeof b === "number") {
     return a - b;
-    // fixit: this is terrible
+  } else if (typeof a === "boolean" && typeof b === "boolean") {
+    return a - b;
   } else if (typeof a === "object" && typeof b === "object") {
     return a.value - b.value;
   }
@@ -217,6 +247,9 @@ export default function ParamsTable({
 
   let containerRef = useRef(null);
   let {width, height} = useComponentSize(containerRef);
+
+  //todo: move to be managed by parent component
+  const [sort, setSort] = useState({order: -1, by: null});
 
   const selected = trueDict(selectedRows);
   const [rowExpand, setRowExpand] = useState({});
@@ -276,7 +309,7 @@ export default function ParamsTable({
   const grouped = sorted.groupBy(...groupKeys)
       .aggregate(group => group.select(...intersect(aggKeys, allKeys)).toDict());
 
-  const expList = grouped.toCollection().map(function ({aggregation, ..._group}, ind) {
+  let expList = grouped.toCollection().map(function ({aggregation, ..._group}, ind) {
 
     const children = [...new DataFrame(aggregation).toCollection().map(child => ({
       ..._group, ...child, key: child.id
@@ -320,9 +353,10 @@ export default function ParamsTable({
           }))] : _;
     }
   })
-      .sort(by((a, b) => (typeof a === 'string' && typeof b === 'string') ? strOrder(a, b) : 0, "expDirectory"))
-      .reverse()
+      .sort(by((...a) => -1 * order(...a), "expDirectory"))
       .flatten();
+  if (!!sort.by)
+    expList = expList.sort(by((...a) => sort.order * order(...a), sort.by));
 
   //todo: add header action for ordering by column
   const gutterCol = {
@@ -341,9 +375,16 @@ export default function ParamsTable({
     ...keys.map((k, ind) => ({
       key: k,
       title: (typeof k === "object"
-          ? <HeaderCell
-              width={(ind === keys.length - 1) ? 2000 : 6 * (k.metrics || []).length}>{"metrics." + k.metrics}</HeaderCell>
-          : <HeaderCell width={(ind === keys.length - 1) ? 2000 : 6 * k.length}>{k}</HeaderCell>),
+          ? <HeaderCell width={(ind === keys.length - 1) ? 2000 : 6 * (k.metrics || []).length}
+                        onAscend={() => setSort({order: 1, by: k})}
+                        onDescend={() => setSort({order: -1, by: k})}
+                        disable={true}
+          >{"metrics." + k.metrics}</HeaderCell>
+          : <HeaderCell width={(ind === keys.length - 1) ? 2000 : 6 * k.length}
+                        onAscend={() => setSort({order: 1, by: k})}
+                        onDescend={() => setSort({order: -1, by: k})}
+                        sortOrder={sort.by === k ? sort.order : 0}
+          >{k}</HeaderCell>),
       dataIndex: k,
       width: (ind === keys.length - 1) ? 500 : 50,
       textWrap: 'ellipsis',
@@ -351,6 +392,7 @@ export default function ParamsTable({
           ? <MetricsCell
               width={(ind === keys.length - 1) ? 2000 : 6 * (k.metrics || []).length}
               metricKey={k.metrics}
+              last={k.last}
               metricsFiles={typeof row.metricsPath === 'string'
                   ? [row.metricsPath]
                   : (row.metricsPath || [])}/>

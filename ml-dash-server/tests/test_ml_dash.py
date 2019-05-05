@@ -219,6 +219,36 @@ def test_series_2(log_dir):
         show(r['data'])
 
 
+def test_series_last(log_dir):
+    query = """
+    query LastMetricQuery(
+      $yKey: String
+      $last: Int
+      $metricsFiles: [String]!
+    ) {
+      series(metricsFiles: $metricsFiles, k: 1, yKey: $yKey, tail: $last) {
+        id
+        yKey
+        yMean
+        yCount
+      }
+    }
+    """
+    variables = {"yKey": "slow_sine",
+                 "last": 100,
+                 "metricsFiles": ["/episodeyang/cpc-belief/mdp/experiment_04/metrics.pkl"]}
+
+    from ml_dash.config import Args
+    Args.logdir = log_dir
+    client = Client(schema)
+    r = client.execute(query, variables=variables)
+    if 'errors' in r:
+        raise RuntimeError(r['errors'])
+    else:
+        print(">>")
+        show(r['data'])
+
+
 def test_series(log_dir):
     from ml_dash.config import Args
     Args.logdir = log_dir
