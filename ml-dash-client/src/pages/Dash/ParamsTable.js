@@ -397,7 +397,7 @@ export default function ParamsTable({
       textWrap: 'ellipsis',
       render: (value, row, index) => (typeof k === "object"
           ? <MetricsCell
-              width={(ind === keys.length - 1) ? 2000 : 6 * (k.metrics || []).length}
+              width={(ind === keys.length - 1) ? 2000 : 6 * (7 + (k.metrics || []).length)}
               metricKey={k.metrics}
               last={k.last}
               selected={selected[row.key]}
