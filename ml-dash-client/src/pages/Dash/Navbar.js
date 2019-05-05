@@ -81,7 +81,7 @@ class Navbar extends React.Component {
           <Box align="center" justify="center" direction="column" height="80px">
             <Textfit forceSingleModeWidth={true}
                      style={{width: "90%", textAlign: "center", fontWeight: 600, marginRight: "2em"}}>
-              <StyledLink to={realPath(pathJoin(window.location.pathname, "../"))}>../</StyledLink>
+              <StyledLink to={realPath(pathJoin(window.location.pathname, "../"))} style={{userSelect: 'none'}}>../</StyledLink>
               {directory.name}
             </Textfit>
           </Box>
