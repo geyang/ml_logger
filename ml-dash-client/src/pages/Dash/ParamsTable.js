@@ -35,6 +35,10 @@ const StyledCell = styled.div`
     margin: 0;
     border: none;
     height: 42px;
+    width: ${props => props.width + "px"};
+    background: ${props => props.selected
+    ? "repeating-linear-gradient( 45deg, #e0f3ff, #e0f3ff 5px, #ffffff 5px, #ffffff 10px ) !important"
+    : ""}
 `;
 
 const StyledHeader = styled.div`
@@ -97,14 +101,14 @@ function HeaderCell({width, children, onAscend, onDescend, sortOrder, disable}) 
   </StyledHeader>;
 }
 
-function TableCell({width, children}) {
+function TableCell({children, ...rest}) {
   if (children === null || typeof children === "undefined")
-    return <StyledCell title="value is `null`" style={{width: width, color: "#a3a3a3"}}>N/A</StyledCell>;
+    return <StyledCell title="value is `null`" style={{color: "#a3a3a3"}} {...rest}>N/A</StyledCell>;
   else if (children === true)
-    return <StyledCell title={children} style={{width: width}}>True</StyledCell>;
+    return <StyledCell title={children} style={{background: "rgba(24,255,0,0.1)"}} {...rest}>True</StyledCell>;
   else if (children === false)
-    return <StyledCell title={children} style={{width: width}}>False</StyledCell>;
-  return <StyledCell title={children} style={{width: width}}>{children}</StyledCell>;
+    return <StyledCell title={children} style={{background: "rgba(255,0,0,0.05)"}} {...rest}>False</StyledCell>;
+  return <StyledCell title={children} {...rest}>{children}</StyledCell>;
 }
 
 const metricsQuery = graphql`
@@ -131,20 +135,22 @@ function fetchMetrics({metricsFiles, prefix, yKey, yKeys, tail}) {
   });
 }
 
-function MetricsCell({width, metricKey, precision = 2, metricsFiles, prefix, last = 10,}) {
+function MetricsCell({metricKey, precision = 2, metricsFiles, prefix, last = 10, ...rest}) {
   const [state, setState] = useState({});
   useEffect(() => {
     if (!state.value) fetchMetrics({metricsFiles, prefix, yKey: metricKey, tail: last})
         .then(({series, errors}) => setState({value: series, errors}));
   }, [...metricsFiles, metricKey]);
-  if (!state)
-    return <StyledCell title={"loading..."} style={{width: width}}>loading...</StyledCell>;
+  if (state.errors)
+    return <TableCell title={"loading..."} {...rest}>{`${state.errors}`}</TableCell>;
+  if (!state.value)
+    return <TableCell title={"loading..."} {...rest}>N/A</TableCell>;
   try {
     let x = state.value.yMean[0].toFixed(precision);
     let range = (state.value.y75[0] / 2 - state.value.y25[0] / 2).toFixed(precision);
-    return <StyledCell title={`Metric.${metricKey}: ${x}±${range}`} style={{width: width}}>{x}±{range}</StyledCell>;
-  } catch {
-    return <StyledCell title={'Metric:' + metricKey} style={{width: width}}>qCut Error</StyledCell>;
+    return <TableCell title={`Metric.${metricKey}: ${x}±${range}`} {...rest}>{x}±{range}</TableCell>;
+  } catch (err) {
+    return <TableCell title={'Metric:' + metricKey} {...rest}>Error: {`${err}`}</TableCell>;
   }
 }
 
@@ -157,18 +163,19 @@ function Multiple(values) {
   </>;
 }
 
-const StyledGutterCell = styled.div`
+const GutterCell = styled.div`
     overflow: visible;
     display: inline-block;
     box-sizing: border-box;
     margin: 0;
     border: 0 solid white;
     text-align: right;
+    width: ${props => props.width + "px"};
+    background: ${props => props.selected
+    ? "repeating-linear-gradient( 45deg, #e0f3ff, #e0f3ff 5px, #ffffff 5px, #ffffff 10px ) !important"
+    : ""}
 `;
 
-function GutterCell({width, ..._props}) {
-  return <StyledGutterCell style={{width}} {..._props}/>;
-}
 
 function Expand({expanded, ..._props}) {
   return <div style={{
@@ -393,10 +400,12 @@ export default function ParamsTable({
               width={(ind === keys.length - 1) ? 2000 : 6 * (k.metrics || []).length}
               metricKey={k.metrics}
               last={k.last}
+              selected={selected[row.key]}
               metricsFiles={typeof row.metricsPath === 'string'
                   ? [row.metricsPath]
                   : (row.metricsPath || [])}/>
-          : <TableCell width={(ind === keys.length - 1) ? 2000 : 6 * k.length}>{value}</TableCell>)
+          : <TableCell width={(ind === keys.length - 1) ? 2000 : 6 * k.length}
+                       selected={selected[row.key]}>{value}</TableCell>)
     }))];
 
   const totalWidth = columns.map(k => k.width).reduce((a, b) => a + b, 0);
