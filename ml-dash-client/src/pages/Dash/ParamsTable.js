@@ -8,7 +8,7 @@ import {
 import Table from "rc-table";
 import './table.css';
 import 'react-resizable/css/styles.css';
-import {Eye, EyeOff, Plus, MinusSquare, Square, CheckSquare, ChevronUp, ChevronDown} from 'react-feather';
+import {Eye, EyeOff, Plus, MinusSquare, Square, CheckSquare, ChevronUp, ChevronDown, RefreshCw} from 'react-feather';
 import DataFrame from "dataframe-js";
 import {minus, unique, match, intersect} from "../../lib/sigma-algebra";
 import LineChart from "../../Charts/LineChart";
@@ -28,6 +28,7 @@ function trueDict(keys = []) {
 }
 
 const StyledCell = styled.div`
+    position: relative;
     padding: 12px 6px;
     overflow: visible;
     display: block;
@@ -135,22 +136,46 @@ function fetchMetrics({metricsFiles, prefix, yKey, yKeys, tail}) {
   });
 }
 
+const RefreshButton = styled(RefreshCw)`
+  position: absolute;
+  right: 5px;
+  border-radius: 4px;
+  width: 12px;
+  height: 12px;
+  line-height: 12px;
+  display: inline-block;
+  color: #23aaff;
+  cursor: pointer;
+  opacity: 0.1;
+  border: 3px solid rgba(0, 0, 0, 0);
+  box-sizing: content-box;
+  transition: all 0.2s;
+  &:hover {
+    opacity: 1;
+    color: white;
+    background: #23aaff;
+    border: 3px solid #23aaff;
+  }
+`;
+
 function MetricsCell({metricKey, precision = 2, metricsFiles, prefix, last = 10, ...rest}) {
   const [state, setState] = useState({});
+  const ask = () => fetchMetrics({metricsFiles, prefix, yKey: metricKey, tail: last})
+      .then(({series, errors}) => setState({value: series, errors}));
   useEffect(() => {
-    if (!state.value) fetchMetrics({metricsFiles, prefix, yKey: metricKey, tail: last})
-        .then(({series, errors}) => setState({value: series, errors}));
+    if (!state.value) ask();
   }, [...metricsFiles, metricKey]);
   if (state.errors)
-    return <TableCell title={"loading..."} {...rest}>{`${state.errors}`}</TableCell>;
+    return <TableCell title={"loading..."} {...rest}>{`${state.errors}`}<RefreshButton onClick={ask}/></TableCell>;
   if (!state.value)
-    return <TableCell title={"loading..."} {...rest}>N/A</TableCell>;
+    return <TableCell title={"loading..."} {...rest}>N/A<RefreshButton onClick={ask}/></TableCell>;
   try {
     let x = state.value.yMean[0].toFixed(precision);
     let range = (state.value.y75[0] / 2 - state.value.y25[0] / 2).toFixed(precision);
-    return <TableCell title={`Metric.${metricKey}: ${x}±${range}`} {...rest}>{x}±{range}</TableCell>;
+    return <TableCell title={`Metric.${metricKey}: ${x}±${range}`} {...rest}>{x}±{range}<RefreshButton onClick={ask}/></TableCell>;
   } catch (err) {
-    return <TableCell title={'Metric:' + metricKey} {...rest}>Error: {`${err}`}</TableCell>;
+    return <TableCell title={'Metric:' + metricKey} {...rest}>Error: {`${err}`}<RefreshButton
+        onClick={ask}/></TableCell>;
   }
 }
 
