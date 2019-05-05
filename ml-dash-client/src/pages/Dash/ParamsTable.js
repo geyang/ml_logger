@@ -382,7 +382,7 @@ export default function ParamsTable({
     ...keys.map((k, ind) => ({
       key: k,
       title: (typeof k === "object"
-          ? <HeaderCell width={(ind === keys.length - 1) ? 2000 : 6 * (k.metrics || []).length}
+          ? <HeaderCell width={(ind === keys.length - 1) ? 2000 : 6 * (7 + (k.metrics || []).length)}
                         onAscend={() => setSort({order: 1, by: k})}
                         onDescend={() => setSort({order: -1, by: k})}
                         disable={true}
