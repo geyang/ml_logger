@@ -14,6 +14,8 @@ export const extTypes = [
   [".doc", "Microsoft Word", "application/msword"],
   [".docx", "Microsoft Word (OpenXML)", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
   [".eot", "MS Embedded OpenType fonts", "application/vnd.ms-fontobject"],
+  [".err", "error output, (generally ASCII or ISO 8859-n)", "text/ansi"],
+  [".error", "error output, (generally ASCII or ISO 8859-n)", "text/ansi"],
   [".epub", "Electronic publication (EPUB)", "application/epub+zip"],
   [".gif", "Graphics Interchange Format (GIF)", "image/gif"],
   [".htm", "HyperText Markup Language (HTML)", "text/html"],

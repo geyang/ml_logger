@@ -48,7 +48,7 @@
     "relay": "relay-compiler --src ./src --schema ./schema.graphql --extensions js jsx",
     "refresh": "yarn generate-schema && yarn relay",
     "build": "react-scripts build",
-    "deploy": "rm -rf ../ml-dash-server/ml-dash-client-dist && mv build ../ml-dash-server/ml-dash-client-dist",
+    "deploy": "rm -rf ../ml-dash-server/ml_dash/client-dist && mv build ../ml-dash-server/ml_dash/client-dist",
     "build-deploy": "yarn build && yarn deploy",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

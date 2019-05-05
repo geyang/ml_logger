@@ -152,6 +152,7 @@ def get_series(metrics_files=tuple(),
         else:
             df = df[y_keys]
 
+        # todo: maybe apply tail and head *after* dropna??
         if tail is not None:
             df = df.tail(tail)
         if head is not None:

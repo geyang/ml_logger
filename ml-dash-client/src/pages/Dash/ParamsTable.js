@@ -1,14 +1,10 @@
-import React, {Fragment, useState, useRef} from "react";
+import React, {Fragment, useState, useRef, useEffect} from "react";
 import styled from "styled-components";
 import 'resize-observer-polyfill'
 import useComponentSize from '@rehooks/component-size'
 import {
   Grid, Box,
-  // Table, TableHeader, TableBody, TableRow, TableCell,
-  Image, Video,
-  CheckBox, RangeInput
 } from "grommet";
-import ReactDragListView from "react-drag-listview";
 import Table from "rc-table";
 import './table.css';
 import 'react-resizable/css/styles.css';
@@ -17,10 +13,13 @@ import DataFrame from "dataframe-js";
 import {minus, unique, match, intersect} from "../../lib/sigma-algebra";
 import LineChart from "../../Charts/LineChart";
 import {colorMap} from "../../Charts/chart-theme";
-import InlineFile, {ImageView, VideoView} from "../../Charts/FileViews";
+import InlineFile, {ImageView, InlineChart, VideoView} from "../../Charts/FileViews";
 import {fromGlobalId, toGlobalId} from "../../lib/relay-helpers";
 import {by, firstItem, strOrder} from "../../lib/string-sort";
 import ExperimentView from "../../Charts/ExperimentView";
+import graphql from "babel-plugin-relay/macro";
+import {fetchQuery} from "react-relay";
+import {modernEnvironment} from "../../data";
 
 function trueDict(keys = []) {
   let _ = {};
@@ -68,12 +67,51 @@ function HeaderCell({width, children}) {
 
 function TableCell({width, children}) {
   if (children === null || typeof children === "undefined")
-    return <StyledCell title="value is `null`" style={{width: width, color: "#a3a3a3"}}>N/A</StyledCell>
+    return <StyledCell title="value is `null`" style={{width: width, color: "#a3a3a3"}}>N/A</StyledCell>;
   else if (children === true)
     return <StyledCell title={children} style={{width: width}}>True</StyledCell>;
   else if (children === false)
     return <StyledCell title={children} style={{width: width}}>False</StyledCell>;
   return <StyledCell title={children} style={{width: width}}>{children}</StyledCell>;
+}
+
+const metricsQuery = graphql`
+  query ParamsTableQuery(
+    $metricsFiles: [String]!,
+    $prefix: String,
+    $yKey: String,
+    $tail: Int,
+  ) {
+    series (
+      metricsFiles: $metricsFiles
+      prefix: $prefix
+      yKey: $yKey
+      k: 1
+      tail: $tail
+    ) {id yKey yMean y25 y75}
+  }
+`;
+
+function fetchMetrics({metricsFiles, prefix, yKey, yKeys, tail}) {
+  return fetchQuery(modernEnvironment, metricsQuery, {
+    metricsFiles: metricsFiles.filter(_ => !!_),
+    prefix, yKey, yKeys, tail
+  });
+}
+
+function MetricsCell({width, metricKey, precision = 2, metricsFiles, prefix, last = 10,}) {
+  const [state, setState] = useState({});
+  useEffect(() => {
+    if (!state.value) fetchMetrics({metricsFiles, prefix, yKey: metricKey, tail: last})
+        .then(({series, errors}) => setState({value: series, errors}));
+  }, [...metricsFiles, metricKey]);
+  try {
+    let x = state.value.yMean[0].toFixed(precision);
+    let range = (state.value.y75[0] / 2 - state.value.y25[0] / 2).toFixed(precision);
+    return <StyledCell title={'Metric:' + metricKey} style={{width: width}}>{x}±{range}</StyledCell>;
+  } catch {
+    return <StyledCell title={'Metric:' + metricKey} style={{width: width}}>qCut Error</StyledCell>;
+  }
 }
 
 
@@ -134,6 +172,23 @@ function SelectRow({checked, ..._props}) {
   }</div>
 }
 
+function childMetric(child) {
+  console.log(child);
+  return child;
+}
+
+function order(a, b) {
+  if (typeof a === "string" && typeof b === "string") {
+    return strOrder(a, b);
+    // fixit: this is terrible
+  } else if (typeof a === "number" && typeof b === "number") {
+    return a - b;
+    // fixit: this is terrible
+  } else if (typeof a === "object" && typeof b === "object") {
+    return a.value - b.value;
+  }
+}
+
 
 export default function ParamsTable({
                                       exps,
@@ -160,13 +215,9 @@ export default function ParamsTable({
   agg = typeof agg === 'string' ? [agg] : agg;
   ignore = typeof ignore === 'string' ? [ignore] : ignore;
 
-  // const dragProps = {onDragEnd: onColumnDragEnd, nodeSelector: "th div.drag-handle"};
-
   let containerRef = useRef(null);
   let {width, height} = useComponentSize(containerRef);
 
-  // const [selected, setSelected] = useState(trueDict(selectedRows));
-  // const [showChart, setShowChart] = useState({});
   const selected = trueDict(selectedRows);
   const [rowExpand, setRowExpand] = useState({});
 
@@ -180,7 +231,6 @@ export default function ParamsTable({
 
   keys = keys.length ? keys : unique(exps.flatMap(exp => exp.parameters.keys));
   keys = minus(keys, hideKeys);
-
 
   let df = new DataFrame(exps.map(exp => ({
     id: exp.id,
@@ -226,46 +276,38 @@ export default function ParamsTable({
   const grouped = sorted.groupBy(...groupKeys)
       .aggregate(group => group.select(...intersect(aggKeys, allKeys)).toDict());
 
-  df = new DataFrame({
-    ...grouped.select(...groupKeys).toDict(),
-    ...new DataFrame(grouped.select('aggregation').toDict().aggregation || []).toDict()
-  });
-
-  // const expList = df.toCollection();
   const expList = grouped.toCollection().map(function ({aggregation, ..._group}, ind) {
 
     const children = [...new DataFrame(aggregation).toCollection().map(child => ({
       ..._group, ...child, key: child.id
     }))];
 
-    let aggShunt = {};
-    Object.keys(aggregation).forEach((k) => aggShunt[k] = <Multiple/>);
-
     if (children.length === 1) {
-      let _ = {
+      let key = children[0].id;
+      return {
+        key,
         ..._group,
         ...children[0],
-        key: children[0].id,
-        __className: "single"
-      };
-      _.__leftGutter = [
-        <SelectRow checked={selected[_.key]} onClick={() => toggleSelected(_.key)}/>,
-        <ShowChart expanded={shownInlineCharts.has(_.key)} onClick={() => toggleInlineChart(_.key)}/>,
-      ];
-      return _;
+        // todo: add metrics values
+        __className: "single",
+        __leftGutter: [
+          <SelectRow checked={selected[key]} onClick={() => toggleSelected(key)}/>,
+          <ShowChart expanded={shownInlineCharts.has(key)} onClick={() => toggleInlineChart(key)}/>,
+        ]
+      }
     } else {
+      let key = aggregation.id.join(',');
       let _ = {
         ..._group,
-        // ...aggShunt,
         ...aggregation,
-        key: aggregation.id.join(','),
+        key,
         __className: "group",
+        __leftGutter: [
+          <Expand expanded={rowExpand[key]} onClick={() => toggleRowExpand(key)}/>,
+          <SelectRow checked={selected[key]} onClick={() => toggleSelected(key)}/>,
+          <ShowChart expanded={shownInlineCharts.has(key)} onClick={() => toggleInlineChart(key)}/>,
+        ]
       };
-      _.__leftGutter = [
-        <Expand expanded={rowExpand[_.key]} onClick={() => toggleRowExpand(_.key)}/>,
-        <SelectRow checked={selected[_.key]} onClick={() => toggleSelected(_.key)}/>,
-        <ShowChart expanded={shownInlineCharts.has(_.key)} onClick={() => toggleInlineChart(_.key)}/>,
-      ];
       return rowExpand[aggregation.id]
           ? [_, ...children.map(c => ({
             ..._group, ...c,
@@ -282,6 +324,7 @@ export default function ParamsTable({
       .reverse()
       .flatten();
 
+  //todo: add header action for ordering by column
   const gutterCol = {
     dataIndex: "__leftGutter",
     title: <GutterCell width={120}>
@@ -297,13 +340,21 @@ export default function ParamsTable({
     gutterCol,
     ...keys.map((k, ind) => ({
       key: k,
-      title: <HeaderCell width={(ind === keys.length - 1) ? 2000 : 50}>{k}</HeaderCell>, //toTitle
+      title: (typeof k === "object"
+          ? <HeaderCell
+              width={(ind === keys.length - 1) ? 2000 : 6 * (k.metrics || []).length}>{"metrics." + k.metrics}</HeaderCell>
+          : <HeaderCell width={(ind === keys.length - 1) ? 2000 : 6 * k.length}>{k}</HeaderCell>),
       dataIndex: k,
       width: (ind === keys.length - 1) ? 500 : 50,
       textWrap: 'ellipsis',
-      // fixed: (ind === 0) ? "left" : null
-      render: (value, row, index) =>
-          <TableCell width={(ind === keys.length - 1) ? 2000 : 50}>{value}</TableCell>
+      render: (value, row, index) => (typeof k === "object"
+          ? <MetricsCell
+              width={(ind === keys.length - 1) ? 2000 : 6 * (k.metrics || []).length}
+              metricKey={k.metrics}
+              metricsFiles={typeof row.metricsPath === 'string'
+                  ? [row.metricsPath]
+                  : (row.metricsPath || [])}/>
+          : <TableCell width={(ind === keys.length - 1) ? 2000 : 6 * k.length}>{value}</TableCell>)
     }))];
 
   const totalWidth = columns.map(k => k.width).reduce((a, b) => a + b, 0);
@@ -317,12 +368,10 @@ export default function ParamsTable({
             columns={columns}
             className="bordered fixed"
             data={expList}
-            // data={expList.map((exp, ind) => ({key: exp.id || ind, ...exp}))}
             rowSelection={() => null}
             size="small"
             bordered
             scroll={{x: totalWidth + 200, y: height - 42}}
-            // onExpand={toggleHidden}
             expandRowByClick
             rowClassName={(row) => row.__className || ""}
             expandedRowKeys={[...shownInlineCharts]}
@@ -333,17 +382,15 @@ export default function ParamsTable({
                             rows="100px"
                             columns="small" overflow={true}>
                       {inlineCharts.map(({type, ...chart}, i) => {
-                        console.log(type, chart, exp.metricsPath);
                         switch (type) {
                           case "series":
                             //todo: add title
-                            return <Box as={LineChart}
-                                        key={i}
-                                        metricsFiles={
-                                          typeof exp.metricsPath === 'string' ? [exp.metricsPath]
-                                              : (exp.metricsPath || [])}
-                                        color={colorMap(expIndex)}
-                                        {...chart}/>;
+                            return <InlineChart key={i}
+                                                metricsFiles={
+                                                  typeof exp.metricsPath === 'string' ? [exp.metricsPath]
+                                                      : (exp.metricsPath || [])}
+                                                color={colorMap(expIndex)}
+                                                {...chart} />;
                           case "file":
                           case "video":
                           case "mov":

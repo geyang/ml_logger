@@ -20,7 +20,7 @@ import Color from 'color';
 import {chartColors} from "./chart-theme";
 
 const seriesQuery = graphql`
-    query LineChartsQuery(
+  query LineChartsQuery(
     $prefix: String,
     $xKey: String,
     $xAlign: String,
@@ -28,28 +28,32 @@ const seriesQuery = graphql`
     $yKeys: [String],
     $k: Int,
     $metricsFiles: [String]!
-    ) {
-        series (
-            metricsFiles: $metricsFiles
-            prefix: $prefix
-            k: $k
-            xKey: $xKey
-            yKey: $yKey
-            yKeys: $yKeys
-            xAlign: $xAlign
-            # k: 10                    
-        ) {id xKey yKey xData yMean y25 y75}
-    }
+  ) {
+    series (
+      metricsFiles: $metricsFiles
+      prefix: $prefix
+      k: $k
+      xKey: $xKey
+      yKey: $yKey
+      yKeys: $yKeys
+      xAlign: $xAlign
+      # k: 10                    
+    ) {id xKey yKey xData yMean y25 y75}
+  }
 `;
 
 const browser = detect();
 
 let labelStyles = {
-  transform: 'rotate(0)',
   fontWeight: 900,
+  textAnchor: "end"
 };
 if (browser && browser.name !== "safari")
   labelStyles = {...labelStyles, fill: "black", stroke: "white", strokeWidth: "2px", paintOrder: "stroke",};
+let yLabelStyles = {
+  ...labelStyles,
+  transform: 'rotate(-90 0 0) translate(0 -38)'
+};
 
 function fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k,}) {
   return fetchQuery(modernEnvironment, seriesQuery, {
@@ -86,6 +90,10 @@ function seriesToAreaRecords(series) {
 function time(v) {
   let s = new Date(v / 1000).toLocaleTimeString();
   return s.slice(0, s.length - 3)
+}
+
+function timeDelta() {
+  //todo: add timeDelta formatter
 }
 
 function LineChart({
@@ -126,7 +134,7 @@ function LineChart({
             quarter: seriesToAreaRecords(data.series)
           }])
         });
-  }, [metricsFiles, prefix, xKey, yKey, yKeys, k]);
+  }, [...metricsFiles, prefix, xKey, yKey, yKeys, k]);
 
   return <FlexibleXYPlot onMouseLeave={_onMouseLeave} {..._props}>
     {lines.map((line, i) =>
@@ -143,7 +151,7 @@ function LineChart({
               : <LineSeriesCanvas data={line.mean} stroke={color} strokeWidth={2} onNearestX={_onNearestX}/>
         ]
     )}
-    <YAxis tickFormat={yFormat === 'time' ? time : null} top={10}
+    <YAxis tickFormat={yFormat === 'time' ? time : null} tickPadding={0}
            style={{text: {background: "white", fontWeight: 800}}}/>
     <XAxis tickLabelAngle={-35}
            tickFormat={xFormat === 'time' ? time : null}
@@ -153,13 +161,13 @@ function LineChart({
                 includeMargin={false}
                 xPercent={0.05}
                 yPercent={0.16}
-                style={{...labelStyles, textAnchor: "left"}}/>
+                style={yLabelStyles}/>
     <ChartLabel text={xTitle || xKey}
                 className="alt-x-label"
                 includeMargin={false}
                 xPercent={0.95}
                 yPercent={1}
-                style={{...labelStyles, textAnchor: "end"}}/>
+                style={labelStyles}/>
     {crosshairValues.length
         ? <Crosshair values={crosshairValues.map(_ => _.value)}>
           <div style={{

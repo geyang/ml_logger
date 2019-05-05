@@ -732,7 +732,7 @@ class ML_Logger:
         :param n_rows: number of rows
         :param n_cols: number of columns
         :param cmap: OneOf([str, matplotlib.cm.ColorMap])
-        :param normalize: defaul None. OneOf[None, 'indivisual', 'row', 'column', 'grid']. Only 'grid' and
+        :param normalize: defaul None. OneOf[None, 'individual', 'row', 'column', 'grid']. Only 'grid' and
                           'individual' are implemented.
         :return: None
         """

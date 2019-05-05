@@ -10,6 +10,7 @@ import {modernEnvironment} from "../data";
 import {by, commonPrefix, strOrder, subPrefix} from "../lib/string-sort";
 import {pathJoin} from "../lib/path-join";
 import store from "../local-storage";
+import LineChart from "./LineChart";
 
 const globQuery = graphql`
   query FileViewsQuery ($cwd: String!, $glob: String) {
@@ -47,7 +48,6 @@ export function TextView({id, ansi = false, width = "100%", height = "100%"}) {
   }, [id]);
   return <StyledText>{ansi ? <Ansi>{text}</Ansi> : text}</StyledText>;
 }
-
 
 export function ImageView({width = "100%", height = "100%", src}) {
   //todo: add scroll bar
@@ -111,7 +111,6 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
       ? pathJoin(store.value.profile.url + "/files", selected.path.slice(1))
       : null);
 
-  console.log(selected);
   return <>
     <Box>
       <StyledTitle onClick={() => toggleShowConfig(!showConfig)}>
@@ -163,3 +162,13 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
   </>
 }
 
+export function InlineChart({yKey, ...chart}) {
+  return <Box>
+    <StyledTitle onClick={() => null}>
+      <div className="title" title={yKey}>{yKey}</div>
+    </StyledTitle>
+    <MainContainer>
+      <LineChart yKey={yKey} {...chart}/>
+    </MainContainer>
+  </Box>
+}
