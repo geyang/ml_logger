@@ -247,6 +247,8 @@ def test_series_last(log_dir):
     else:
         print(">>")
         show(r['data'])
+        assert not not r['data']['series']['yMean'], "the yMean should NOT be empty"
+        assert not not r['data']['series']['yCount'] == [100.0]
 
 
 def test_series(log_dir):
