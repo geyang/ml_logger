@@ -10,6 +10,9 @@ import store from "../local-storage";
 import {pathJoin} from "../lib/path-join";
 import {Box} from "grommet";
 import {displayType} from "./file-types";
+import {Plus} from "react-feather";
+
+const {commitMutation} = require("react-relay");
 
 const expQuery = graphql`
   query ExperimentViewQuery($id: ID!) {
@@ -96,17 +99,32 @@ function InlineFile({id, name}) {
   </Box>;
 }
 
+
 function InlineMetrics({id, name, keys, ..._metrics}) {
+  const [selected, setSelection] = useState();
   const {type, id: path} = fromGlobalId(id);
   const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
-  return <Box>
-    <StyledTitle>
-      <div className="title" title={name}>{name}</div>
-    </StyledTitle>
-    <StyledContainer>
-      {keys.map(k => <StyledItem>{k}</StyledItem>)}
-    </StyledContainer>
-  </Box>;
+  return <>
+    <Box>
+      <StyledTitle>
+        <div className="title" title={name}>{name}</div>
+      </StyledTitle>
+      <StyledContainer>
+        {keys.map(k => <StyledItem onClick={() => setSelection(k)}>{k}</StyledItem>)}
+      </StyledContainer>
+    </Box>
+    {selected
+        ? <Box>
+          <StyledTitle>
+            <div className="title" title="Make A Chart">Make A Chart</div>
+          </StyledTitle>
+          <StyledContainer>
+            <StyledItem onClick={() => null}>+ Inline Chart</StyledItem>
+            <StyledItem onClick={() => null}>+ Table Cell</StyledItem>
+          </StyledContainer>
+        </Box>
+        : null}
+  </>;
 }
 
 function InlineDirView({id, showHidden, onSubmit}) {
@@ -133,12 +151,12 @@ function InlineDirView({id, showHidden, onSubmit}) {
       {directories.map(f => <Directory active={selected.id === f.id} onClick={() => select(f)} {...f}/>)}
       {files.map(f => <File active={selected.id === f.id} onClick={() => select(f)} {...f}/>)}
     </StyledContainer>
-    {selectedType === "Directory" ? <InlineDirView key={selected.id} onClick={onSubmit} {...selected}/> : null}
-    {selectedType === "File" ? <InlineFile key={selected.id} onClick={onSubmit} {...selected}/> : null}
+    {selectedType === "Directory" ? <InlineDirView key={selected.id} {...selected}/> : null}
+    {selectedType === "File" ? <InlineFile key={selected.id} {...selected}/> : null}
   </>
 }
 
-export default function InlineExperimentView({id, showHidden, onSubmit}) {
+export default function InlineExperimentView({id, showHidden, onSubmit, addMetricCell, addChart}) {
   const [{metrics, directories, files}, setState] = useState({metrics: {}, directories: [], files: []});
   const [queryError, setError] = useState();
   const [selected, select] = useState({id: null});
@@ -169,8 +187,8 @@ export default function InlineExperimentView({id, showHidden, onSubmit}) {
     </StyledContainer>
     {/*this is a hack, the name for metrics need to be added to the file.*/}
     {selectedType === "Metrics" ? <InlineMetrics name="Metrics" {...metrics}/> : null}
-    {selectedType === "Directory" ? <InlineDirView key={selected.id} onClick={onSubmit} {...selected}/> : null}
-    {selectedType === "File" ? <InlineFile key={selected.id} onClick={onSubmit} {...selected}/> : null}
+    {selectedType === "Directory" ? <InlineDirView key={selected.id} {...selected}/> : null}
+    {selectedType === "File" ? <InlineFile key={selected.id} {...selected}/> : null}
   </>;
 }
 
