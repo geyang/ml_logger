@@ -20,9 +20,9 @@ setup_yaml()
 
 def show(obj):
     import yaml
-    print(yaml.dump(obj, default_flow_style=False))
+    print(yaml.dump(obj))
 
 
 def shows(obj):
     import yaml
-    return yaml.dump(obj, default_flow_style=False)
+    return yaml.dump(obj)

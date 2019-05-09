@@ -1,7 +1,6 @@
 from os.path import split, realpath, join, splitext, basename
 from graphene import relay, ObjectType, String, List, JSONString, Int
 from graphene.types.generic import GenericScalar
-from graphql_relay import from_global_id
 from ml_dash.config import Args
 from ml_dash.schema.files.file_helpers import find_files, read_records, read_dataframe
 

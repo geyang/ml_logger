@@ -57,6 +57,56 @@ def test_mutate_text_file(log_dir):
         show(r['data'])
 
 
+def test_mutate_json_file(log_dir):
+    from ml_dash.config import Args
+    Args.logdir = log_dir
+    client = Client(schema)
+    query = """
+        mutation AppMutation ($id: ID!) {
+            updateJson (input: { 
+                            id: $id, 
+                            data: {text: "hey", key: 10},
+                            clientMutationId: "10", 
+             }) { 
+                file { id name json text yaml }
+            }
+        }
+    """
+    path = "/episodeyang/cpc-belief/README.md"
+    r = client.execute(query, variables=dict(id=to_global_id("File", path)))
+
+    if 'errors' in r:
+        raise RuntimeError("\n" + shows(r['errors']))
+    else:
+        print(">>")
+        show(r['data'])
+
+
+def test_mutate_yaml_file(log_dir):
+    from ml_dash.config import Args
+    Args.logdir = log_dir
+    client = Client(schema)
+    query = """
+        mutation AppMutation ($id: ID!) {
+            updateYaml (input: { 
+                            id: $id, 
+                            data: {text: "hey", key: 10, charts: [0, 1]},
+                            clientMutationId: "10", 
+             }) { 
+                file { id name text yaml }
+            }
+        }
+    """
+    path = "/episodeyang/cpc-belief/README.md"
+    r = client.execute(query, variables=dict(id=to_global_id("File", path)))
+
+    if 'errors' in r:
+        raise RuntimeError("\n" + shows(r['errors']))
+    else:
+        print(">>")
+        show(r['data'])
+
+
 def test_glob_files(log_dir):
     from ml_dash.config import Args
     Args.logdir = log_dir

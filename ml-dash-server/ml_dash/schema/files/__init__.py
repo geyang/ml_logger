@@ -20,7 +20,8 @@ class File(ObjectType):
 
     path = String(description='path to the file')
     rel_path = String(description='relative path to the file')
-    text = String(description='text content of the file', start=Int(required=False, default_value=0),
+    text = String(description='text content of the file',
+                  start=Int(required=False, default_value=0),
                   stop=Int(required=False, default_value=None))
 
     def resolve_text(self, info, start=0, stop=None):
@@ -34,7 +35,8 @@ class File(ObjectType):
     def resolve_json(self, info):
         import json
         try:
-            with open(self.id, 'r') as f:
+            from ml_dash.config import Args
+            with open(join(Args.logdir, self.id[1:]), "r") as f:
                 return json.load(f)
         except FileNotFoundError:
             return None
@@ -98,6 +100,17 @@ def save_text_to_file(path, text):
     return get_file(path)
 
 
+def save_yaml_to_file(path, data):
+    from ml_dash.config import Args
+    assert isabs(path), "the path has to be absolute path."
+    _path = join(Args.logdir, path[1:])
+    # note: assume all text format
+    with open(_path, "w+") as f:
+        import yaml
+        _ = yaml.dump(data, f)
+    return get_file(path)
+
+
 def save_json_to_file(path, data):
     from ml_dash.config import Args
     assert isabs(path), "the path has to be absolute path."
@@ -105,7 +118,7 @@ def save_json_to_file(path, data):
     # note: assume all text format
     with open(_path, "w+") as f:
         import json
-        _ = json.dumps(data, sortKeys=True, indent=2)
+        _ = json.dumps(data, sort_keys=True, indent=2)
         f.write(_)
     return get_file(path)
 
@@ -127,10 +140,6 @@ def remove_directory(path):
     shutil.rmtree(_path)
 
 
-def save_yaml_to_file(path, data):
-    raise NotImplementedError
-
-
 class MutateTextFile(relay.ClientIDMutation):
     class Input:
         id = ID()
@@ -140,33 +149,40 @@ class MutateTextFile(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, id, text, client_mutation_id):
-        _type, id = from_global_id(id)
-        return MutateTextFile(file=save_text_to_file(id, text))
+        _type, path = from_global_id(id)
+        return MutateTextFile(file=save_text_to_file(path, text))
 
 
 class MutateYamlFile(relay.ClientIDMutation):
-    class Arguments:
-        data = String()
-
-    file = Field(File)
-
-    @classmethod
-    def mutate_and_get_payload(self, root, info, data, client_mutation_id):
-        _type, id = from_global_id(client_mutation_id)
-        return MutateYamlFile(file=save_yaml_to_file(id, data))
-
-
-class MutateJSONFile(relay.ClientIDMutation):
-    class Arguments:
+    """
+    serializes the data to a yaml file format
+    """
+    class Input:
         id = ID()
-        data = String()
+        data = GenericScalar()
 
     file = Field(File)
 
     @classmethod
     def mutate_and_get_payload(self, root, info, id, data, client_mutation_id):
-        _type, id = from_global_id(client_mutation_id)
-        return MutateJSONFile(file=save_json_to_file(id, data))
+        _type, path = from_global_id(id)
+        return MutateYamlFile(file=save_yaml_to_file(path, data))
+
+
+class MutateJSONFile(relay.ClientIDMutation):
+    """
+    serializes the data to a json file format
+    """
+    class Input:
+        id = ID()
+        data = GenericScalar()
+
+    file = Field(File)
+
+    @classmethod
+    def mutate_and_get_payload(self, root, info, id, data, client_mutation_id):
+        _type, path = from_global_id(id)
+        return MutateJSONFile(file=save_json_to_file(path, data))
 
 
 class DeleteFile(relay.ClientIDMutation):
