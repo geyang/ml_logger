@@ -140,21 +140,22 @@ const RefreshButton = styled(RefreshCw)`
   position: absolute;
   right: 5px;
   border-radius: 4px;
-  width: 12px;
-  height: 12px;
+  width: 18px;
+  height: 18px;
   line-height: 12px;
   display: inline-block;
   color: #23aaff;
   cursor: pointer;
   opacity: 0.1;
-  border: 3px solid rgba(0, 0, 0, 0);
-  box-sizing: content-box;
+  border: 0 solid none !important;
+  box-sizing: border-box;
   transition: all 0.2s;
+  padding: 3px;
+  transform: scale(1); // to fix svg position bug in safari.
   &:hover {
     opacity: 1;
     color: white;
     background: #23aaff;
-    border: 3px solid #23aaff;
   }
 `;
 
