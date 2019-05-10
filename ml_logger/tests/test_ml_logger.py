@@ -108,10 +108,8 @@ def test_image(setup):
     logger.log_image(image_bw, f"bw_{100}.png")
     logger.log_image(image_rgba, f"rbga_{100}.png")
 
-    # todo: animation is NOT implemented.
-    # now print a stack
-    # for i in range(10):
-    #     logger.log_image(i, animation=[image_rgba] * 5)
+    logger.log_image(image_bw[:, :, 0].astype(np.float32), "black_white_individual.png", normalize='individual')
+    logger.log_image(np.ones(64, 64), "black_white_grid.png", normalize='grid')
 
 
 def test_pyplot(setup):
