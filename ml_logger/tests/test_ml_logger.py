@@ -109,7 +109,7 @@ def test_image(setup):
     logger.log_image(image_rgba, f"rbga_{100}.png")
 
     logger.log_image(image_bw[:, :, 0].astype(np.float32), "black_white_individual.png", normalize='individual')
-    logger.log_image(np.ones(64, 64), "black_white_grid.png", normalize='grid')
+    logger.log_image(np.ones([64, 64]), "black_white_grid.png", normalize='grid')
 
 
 def test_pyplot(setup):
