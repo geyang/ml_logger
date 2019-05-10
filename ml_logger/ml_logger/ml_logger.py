@@ -750,10 +750,10 @@ class ML_Logger:
             if normalize is None:
                 pass
             elif normalize == 'individual':
-                r = np.amax(stack, axis=[1, 2]) - np.amin(stack, axis=[1, 2])
-                stack = (stack - np.amin(stack, axis=[1, 2])[:, :, None]) / np.select([r != 0], [r], 1)[:, :, None]
+                r = np.nanmax(stack, axis=(1, 2)) - np.nanmin(stack, axis=(1, 2))
+                stack = (stack - np.nanmin(stack, axis=(1, 2))[:, :, None]) / np.select([r != 0], [r], 1)[:, :, None]
             elif normalize == 'grid':
-                stack = (stack - np.amin(stack)) / (np.amax(stack) - np.amin(stack) or 1)
+                stack = (stack - np.nanmin(stack)) / (np.nanmax(stack) - np.nanmin(stack) or 1)
             stack = (map_fn(stack) * 255).astype(np.uint8)
         elif len(stack.shape) == 4:
             assert cmap is None, "color map is not used for rgb(a) images."
