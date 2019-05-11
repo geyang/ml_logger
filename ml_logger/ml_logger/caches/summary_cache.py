@@ -169,10 +169,9 @@ def flatten(array):
     :return:
     """
     r = []
-    for i in array:
-        try:
-            for _ in i:
-                r += flatten(_)
-        except TypeError:  # Iterating through a 0-d array
-            r += [i]
+    try:
+        for item in array:
+            r += flatten(item)
+    except TypeError:  # Iterating through a 0-d array
+        r += [float(array)]
     return r
