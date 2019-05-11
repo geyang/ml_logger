@@ -813,8 +813,8 @@ class ML_Logger:
                 key += "." + format
 
         filename = os.path.join(self.prefix, key)
-        import tempfile, imageio
-        with tempfile.NamedTemporaryFile(suffix=f'.{format}') as ntp:
+        import tempfile, imageio, warnings
+        with warnings.catch_warnings(), tempfile.NamedTemporaryFile(suffix=f'.{format}') as ntp:
             try:
                 imageio.mimsave(ntp.name, frame_stack, format=format, fps=fps, **imageio_kwargs)
             except imageio.core.NeedDownloadError:
