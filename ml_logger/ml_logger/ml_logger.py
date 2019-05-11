@@ -751,7 +751,8 @@ class ML_Logger:
                 pass
             elif normalize == 'individual':
                 r = np.nanmax(stack, axis=(1, 2)) - np.nanmin(stack, axis=(1, 2))
-                stack = (stack - np.nanmin(stack, axis=(1, 2))[:, None]) / np.select([r != 0], [r], 1)[:, None]
+                stack = (stack - np.nanmin(stack, axis=(1, 2))[:, None, None]) / \
+                        np.select([r != 0], [r], 1)[:, None, None]
             elif normalize == 'grid':
                 stack = (stack - np.nanmin(stack)) / (np.nanmax(stack) - np.nanmin(stack) or 1)
             stack = (map_fn(stack) * 255).astype(np.uint8)

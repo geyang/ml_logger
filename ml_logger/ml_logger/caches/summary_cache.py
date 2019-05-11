@@ -161,13 +161,18 @@ class SummaryCache:
 
 
 def flatten(array):
+    """
+    Returns a flattened nested arrays. Works with numpy containers with non-equal-length children.
+
+    we don't use np.flatten, b/c sometimes you have to iterate through each child.
+    :param array:
+    :return:
+    """
     r = []
     for i in array:
-        if isinstance(i, np.ndarray):
-            r += list(i.flatten())
-        else:
-            try:
-                r += list(i)
-            except TypeError:
-                r += [i]
+        try:
+            for _ in i:
+                r += flatten(_)
+        except TypeError:  # Iterating through a 0-d array
+            r += [i]
     return r
