@@ -11,12 +11,11 @@ import 'react-resizable/css/styles.css';
 import {Eye, EyeOff, Plus, MinusSquare, Square, CheckSquare, ChevronUp, ChevronDown, RefreshCw} from 'react-feather';
 import DataFrame from "dataframe-js";
 import {minus, unique, match, intersect} from "../../lib/sigma-algebra";
-import LineChart from "../../Charts/LineChart";
 import {colorMap} from "../../Charts/chart-theme";
 import InlineFile, {ImageView, InlineChart, VideoView} from "../../Charts/FileViews";
 import {fromGlobalId, toGlobalId} from "../../lib/relay-helpers";
 import {by, firstItem, strOrder} from "../../lib/string-sort";
-import ExperimentView from "../../Charts/ExperimentView";
+import InlineExperimentView from "../../Charts/InlineExperimentView";
 import graphql from "babel-plugin-relay/macro";
 import {fetchQuery} from "react-relay";
 import {modernEnvironment} from "../../data";
@@ -173,7 +172,8 @@ function MetricsCell({metricKey, precision = 2, metricsFiles, prefix, last = 10,
   try {
     let x = state.value.yMean[0].toFixed(precision);
     let range = (state.value.y75[0] / 2 - state.value.y25[0] / 2).toFixed(precision);
-    return <TableCell title={`Metric.${metricKey}: ${x}±${range}`} {...rest}>{x}±{range}<RefreshButton onClick={ask}/></TableCell>;
+    return <TableCell title={`Metric.${metricKey}: ${x}±${range}`} {...rest}>{x}±{range}<RefreshButton
+        onClick={ask}/></TableCell>;
   } catch (err) {
     return <TableCell title={'Metric:' + metricKey} {...rest}>Error: {`${err}`}<RefreshButton
         onClick={ask}/></TableCell>;
@@ -247,6 +247,10 @@ function order(a, b) {
     return a - b;
   } else if (typeof a === "boolean" && typeof b === "boolean") {
     return a - b;
+  } else if (typeof a === "boolean" && b === null) {
+    return a ? 1 : -1;
+  } else if (typeof b === "boolean" && a === null) {
+    return b ? -1 : 1;
   } else if (typeof a === "object" && typeof b === "object") {
     return a.value - b.value;
   }
@@ -270,6 +274,8 @@ export default function ParamsTable({
                                       shownInlineCharts,
                                       showInlineCharts, // call with (shownRows: [], shownRows: object, show: bool)
                                       onColumnDragEnd,
+                                      addMetricCell,
+                                      addChart,
                                       ..._props
                                     }) {
 
@@ -484,9 +490,11 @@ export default function ParamsTable({
                             return null;
                         }
                       })}
-                      <ExperimentView id={exp.id}
-                                      showHidden={true}
-                                      onClick={() => null}/>
+                      <InlineExperimentView id={exp.id}
+                                            showHidden={true}
+                                            onClick={() => null}
+                                            addMetricCell={addMetricCell}
+                                            addChart={addChart}/>
                     </Grid>
                     : null
             }

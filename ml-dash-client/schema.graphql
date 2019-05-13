@@ -94,6 +94,7 @@ type Metrics implements Node {
   id: ID!
   path: String
   name: String
+  stem: String
   keys: [String]
   value(keys: [String], k: Int, last: Int, window: Int): GenericScalar
 }

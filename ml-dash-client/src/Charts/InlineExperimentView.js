@@ -10,12 +10,11 @@ import store from "../local-storage";
 import {pathJoin} from "../lib/path-join";
 import {Box} from "grommet";
 import {displayType} from "./file-types";
-import {Plus} from "react-feather";
 
 const {commitMutation} = require("react-relay");
 
 const expQuery = graphql`
-  query ExperimentViewQuery($id: ID!) {
+  query InlineExperimentViewQuery($id: ID!) {
     experiment (id: $id) {
       id name path
       metrics { id keys }
@@ -25,7 +24,7 @@ const expQuery = graphql`
   }`;
 
 const dirQuery = graphql`
-  query ExperimentViewDirectoryQuery($id: ID!) {
+  query InlineExperimentViewDirectoryQuery($id: ID!) {
     directory (id: $id) {
       id name path
       directories(first:1000) { edges {node { id name path } } }
@@ -100,7 +99,7 @@ function InlineFile({id, name}) {
 }
 
 
-function InlineMetrics({id, name, keys, ..._metrics}) {
+function InlineMetrics({id, name, keys, addMetricCell, addChart, ..._metrics}) {
   const [selected, setSelection] = useState();
   const {type, id: path} = fromGlobalId(id);
   const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
@@ -115,12 +114,9 @@ function InlineMetrics({id, name, keys, ..._metrics}) {
     </Box>
     {selected
         ? <Box>
-          <StyledTitle>
-            <div className="title" title="Make A Chart">Make A Chart</div>
-          </StyledTitle>
           <StyledContainer>
-            <StyledItem onClick={() => null}>+ Inline Chart</StyledItem>
-            <StyledItem onClick={() => null}>+ Table Cell</StyledItem>
+            <StyledItem onClick={() => addChart({yKey: selected})}>+ Line Chart</StyledItem>
+            <StyledItem onClick={() => addMetricCell({metrics: selected})}>+ Metric Cell</StyledItem>
           </StyledContainer>
         </Box>
         : null}
@@ -162,8 +158,6 @@ export default function InlineExperimentView({id, showHidden, onSubmit, addMetri
   const [selected, select] = useState({id: null});
   const selectedType = selected.id ? fromGlobalId(selected.id).type : null;
 
-  console.log(selectedType);
-
   useEffect(() => {
     fetchExperiment({id}).then(({experiment, error}) => {
       if (!!error) return setError(error);
@@ -186,7 +180,9 @@ export default function InlineExperimentView({id, showHidden, onSubmit, addMetri
           : <File active={selected.id === f.id} onClick={() => select(f)} {...f}/>)}
     </StyledContainer>
     {/*this is a hack, the name for metrics need to be added to the file.*/}
-    {selectedType === "Metrics" ? <InlineMetrics name="Metrics" {...metrics}/> : null}
+    {selectedType === "Metrics"
+        ? <InlineMetrics name="Metrics" addMetricCell={addMetricCell} addChart={addChart} {...metrics}/>
+        : null}
     {selectedType === "Directory" ? <InlineDirView key={selected.id} {...selected}/> : null}
     {selectedType === "File" ? <InlineFile key={selected.id} {...selected}/> : null}
   </>;

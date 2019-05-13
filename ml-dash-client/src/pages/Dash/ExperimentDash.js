@@ -12,11 +12,12 @@ import {DataFrame} from "dataframe-js";
 import {ParallelCoordinates} from "../../components/ParallelCoordiantes";
 import isGlob from "is-glob";
 import minimatch from "minimatch";
+import {modernEnvironment} from "../../data";
 
 let tempID = 0;
 
-function updateText(environment, fileId, text) {
-  return commitMutation(environment, {
+function updateText(fileId, text) {
+  return commitMutation(modernEnvironment, {
     mutation: graphql`
       mutation ExperimentDashUpdateMutation($input: MutateTextFileInput!) {
         updateText (input: $input) {
@@ -31,8 +32,26 @@ function updateText(environment, fileId, text) {
   });
 }
 
-function deleteFile(environment, fileId) {
-  return commitMutation(environment, {
+//note: use the same resolver as the writer
+function updateDashConfig(fileId, dashConfig) {
+  return commitMutation(modernEnvironment, {
+    mutation: graphql`
+      mutation ExperimentDashYamlUpdateMutation($input: MutateYamlFileInput!) {
+        updateYaml (input: $input) {
+          file { id name path relPath text yaml}
+        }
+      }
+    `,
+    variables: {
+      input: {id: fileId, data: dashConfig, clientMutationId: tempID++},
+    },
+    configs: []
+  });
+}
+
+
+function deleteFile(fileId) {
+  return commitMutation(modernEnvironment, {
     mutation: graphql`
       mutation ExperimentDashDeleteMutation(
         $input: DeleteFileInput!
@@ -50,8 +69,8 @@ function deleteFile(environment, fileId) {
   });
 }
 
-function deleteDirectory(environment, fileId) {
-  return commitMutation(environment, {
+function deleteDirectory(fileId) {
+  return commitMutation(modernEnvironment, {
     mutation: graphql`
       mutation ExperimentDashDeleteDirectoryMutation(
         $input: DeleteDirectoryInput!
@@ -99,16 +118,16 @@ function ExperimentDash({
   const [editReadme, toggleReadmeEdit] = useToggle(false);
   const [showParallelCoord, toggleParallelCoord] = useToggle(false);
 
-  const updateDashConfig = debounce(1000, (id, text) => {
+  const updateDashConfigText = debounce(1000, (id, text) => {
     if (!id)
       id = toGlobalId("File", directory.path + "/default.dashcfg");
-    updateText(relay.environment, id, text);
+    updateText(id, text);
   });
 
   const updateReadme = debounce(1000, (id, text) => {
     if (!id)
       id = toGlobalId("File", directory.path + "/README.md");
-    updateText(relay.environment, id, text);
+    updateText(id, text);
   });
 
   const {files, fullExperiments, readme, dashConfigs: dC} = directory;
@@ -178,6 +197,35 @@ function ExperimentDash({
     return keys; // for testing
   }
 
+  console.log(dashConfig);
+
+  // dashConfigMutations
+  function addMetricCell(keyConfig) {
+    const data = dashConfig.yaml || {
+      keys: [], charts: [],
+      id: toGlobalId("File", directory.path + "/default.dashcfg")
+    };
+    updateDashConfig(dashConfig.id, {...data, keys: [...data.keys, keyConfig]})
+  }
+
+  function addChart(chartConfig) {
+    const data = dashConfig.yaml || {
+      keys: [], charts: [],
+      id: toGlobalId("File", directory.path + "/default.dashcfg")
+    };
+    updateDashConfig(dashConfig.id, {...data, charts: [...data.charts, chartConfig]})
+  }
+
+  // function updateMetricCell(keyConfig) {
+  //   const data = dashConfig.yaml;
+  //   updateDashConfig(dashConfig.id, {...data, keys: [...data.keys, keyConfig]})
+  // }
+  //
+  // function updateChart(chartConfig) {
+  //   const data = dashConfig.yaml;
+  //   updateDashConfig(dashConfig.id, {...data, charts: [...data.charts, chartConfig]})
+  // }
+
   const [selected, setSelected] = useState([]);
   const [inlineChartRows, setInlineChartRows] = useState(new Set());
 
@@ -212,7 +260,7 @@ function ExperimentDash({
                   theme="vs-github"
                   value={dashConfig && dashConfig.text}
                   options={{selectOnLineNumbers: true, folding: true}}
-                  onChange={(value) => updateDashConfig(dashConfig && dashConfig.id, value)}
+                  onChange={(value) => updateDashConfigText(dashConfig && dashConfig.id, value)}
                   editorDidMount={() => null}/>
             </Box> : null}
         <ParamsTable
@@ -229,11 +277,14 @@ function ExperimentDash({
             onColumnDragEnd={reorderKeys}
             selectedRows={selected} onRowSelect={setSelected}
             shownInlineCharts={inlineChartRows} showInlineCharts={setInlineChartRows}
+            addMetricCell={addMetricCell}
+            addChart={addChart}
+
         />
         {selected.length
             ? <ContextMenu selected={selected}
                            deleteDirectory={(id) => {
-                             deleteDirectory(relay.environment, id);
+                             deleteDirectory(id);
                              setSelected([]);
                            }}/>
             : null}

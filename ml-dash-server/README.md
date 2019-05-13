@@ -2,7 +2,7 @@
 
 [![Downloads](http://pepy.tech/badge/ml-dash)](http://pepy.tech/project/ml-dash)
 
-<img alt="hyperparameter column demo" src="https://github.com/episodeyang/ml_logger/tree/master/ml-dash-server/figures/ml-dash-v0.1.0.png" align="right" width="50%"/>
+<img alt="hyperparameter column" src="https://github.com/episodeyang/ml_logger/raw/master/ml-dash-server/figures/visualization_column.png" align="right" width="50%"/>
 
 ML-dash replaces visdom and tensorboard. It allows you to see real-time updates, review 1000+ of experiments quickly, and dive in-depth into individual experiments with minimum mental effort.
 
