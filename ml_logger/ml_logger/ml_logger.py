@@ -755,6 +755,13 @@ class ML_Logger:
                         np.select([r != 0], [r], 1)[:, None, None]
             elif normalize == 'grid':
                 stack = (stack - np.nanmin(stack)) / (np.nanmax(stack) - np.nanmin(stack) or 1)
+            elif isinstance(normalize, Sequence):
+                low, high = normalize
+                low = np.nanmin(stack) if low is None else low
+                high = np.nanmax(stack) if high is None else high
+                stack = (stack - low) / (high - low or 1)
+            else:
+                raise NotImplementedError(f'for normalize = {normalize}')
             stack = (map_fn(stack) * 255).astype(np.uint8)
         elif len(stack.shape) == 4:
             assert cmap is None, "color map is not used for rgb(a) images."
@@ -813,8 +820,9 @@ class ML_Logger:
                 key += "." + format
 
         filename = os.path.join(self.prefix, key)
-        import tempfile, imageio, warnings
-        with warnings.catch_warnings(), tempfile.NamedTemporaryFile(suffix=f'.{format}') as ntp:
+        import tempfile, imageio  # , logging as py_logging
+        # py_logging.getLogger("imageio").setLevel(py_logging.WARNING)
+        with tempfile.NamedTemporaryFile(suffix=f'.{format}') as ntp:
             try:
                 imageio.mimsave(ntp.name, frame_stack, format=format, fps=fps, **imageio_kwargs)
             except imageio.core.NeedDownloadError:

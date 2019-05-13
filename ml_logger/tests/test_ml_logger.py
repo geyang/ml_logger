@@ -138,7 +138,7 @@ def test_video(setup):
     import numpy as np
 
     def im(x, y):
-        canvas = np.zeros((200, 200))
+        canvas = np.ones((640, 480), dtype=np.float32) * 0.001
         for i in range(200):
             for j in range(200):
                 if x - 5 < i < x + 5 and y - 5 < j < y + 5:
