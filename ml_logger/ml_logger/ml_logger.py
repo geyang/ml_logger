@@ -926,7 +926,7 @@ class ML_Logger:
         # data = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
         # self.log_data(data=data, path=path, overwrite=True)
 
-    def load_module(self, module, path="weights.pkl", stream=True):
+    def load_module(self, module, path="weights.pkl", stream=True, tries=5):
         """
         Load torch module from file.
 
@@ -936,7 +936,7 @@ class ML_Logger:
         """
         import torch
         d = {}
-        for chunk in (self.iload_pkl if stream else self.load_pkl)(path):
+        for chunk in (self.iload_pkl if stream else self.load_pkl)(path, tries=tries):
             d.update(chunk)
 
         assert d, f"the datafile can not be empty: [d == {{{d.keys()}...}}]"
@@ -1104,7 +1104,7 @@ class ML_Logger:
         :param stop: Stop index for the chunks. None means to the end of the file.
         :param tries: (int) The number of ties for the request. The last one does not catch error.
         :param delay: (float) the delay multiplier between the retries. Multiplied (in seconds) with
-            a random float in [0, 1).
+            a random float in [1, 1.5).
         :return: a tuple of each one of the data chunck logged into the file.
         """
         path = os.path.join(self.prefix, key)
@@ -1113,7 +1113,8 @@ class ML_Logger:
                 return self.client.read_pkl(path, start, stop)
             except:
                 import time, random
-                time.sleep(random.random() * delay)
+                # todo: use separate random generator to avoid mutating global random generator.
+                time.sleep((1 + random.random() * 0.5) * delay)
                 tries -= 1
         # last one does not catch.
         return self.client.read_pkl(path, start, stop)
