@@ -37,6 +37,8 @@ export const extTypes = [
   [".mid", "Musical Instrument Digital Interface (MIDI)", "audio/midi audio/x-midi"],
   [".midi", "Musical Instrument Digital Interface (MIDI)", "audio/midi audio/x-midi"],
   [".mjs", "JavaScript module", "text/javascript"],
+  [".mov", "movie file", "video/mov"],
+  [".mp4", "movie file", "video/mp4"],
   [".mp3", "MP3 audio", "audio/mpeg"],
   [".mpeg", "MPEG Video", "video/mpeg"],
   [".mpkg", "Apple Installer Package", "application/vnd.apple.installer+xml"],

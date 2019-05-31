@@ -132,8 +132,7 @@ def get_series(metrics_files=tuple(),
     dfs = [read_dataframe(join(Args.logdir, _id[1:])) for _id in ids]
 
     y_keys = y_keys or [y_key]
-    join_keys = [x_key, *y_keys]
-    join_keys = list(set([k for k in join_keys if k is not None]))
+    join_keys = [k for k in {x_key, *y_keys} if k is not None]
 
     joined = []
     for df in dfs:
@@ -143,7 +142,7 @@ def get_series(metrics_files=tuple(),
             df.set_index(x_key)
             if x_align is None:
                 pass
-            elif x_align == "start":
+            elif x_align == "start":  # todo: this needs to be part of the join
                 df[x_key] -= df[x_key][0]
             elif x_align == "end":
                 df[x_key] -= df[x_key][-1]
@@ -233,3 +232,5 @@ SeriesArguments = dict(
     y_keys=List(String, description="Alternatively you can pass a list of keys to yKey*s*."),
     label=String(),
 )
+
+# if __name__ == "__main__":

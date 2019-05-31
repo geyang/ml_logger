@@ -74,6 +74,7 @@ function fetchDirectory(inputs) {
 function InlineFile({id, name}) {
   const {type, id: path} = fromGlobalId(id);
   const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
+  console.log(name, displayType(name), src);
   const _ = () => {
     switch (displayType(name)) {
       case "image":

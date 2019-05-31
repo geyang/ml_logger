@@ -58,9 +58,13 @@ export function ImageView({width = "100%", height = "100%", src}) {
   }}/>;
 }
 
-export function VideoView({src}) {
+export function VideoView({width = "100%", height = "100%", src}) {
   //todo: add scroll bar
-  return <Video>
+  return <Video style={{
+    maxWidth: width, maxHeight: height,
+    objectFit: "contain",
+    borderRadius: 10
+  }}>
     <source key="video" src={src} type="video/mp4"/>
     {/*<track key="cc" label="English" kind="subtitles" srcLang="en" src="/assets/small-en.vtt" default/>*/}
   </Video>
@@ -111,16 +115,20 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
       ? pathJoin(store.value.profile.url + "/files", selected.path.slice(1))
       : null);
 
+  // if type === "file" type = fileTypes(src);
+  let viewer; // only render if src is valid. Otherwise breaks the video component.
+  if (type === "video" && src) viewer = <VideoView src={encodeURI(src)}/>;
+  else viewer = <MainContainer><ImageView src={encodeURI(src)}/></MainContainer>;
+
+  console.log(type, src, encodeURI(src));
+
   return <>
     <Box>
       <StyledTitle onClick={() => toggleShowConfig(!showConfig)}>
         <div className="title" title={selected && selected.path}>
           {selected ? selected.name : (title || "N/A")}
         </div>
-      </StyledTitle>
-      <MainContainer>
-        <ImageView src={encodeURI(src)}/>
-      </MainContainer>
+      </StyledTitle>{viewer}
     </Box>
     {showConfig
         ? <div>
