@@ -16,30 +16,27 @@ class Project(ObjectType):
 
     experiments = relay.ConnectionField(lambda: schema.experiments.ExperimentConnection)
 
-    def resolve_experiments(self, info, **kwargs):
+    def resolve_experiments(self, info, before=None, after=None, first=None, last=None):
+        # todo: add support for before after and last
+        if first is not None:
+            return schema.experiments.find_experiments(cwd=self.id, stop=first)
         return schema.experiments.find_experiments(cwd=self.id)
 
     directories = relay.ConnectionField(lambda: schema.directories.DirectoryConnection)
-    files = relay.ConnectionField(lambda: schema.files.FileConnection)
 
-    def resolve_directories(self, info, **kwargs):
+    def resolve_directories(self, info, before=None, after=None, first=None, last=None):
         from ml_dash.config import Args
         root_dir = join(Args.logdir, self.id[1:])
         return [schema.Directory(id=join(self.id, _), name=_)
                 for _ in listdir(root_dir) if not isfile(join(root_dir, _))]
 
-    def resolve_files(self, info, **kwargs):
+    files = relay.ConnectionField(lambda: schema.files.FileConnection)
+
+    def resolve_files(self, info, before=None, after=None, first=None, last=None):
         from ml_dash.config import Args
         root_dir = join(Args.logdir, self.id[1:])
         return [schema.Directory(id=join(self.id, _), name=_)
                 for _ in listdir(root_dir) if isfile(join(root_dir, _))]
-
-    # def resolve_experiments(self, info, **kargs):
-    #     from ml_dash.config import Args
-    #     root_dir = join(Args.logdir, self.id[1:])
-    #
-    #     return [schema.Directory(id=join(self.id, _), name=_)
-    #             for _ in listdir(root_dir) if isfile(join(root_dir, _))]
 
     @classmethod
     def get_node(cls, info, id):
