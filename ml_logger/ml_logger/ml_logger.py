@@ -183,7 +183,8 @@ class ML_Logger:
                   max_workers=None,
                   buffer_size=None,
                   summary_cache_opts: dict = None,
-                  register_experiment=True
+                  register_experiment=True,
+                  silent=False,
                   ):
         """
         Configure an existing logger with updated configurations.
@@ -258,21 +259,21 @@ class ML_Logger:
             self.client.__init__(url=self.log_directory, asynchronous=asynchronous, max_workers=max_workers)
             cprint('✓ done', 'green')
 
+        if not silent:
+            print(f"Dashbord: {ML_DASH.format(prefix=self.prefix)}")
+            print(f"Log_directory: {self.log_directory}")
+
         # now register the experiment
         if register_experiment:
             with logger.SyncContext(clean=True):  # single use SyncContext
                 self.log_params(run=self.run_info())
 
     def run_info(self, **kwargs):
-        if self.log_directory.startswith("http://"):
-            host, port = self.log_directory[7:].split(":")
-            run_info = dict(dashboard=ML_DASH.format(host=host, prefix=self.prefix))
-        else:
-            run_info = dict(log_directory=self.log_directory)
-        run_info['createTime'] = self.now()
-        run_info['prefix'] = self.prefix
-        run_info.update(kwargs)
-        return run_info
+        return {
+            "createTime": self.now(),
+            "prefix": self.prefix,
+            **kwargs
+        }
 
     @staticmethod
     def fn_info(fn):
@@ -328,22 +329,54 @@ class ML_Logger:
         now = datetime.now()
         return now.strftime(fmt) if fmt else now
 
-    def stem(self, path, depth=-1):
+    def truncate(self, path, depth=-1):
+        """
+        truncates the path's parent directories w.r.t. given depth. By default, returns the filename
+        of the path.
+
+        .. code:: python
+
+            path = "/Users/geyang/some-proj/experiments/rope-cnn.py"
+            logger.truncate(path, -1)
+
+        ::
+
+            "rope-cnn.py"
+
+        .. code:: python
+
+            logger.truncate(path, 4)
+
+        ::
+
+            "experiments/rope-cnn.py"
+
+        This is useful for saving the *relative* path of your main script.
+
+        :param path: "learning-to-learn/experiments/run.py"
+        :param depth: 1, 2... when 1 it picks only the file name.
+        :return: "run"
+        """
+        return "/".join(path.split('/')[depth:])
+
+    def stem(self, path):
         """
         returns the stem of the filename in the path, truncates parent directories w.r.t. given depth.
 
         .. code:: python
 
             path = "/Users/geyang/some-proj/experiments/rope-cnn.py"
-            logger.stem(path, -1)
+            logger.stem(path)
 
         ::
 
-            "rope-cnn"
+            "/Users/geyang/some-proj/experiments/rope-cnn"
 
+        You can use this in combination with the truncate function.
         .. code:: python
 
-            logger.stem(path, 4)
+            _ = logger.truncate(path, 4)
+            _ = logger.stem(_)
 
         ::
 
@@ -352,10 +385,9 @@ class ML_Logger:
         This is useful for saving the *relative* path of your main script.
 
         :param path: "learning-to-learn/experiments/run.py"
-        :param depth: 1, 2... when 1 it picks only the file name.
         :return: "run"
         """
-        return "/".join(os.path.splitext(path)[0].split('/')[depth:])
+        return os.path.splitext(path)[0]
 
     def diff(self, diff_directory=".", diff_filename="index.diff", silent=False):
         """
