@@ -1,4 +1,4 @@
-from graphene import relay, ObjectType, Float, Schema, List, String, Field
+from graphene import relay, ObjectType, Float, Schema, List, String, Field, Int
 from ml_dash.schema.files.series import Series, get_series, SeriesArguments
 from ml_dash.schema.files.metrics import Metrics, get_metrics
 from ml_dash.schema.schema_helpers import bind, bind_args
@@ -6,57 +6,9 @@ from ml_dash.schema.users import User, get_users, get_user
 from ml_dash.schema.projects import Project
 from ml_dash.schema.directories import Directory, get_directory
 from ml_dash.schema.files import File, FileConnection, MutateTextFile, MutateJSONFile, MutateYamlFile, \
-    DeleteFile, DeleteDirectory, glob_files
+    DeleteFile, DeleteDirectory, find_files_by_query
 # MutateJSONFile, MutateYamlFile
 from ml_dash.schema.experiments import Experiment
-
-
-# class Experiment(graphene.ObjectType):
-#     class Meta:
-#         interfaces = relay.Node,
-#
-#     parameter_keys = graphene.List(description="keys in the parameter file")
-#     metric_keys = graphene.List(description="the x data")
-#     video_keys = graphene.List(description="the x data")
-#     img_keys = graphene.List(description="the x data")
-#     diff_keys = graphene.List(description="the x data")
-#     log_keys = graphene.List(description="the x data")
-#     view_config = ""
-#
-# class TimeSeries(graphene.ObjectType):
-#     class Meta:
-#         interfaces = relay.Node,
-#
-#     x_data = graphene.List(description="the x data")
-#     y_data = graphene.List(description="the y data")
-#     serialized = graphene.String(description='string serialized data')
-#
-#
-# class TimeSeriesWithStd(graphene.ObjectType):
-#     class Meta:
-#         interfaces = relay.Node,
-#
-#     x_data = graphene.List(description="the x data")
-#     y_data = graphene.List(description="the y data")
-#     std_data = graphene.List(description="the standard deviation data")
-#     quantile_25_data = graphene.List(description="the standard deviation data")
-#     quantile_50_data = graphene.List(description="the standard deviation data")
-#     quantile_75_data = graphene.List(description="the standard deviation data")
-#     quantile_100_data = graphene.List(description="the standard deviation data")
-#     mode_data = graphene.List(description="the standard deviation data")
-#     mean_data = graphene.List(description="the standard deviation data")
-#     serialized = graphene.String(description='string serialized data')
-#
-#
-# class LineChart(graphene.ObjectType):
-#     class Meta:
-#         interfaces = relay.Node,
-#
-#     key = graphene.String(description="The path to the metrics file (including metrics.pkl)")
-#     x_key = graphene.String(description="key for the x axis")
-#     x_label = graphene.String(description="label for the x axis")
-#     y_key = graphene.String(description="key for the y axis")
-#     y_label = graphene.String(description="label for the x axis")
 
 
 class EditText(relay.ClientIDMutation):
@@ -86,7 +38,8 @@ class Query(ObjectType):
     directory = relay.Node.Field(Directory)
     file = relay.Node.Field(File)
 
-    glob = Field(List(File), cwd=String(required=True), query=String(), resolver=bind_args(glob_files))
+    glob = Field(List(File), cwd=String(required=True), query=String(), start=Int(), stop=Int(),
+                 resolver=bind_args(find_files_by_query))
 
 
 class Mutation(ObjectType):

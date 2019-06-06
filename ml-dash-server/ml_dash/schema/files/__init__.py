@@ -76,7 +76,7 @@ def find_files_by_query(cwd, query="**/*.*", **kwargs):
     from ml_dash.config import Args
     assert isabs(cwd), "the current work directory need to be an absolute path."
     _cwd = realpath(join(Args.logdir, cwd[1:])).rstrip('/')
-    parameter_files = find_files(_cwd, query)
+    parameter_files = find_files(_cwd, query, **kwargs)
     return [
         # note: not sure about the name.
         File(id=join(cwd.rstrip('/'), p['path']),
@@ -85,10 +85,6 @@ def find_files_by_query(cwd, query="**/*.*", **kwargs):
              rel_path=p['path'], )
         for p in parameter_files
     ]
-
-
-def glob_files(cwd, query="*.*"):
-    return find_files_by_query(cwd=cwd, query=query)
 
 
 def save_text_to_file(path, text):
@@ -157,6 +153,7 @@ class MutateYamlFile(relay.ClientIDMutation):
     """
     serializes the data to a yaml file format
     """
+
     class Input:
         id = ID()
         data = GenericScalar()
@@ -173,6 +170,7 @@ class MutateJSONFile(relay.ClientIDMutation):
     """
     serializes the data to a json file format
     """
+
     class Input:
         id = ID()
         data = GenericScalar()

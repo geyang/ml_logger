@@ -17,7 +17,9 @@ class User(ObjectType):
 
     projects = relay.ConnectionField(lambda: schema.projects.ProjectConnection)
 
-    def resolve_projects(self, info, **kwargs):
+    def resolve_projects(self, info, before=None, after=None, first=None, last=None):
+        # todo: figure out a good way for pagination.
+        # note: project does not support first, last
         return schema.projects.get_projects(self.username)
 
     # teams = List(lambda: schema.Team)
