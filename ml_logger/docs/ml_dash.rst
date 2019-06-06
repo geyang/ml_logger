@@ -1,5 +1,5 @@
-ML-Dash
-================
+Visualize with ML-Dash
+======================
 
 Dashboard App
 --------------

@@ -1,8 +1,30 @@
-Logging Data
+logging Data
 ================
 
 Logging Scalar Metrics
 ----------------------
+
+Saving Matplotlib Figures
+-------------------------
+
+:code:`log_video([*frames...`
+-----------------------------
+
+:code:`log_images([*images...`
+------------------------------
+
+:code:`log_pkl(data...`
+------------------------
+
+:code:`log_text("your text...`
+------------------------------
+
+save pyTorch modules
+------------------------
+
+save TensorFlow variables
+-------------------------
+
 
 .. code-block:: python
 
