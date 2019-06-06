@@ -1,4 +1,4 @@
-To Develop
+Contribute
 ==========
 
 First clone repo, install dev dependencies, and install the module under

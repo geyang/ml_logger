@@ -84,8 +84,9 @@ RoadMap
        :maxdepth: 0
        :glob:
 
-       installation
+       setting_up
        usage
+       ml_dash
        modindex
        develop
 
