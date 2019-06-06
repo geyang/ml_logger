@@ -1,7 +1,7 @@
 .. _contents::
 
 #################################
-Introducing Ml-Logger and ML-Dash
+Introducing Ml-Logger
 #################################
 
 |Downloads|
@@ -37,7 +37,7 @@ To get started:
     [2019-06-05 20:56:33 -0700] [46329] [INFO] Starting worker [46329]
 
 ML-Logger
----------
+=========
 
 - Saves all data in a folder structure (S3 and other backend coming soon)
 - Built-in support Tensorflow + pyTorch
@@ -47,7 +47,7 @@ ML-Logger
 - Support saving in pickle and numpy formats
 
 Log it, and read it later for Analysis!
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+========================================
 
 supports two way communication between the job and the instrumentation server. Want to run some analysis on a model trained last week? No problem! just do
 
@@ -56,7 +56,7 @@ supports two way communication between the job and the instrumentation server. W
     logger.load_module(<NNModule>, key="username/project/run-id/models/blah.pkl").
 
 Fast and Furious
-^^^^^^^^^^^^^^^^^
+=================
 
 
 Did I mention that ML-Logger is uber-fast? We make the IO requests asynchronously, so that you main code doesn't slow down. We also support local metrics cache, so that you only send the summary of the metrics :).
@@ -64,8 +64,9 @@ Did I mention that ML-Logger is uber-fast? We make the IO requests asynchronousl
 Oh, for logging videos, we first compress the frame tensor 2000x. And we support live plotting with Matplotlib!
 
 
+#################################
 ML-Dash
--------
+#################################
 
 A Visualization Dashboard designed from ground up, to replace Tensorboard and Visdom.
 
@@ -79,14 +80,10 @@ RoadMap
 
 ..
 
-    Table of Contents
-    ^^^^^^^^^^^^^^^^^
-
     .. toctree::
-       :maxdepth: 3
+       :maxdepth: 0
        :glob:
 
-       index
        installation
        usage
        modindex
