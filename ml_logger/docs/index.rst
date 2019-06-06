@@ -9,7 +9,7 @@ Introducing Ml-Logger and ML-Dash
 .. |Downloads| image:: http://pepy.tech/badge/ml-logger
    :target: http://pepy.tech/project/ml-logger
 
-- Does Tensorboard feel slow for you?
+- Does Tensorboard feel slow to you?
 - Do you have trouble managing hundreds of runs, and 20 different experiments?
 - Does the Protobuff that tensorboardX uses feel too opaque, and hard to read from for analysis?
 
