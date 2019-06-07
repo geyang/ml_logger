@@ -18,6 +18,7 @@ ML-Dash tutorial
 ----------------------------
 
 Launch the Dashboard Web-app
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The dashboard is a web app. You can launch a static server to serve this web app via:
 
@@ -27,6 +28,7 @@ The dashboard is a web app. You can launch a static server to serve this web app
 
 
 Configuring the Dashboard server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The important thing is that you want to set the `--host` flag to `0.0.0.0` so that the server accepts http requests from any client. Not just limited to your localhost.
 
@@ -44,7 +46,7 @@ The important thing is that you want to set the `--host` flag to `0.0.0.0` so th
    
 
 Configuring the Dashboard
-
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. API URL need to contain `http://` or `https://`.
 2. access token is currently not supported (leave empty)
@@ -68,6 +70,7 @@ Configuring the Dashboard
 
 
 Logging Your First Experiment!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For launch I use `jaynes`, with a thunk that configures the logging prefix. For now we can make it simple and just log something:
 
@@ -98,7 +101,8 @@ If you want to log to a logging server, run something like these:
     python -m ml_logger.server -h
     python -m ml_logger.server --port 8081 --host 0.0.0.0 --data-dir ~/runs --workers 4
 
-
+Old Tutorial [delete soon]
+==========================
 
 Now you can fire up an `ipython` console and start logging!
 
