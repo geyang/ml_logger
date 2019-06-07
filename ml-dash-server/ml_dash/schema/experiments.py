@@ -58,6 +58,14 @@ class ExperimentConnection(relay.Connection):
 
 
 def find_experiments(cwd, **kwargs):
+    """
+    find all experiments
+
+    :param cwd:
+    :param start:
+    :param stop:
+    :return:
+    """
     from ml_dash.config import Args
     assert isabs(cwd), "the current work directory need to be an absolute path."
     _cwd = realpath(join(Args.logdir, cwd[1:])).rstrip('/')

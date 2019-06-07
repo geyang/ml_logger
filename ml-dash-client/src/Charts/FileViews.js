@@ -156,11 +156,11 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
               ?
               <>
                 <p direction={"row"} gap={'none'} height={30}>
-                  <strong>glob</strong>: <span style={{display: "inlineBlock"}}>{glob}</span>
+                  <strong>glob</strong>: <span style={{display: "inline-block"}}>{glob}</span>
                 </p>
                 <p direction={"row"} gap={'none'} height={30}>
                   <strong>file</strong>:
-                  <span style={{display: "inlineBlock"}}>{
+                  <span style={{display: "inline-block", wordBreak: "break-word"}}>{
                     subPrefix(selected.path, pathPrefix)}</span>
                 </p>
               </>

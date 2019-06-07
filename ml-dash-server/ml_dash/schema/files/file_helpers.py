@@ -5,8 +5,24 @@ from os.path import basename, join, realpath, dirname
 from ml_dash.file_handlers import cwdContext
 
 
-def file_stat(file_path):
+def file_stat(file_path, no_stat=True):
+    """
+    getting the stats of the file.
+
+    no_stat turns the stat call off.
+
+    :param file_path:
+    :param no_stat:
+    :return:
+    """
     # note: this when looped over is very slow. Fine for a small list of files though.
+    if no_stat:
+        return dict(
+            name=basename(file_path),
+            path=file_path,
+            dir=dirname(file_path),
+        )
+
     stat_res = stat(file_path)
     sz = stat_res.st_size
     return dict(
@@ -20,7 +36,7 @@ def file_stat(file_path):
     )
 
 
-def find_files(cwd, query, start=None, stop=None):
+def find_files(cwd, query, start=None, stop=None, no_stat=True, show_progress=False):
     """
     find files by iGlob.
 
@@ -28,12 +44,17 @@ def find_files(cwd, query, start=None, stop=None):
     :param query: glob query
     :param start: starting index for iGlob.
     :param stop: ending index for iGlob
+    :param no_stat: boolean flag to turn off the file_stat call.
     :return:
     """
     from itertools import islice
     with cwdContext(cwd):
-        file_paths = list(islice(iglob(query, recursive=True), start, stop))
-        files = [file_stat(_) for _ in file_paths]
+        if show_progress:
+            from tqdm import tqdm
+            file_paths = list(tqdm(islice(iglob(query, recursive=True), start, stop), desc=f"glob@{query}"))
+        else:
+            file_paths = list(islice(iglob(query, recursive=True), start, stop))
+        files = [file_stat(_, no_stat) for _ in file_paths]
         return files
 
 

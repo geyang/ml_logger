@@ -38,7 +38,7 @@ The important thing is that you want to set the `--host` flag to `0.0.0.0` so th
 
 
 .. image:: configuring the logging profile
-   :target: ./profile_config.png
+   :target: ./_static/profile_config.png
 
 Configuring the Dashboard
 

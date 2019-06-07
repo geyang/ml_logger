@@ -2,7 +2,6 @@ from functools import reduce
 from os.path import split, join
 from graphene import ObjectType, relay, String, List
 from graphene.types.generic import GenericScalar
-from ml_dash import schema
 from ml_dash.config import Args
 from ml_dash.schema.files.file_helpers import read_json
 from ml_dash.schema.helpers import assign, dot_keys, dot_flatten

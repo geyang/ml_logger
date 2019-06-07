@@ -325,7 +325,7 @@ export default createFragmentContainer(ExperimentDash, {
           node {id name text stem relPath yaml}
         }
       }
-      fullExperiments: experiments (first:50) @connection(key: "ExperimentDash_fullExperiments") {
+      fullExperiments: experiments (first:100) @connection(key: "ExperimentDash_fullExperiments") {
         edges { node {
           id name path
           parameters { keys flat}
