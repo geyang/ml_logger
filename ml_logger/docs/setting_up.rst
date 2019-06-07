@@ -39,8 +39,7 @@ The important thing is that you want to set the `--host` flag to `0.0.0.0` so th
      1765  python -m ml_dash.server --port 8090 --workers 1 --host 0.0.0.0 --logdir ~/runs
 
 
-.. image:: configuring the logging profile
-   :target: ./_static/profile_config.png
+.. image:: _static/profile_config.png
    :scale: 30 %
    :align: right
    
