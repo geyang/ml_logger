@@ -2,16 +2,100 @@ Setup
 ===============
 
 Install the package with pip
+----------------------------
 
 .. code-block:: bash
 
-   pip install ml-logger
+   pip install ml-logger ml-dash
 
 To make sure you use the newest version:
 
 .. code-block:: bash
 
-   pip install ml-logger --upgrade --no-cache
+   pip install ml-logger ml-dash --upgrade --no-cache
+
+ML-Dash tutorial
+----------------------------
+
+Launch the Dashboard Web-app
+
+The dashboard is a web app. You can launch a static server to serve this web app via:
+
+.. code::python
+
+    python -m ml_dash.app
+
+
+Configuring the Dashboard server
+
+The important thing is that you want to set the `--host` flag to `0.0.0.0` so that the server accepts http requests from any client. Not just limited to your localhost.
+
+.. code::bash
+
+     1763  python -m ml_dash.server -h
+     1764  python -m ml_dash.server --port 8090 --workers 4 --host 0.0.0.0 --logdir ~/runs
+     1765  python -m ml_dash.server --port 8090 --workers 1 --host 0.0.0.0 --logdir ~/runs
+
+
+.. image:: configuring the logging profile
+   :target: ./profile_config.png
+
+Configuring the Dashboard
+
+
+1. API URL need to contain `http://` or `https://`.
+2. access token is currently not supported (leave empty)
+3. Username should be the root folder of your logging directory. For mine, it currently look like this
+
+..
+
+    ~>ubuntu: tree runs -L 3
+    runs
+    ├── amyzhang
+    │   ├── fair
+    │   ├── plan2vec
+    │   └── plan2vec-experiments
+    ├── episodeyang
+    │   ├── gmo-experiments
+    │   ├── leaf
+    │   ├── learning-to-learn
+    │   └── plan2vec
+    ├── Live Plotting.ipynb
+    └── watch.py
+
+
+Logging Your First Experiment!
+
+For launch I use `jaynes`, with a thunk that configures the logging prefix. For now we can make it simple and just log something:
+
+
+> for advanced usage, take a look at this fairinternal repo: `fairinternal/plan2vec`
+
+
+.. code::python
+
+    from ml_logger import logger
+
+    logger.configure(log_directory="http://<your-host>:<port>",
+                     prefix="username/experiment/run-id")
+
+    for i in range(1000):
+      logger.log(loss=1.01**-i, step=i, flush=True)
+
+alternatively you can do:
+
+.. code::python
+
+    logger.configure(log_directory="your root", prefix="username/experiment/run-id")
+
+If you want to log to a logging server, run something like these:
+
+.. code::bash
+
+    python -m ml_logger.server -h
+    python -m ml_logger.server --port 8081 --host 0.0.0.0 --data-dir ~/runs --workers 4
+
+
 
 Now you can fire up an `ipython` console and start logging!
 

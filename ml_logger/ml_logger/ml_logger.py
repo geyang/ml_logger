@@ -1274,19 +1274,31 @@ class ML_Logger:
             self.log_text(self.print_buffer, filename=file, silent=False)
         self.print_buffer = ""
 
-    def log_text(self, text: str = None, filename=None, silent=True):
+    def log_text(self, text: str = None, filename=None, dedent=False, silent=True):
         """
         logging and printing a string object.
 
         This does not log to the buffer. It calls the low-level log_text method right away
         without buffering.
 
+        .. code:: python
+
+            logger.log_text('''
+                some text
+                with indent''', dedent=True)
+
+        This logs with out the indentation at the begining of the text.
+
         :param text:
-        :param filename:
+        :param filename: file name to which the string is logged.
+        :param dedent: boolean flag for dedenting the multi-line string
         :param silent:
         :return:
         """
         filename = filename or self.log_filename
+        if dedent:
+            from textwrap import dedent
+            text = dedent(text)
         if text is not None:
             self.client.log_text(key=os.path.join(self.prefix, filename), text=text)
             if not silent:

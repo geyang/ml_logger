@@ -5,3 +5,7 @@ numpy
 matplotlib
 tensorflow
 torch
+# needed for ml_dash elastic
+tqdm
+scipy
+elasticsearch
