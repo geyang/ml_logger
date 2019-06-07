@@ -87,7 +87,7 @@ For launch I use `jaynes`, with a thunk that configures the logging prefix. For 
     for i in range(1000):
       logger.log(loss=1.01**-i, step=i, flush=True)
 
-alternatively you can do:
+alternatively you can do (where “your root” begins with “file://”):
 
 .. code::python
 
