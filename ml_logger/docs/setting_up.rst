@@ -52,7 +52,7 @@ Configuring the Dashboard
 2. access token is currently not supported (leave empty)
 3. Username should be the root folder of your logging directory. For mine, it currently look like this
 
-..
+.. code::
 
     ~>ubuntu: tree runs -L 3
     runs
