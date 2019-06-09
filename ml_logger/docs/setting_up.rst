@@ -1,5 +1,5 @@
 Setup
-===============
+=====
 
 Install the package with pip
 ----------------------------
@@ -71,13 +71,16 @@ Configuring the Dashboard
 Logging Your First Experiment!
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For launch I use `jaynes`, with a thunk that configures the logging prefix. For now we can make it simple and just log something:
+For launch I use jaynes_, with a thunk that configures the logging prefix. For now we can make it simple and just log something:
+
+.. _jaynes: https://jaynes.readthedocs.io/en/latest/
+
+..
+
+    for advanced usage, take a look at this fairinternal repo: fairinternal/plan2vec
 
 
-> for advanced usage, take a look at this fairinternal repo: `fairinternal/plan2vec`
-
-
-.. code::python
+.. code:: python
 
     from ml_logger import logger
 

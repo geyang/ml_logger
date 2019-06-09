@@ -61,7 +61,7 @@ Fast and Furious
 
 Did I mention that ML-Logger is uber-fast? We make the IO requests asynchronously, so that you main code doesn't slow down. We also support local metrics cache, so that you only send the summary of the metrics :).
 
-Oh, for logging videos, we first compress the frame tensor 2000x. And we support live plotting with Matplotlib!
+Oh, for logging videos, we first compress the frame tensor 200x. And we support live plotting with Matplotlib!
 
 
 #################################
