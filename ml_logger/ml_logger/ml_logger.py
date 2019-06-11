@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from contextlib import contextmanager
 
 import numpy as np
@@ -156,6 +157,7 @@ class ML_Logger:
         self.duplex = None
         self.timestamp = None
 
+        self.timer_cache = defaultdict(None)
         self.do_not_print = DefaultSet("__timestamp")
         self.print_helper = PrintHelper()
 
@@ -298,21 +300,23 @@ class ML_Logger:
         return dict(hash=self.__head__, branch=self.__current_branch__)
 
     # timing functions
-    def split(self):
+    def split(self, key='default'):
         """
-        returns a datetime object. You can get integer seconds and miliseconds (both int) from it.
+        returns a datetime object. You can get integer seconds and milli-seconds (both int) from it.
+
         Note: This is Not idempotent, which is why it is not a property.
 
         :return: float (seconds/miliseconds)
         """
         new_tic = self.now()
         try:
-            dt = new_tic - self._tic
-            self._tic = new_tic
-            return dt.total_seconds()
-        except AttributeError:
-            self._tic = new_tic
-            return None
+            dt = new_tic - self.timer_cache[key]
+            _ = dt.total_seconds()
+        except:
+            _ = None
+
+        self.timer_cache[key] = new_tic
+        return _
 
     def now(self, fmt=None):
         """
