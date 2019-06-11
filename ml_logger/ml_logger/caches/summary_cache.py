@@ -85,39 +85,49 @@ class SummaryCache:
         """
         return {k: self.data[k][:len] for k in (keys or self.data.keys()) if self.data[k] != []}
 
-    # note: is idempotent
-    def get_stats(self, *only_keys, explicit=None, key_stats=None, default_stats=None, **_key_stats):
+    def get(self, key, default=None):
         """
-        | Returns the metrics as a dictionary containing key / value pairs
-        | of the statistics of the metrics.
-        |
-        | OR
-        |
-        | Returns statistics that are queried.
-        |
-        | Note that this method is idempotent. AKA you can call multiple times without
-        | affecting what is stored in the data object.
-        |
-        | When a few key strings are passed in explicitly, ONLY those keys
-        | plus those specified in the keyword arguments in **key_modes are
-        | returned.
-        |
-        | To enable explicit mode without specifying *only_keys, set
-        | `get_only` to True
-        |
-        | # Modes for the Statistics:
-        | ===================
-        |
-        | key_mode would be one of:
-        |   - mean:
-        |   - min_max:
-        |   - std_dev:
-        |   - quantile:
-        |   - histogram(bins=10):
-        |
+        Returns a single stat
+
+        :param key: the key for the metric
+        :param default: None
+        :return:
+        """
+        return self.data.get(key, default)
+
+    # note: is idempotent
+    def get_stats(self, *only_keys, key_stats=None, explicit=None, default_stats=None, **_key_stats):
+        """
+         Returns the metrics as a dictionary containing key / value pairs
+         of the statistics of the metrics.
+        
+         OR
+        
+         Returns statistics that are queried.
+        
+         Note that this method is idempotent. AKA you can call multiple times without
+         affecting what is stored in the data object.
+        
+         When a few key strings are passed in explicitly, ONLY those keys
+         plus those specified in the keyword arguments in **key_modes are
+         returned.
+        
+         To enable explicit mode without specifying *only_keys, set
+         `get_only` to True
+        
+         # Modes for the Statistics:
+         ===================
+        
+         key_mode would be one of:
+           - mean:
+           - min_max:
+           - std_dev:
+           - quantile:
+           - histogram(bins=10):
+        
         :param * only_keys: list of key strings to return explicitly
-        :param explicit: boolean flag, when true only keys explicitly specified would be returned
         :param key_stats: a dictionary for the key and the statistic modes to be returned.
+        :param explicit: boolean flag, when true only keys explicitly specified would be returned
         :param default_stats: the default stats mode for all metrics
         :param ** _key_stats: key value pairs, as a short hand for the key_modes dictionary.
         :return: dictionary of the keys and the statistics requested.
@@ -137,7 +147,9 @@ class SummaryCache:
                 d = d[~np.isnan(d)]
                 if len(d) == 0:
                     continue
-                if stats_type.startswith("mean"):
+                if stats_type == "sum":
+                    metrics[k + "/sum"] = d.sum()
+                elif stats_type.startswith("mean"):
                     metrics[k + "/mean"] = d.mean()
                 elif stats_type.startswith("min_max"):
                     metrics[k + "/min"] = d.min()

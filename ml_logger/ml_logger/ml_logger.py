@@ -260,7 +260,8 @@ class ML_Logger:
             cprint('✓ done', 'green')
 
         if not silent:
-            print(f"Dashbord: {ML_DASH.format(prefix=self.prefix)}")
+            from urllib.parse import quote
+            print(f"Dashboard: {ML_DASH.format(prefix=quote(self.prefix))}")
             print(f"Log_directory: {self.log_directory}")
 
         # now register the experiment
