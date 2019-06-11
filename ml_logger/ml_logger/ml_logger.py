@@ -300,23 +300,44 @@ class ML_Logger:
         return dict(hash=self.__head__, branch=self.__current_branch__)
 
     # timing functions
-    def split(self, key='default'):
+    def split(self, *keys):
         """
-        returns a datetime object. You can get integer seconds and milli-seconds (both int) from it.
+        returns a float in seconds when 1 key is passed, or
+        a list of floats when multiple keys are passsed in.
+
+        Automatically de-dupes the keys, but will return the same
+        number of intervals. duplicates will recieve the same
+        result.
 
         Note: This is Not idempotent, which is why it is not a property.
 
-        :return: float (seconds/miliseconds)
-        """
-        new_tic = self.now()
-        try:
-            dt = new_tic - self.timer_cache[key]
-            _ = dt.total_seconds()
-        except:
-            _ = None
+        .. code:: python
 
-        self.timer_cache[key] = new_tic
-        return _
+            from ml_logger import logger
+
+            logger.split('loop', 'iter')
+            it = 0
+            for i in range(10):
+                it += logger.split('iter')
+            print('iteration', it / 10)
+            print('loop', logger.split('loop'))
+
+        :type *keys: position arguments are timed together.
+        :return: float (in seconds)
+        """
+        keys = keys or ['default']
+        results = {k: None for k in keys}
+        new_tic = self.now()
+        for key in set(keys):
+            try:
+                dt = new_tic - self.timer_cache[key]
+                results[key] = dt.total_seconds()
+            except:
+                results[key] = None
+            self.timer_cache[key] = new_tic
+
+        return results[keys[0]] \
+            if len(keys) == 1 else [results[k] for k in keys]
 
     def now(self, fmt=None):
         """
