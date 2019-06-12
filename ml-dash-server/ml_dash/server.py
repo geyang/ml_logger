@@ -1,7 +1,6 @@
 from ml_dash.schema import schema
 from sanic_graphql import GraphQLView
 
-from .file_events import file_events, setup_watch_queue
 from .file_handlers import get_path, remove_path, batch_get_path
 
 from sanic import Sanic
@@ -29,13 +28,12 @@ app.add_route(get_path, '/files/', methods=['GET', 'OPTIONS'])
 app.add_route(get_path, '/files/<file_path:path>', methods=['GET', 'OPTIONS'])
 app.add_route(batch_get_path, '/batch-files', methods=['GET', 'OPTIONS'])
 app.add_route(remove_path, '/files/<file_path:path>', methods=['DELETE'])
-app.add_route(file_events, '/file-events', methods=['GET', 'OPTIONS'])
-app.add_route(file_events, '/file-events/<file_path:path>', methods=['GET', 'OPTIONS'])
-app.listener('before_server_start')(setup_watch_queue)
 
-
-# app.add_task(start_watcher)
-
+# note: currently disabled, file events API.
+# from .file_events import file_events, setup_watch_queue
+# app.add_route(file_events, '/file-events', methods=['GET', 'OPTIONS'])
+# app.add_route(file_events, '/file-events/<file_path:path>', methods=['GET', 'OPTIONS'])
+# app.listener('before_server_start')(setup_watch_queue)
 
 def run(logdir=None, **kwargs):
     from . import config
