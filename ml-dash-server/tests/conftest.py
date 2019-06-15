@@ -1,6 +1,6 @@
-import os
+from os.path import expanduser
 
-TEST_LOG_DIR = os.path.expanduser('~/ml-logger-debug/runs')
+TEST_LOG_DIR = expanduser('~/ml-logger-debug/runs')
 
 def pytest_addoption(parser):
     parser.addoption('--log-dir',
