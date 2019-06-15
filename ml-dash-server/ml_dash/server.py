@@ -10,14 +10,17 @@ app = Sanic(__name__)
 # CORS(app)
 CORS(app, resources={r"/*": {"origins": "*"}}, automatic_options=True)
 
+# NOTE: disable for laziness. Should enable it in the future.
 # @app.listener('before_server_start')
 # def init_graphql(app, loop):
 #     app.add_route(GraphQLView.as_view(schema=schema, executor=AsyncioExecutor(loop=loop)), '/graphql')
 
 # new graphQL endpoints
-app.add_route(GraphQLView.as_view(schema=schema, graphiql=True), '/graphql',
+app.add_route(GraphQLView.as_view(schema=schema, graphiql=True),
+              '/graphql',
               methods=['GET', 'POST', 'FETCH', 'OPTIONS'])
-app.add_route(GraphQLView.as_view(schema=schema, batch=True), '/graphql/batch',
+app.add_route(GraphQLView.as_view(schema=schema, batch=True),
+              '/graphql/batch',
               methods=['GET', 'POST', 'FETCH', 'OPTIONS'])
 
 # # Serving static app
@@ -34,6 +37,7 @@ app.add_route(remove_path, '/files/<file_path:path>', methods=['DELETE'])
 # app.add_route(file_events, '/file-events', methods=['GET', 'OPTIONS'])
 # app.add_route(file_events, '/file-events/<file_path:path>', methods=['GET', 'OPTIONS'])
 # app.listener('before_server_start')(setup_watch_queue)
+
 
 def run(logdir=None, **kwargs):
     from . import config
