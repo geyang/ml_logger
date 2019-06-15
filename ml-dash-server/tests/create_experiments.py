@@ -1,5 +1,8 @@
 import numpy as np
 from ml_logger import logger
+from os.path import expanduser
+
+DEBUG_DIR = expanduser('~/ml-logger-debug/runs')
 
 if __name__ == "__main__":
     from scipy.misc import face
@@ -10,7 +13,7 @@ if __name__ == "__main__":
     for username in ["episodeyang", "amyzhang"]:
         for project in ['cpc-belief', 'playground']:
             for i in range(10):
-                prefix = f"runs/{username}/{project}/{'mdp/' if i < 5 else '/'}experiment_{i:02d}"
+                prefix = f"{DEBUG_DIR}/{username}/{project}/{'mdp/' if i < 5 else '/'}experiment_{i:02d}"
                 logger.remove(prefix)
 
                 logger.configure(prefix=prefix)

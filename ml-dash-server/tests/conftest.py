@@ -1,5 +1,6 @@
-TEST_LOG_DIR = '../../runs'
+import os
 
+TEST_LOG_DIR = os.path.expanduser('~/ml-logger-debug/runs')
 
 def pytest_addoption(parser):
     parser.addoption('--log-dir',
