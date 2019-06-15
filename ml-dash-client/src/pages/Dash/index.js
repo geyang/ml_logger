@@ -17,24 +17,24 @@ export function DashPrepareVariables({username, project, path}) {
 }
 
 export const DashQuery = graphql`
-  query DashQuery($id: ID!) {
-    directory (id: $id) {
-      id
-      name
-      ... Navbar_directory
-      ... ExperimentDash_directory
+    query DashQuery($id: ID!) {
+        directory (id: $id) {
+            id
+            name
+            ... Navbar_directory
+            ... ExperimentDash_directory
+        }
     }
-  }
 `;
 
 export default function Dash({directory, match, ..._props}) {
 
+  useTitle(directory.name);
+
   const [state, setState] = useState({experiments: [], charts: []});
 
   const openExperimentDetails = (experiment, charts = []) => {
-    console.log(experiment);
     const location = _props.match.location;
-    console.log(state.experiments);
     _props.router.replace({...location, query: {...location.query, view: "experiment"}});
     if (!!experiment)
       setState({experiments: [experiment], charts: charts});
@@ -54,11 +54,8 @@ export default function Dash({directory, match, ..._props}) {
     _props.router.replace({...location, query: restOfQuery})
   };
 
-
   const viewMode = match.location.query.view;
   const isExperimentView = viewMode === "experiment";
-
-  useTitle(directory.name);
 
   return <Box fill={true}
               direction="row"

@@ -22,7 +22,7 @@ Launch the Dashboard Web-app
 
 The dashboard is a web app. You can launch a static server to serve this web app via:
 
-.. code::python
+.. code:: python
 
     python -m ml_dash.app
 
@@ -32,7 +32,7 @@ Configuring the Dashboard server
 
 The important thing is that you want to set the `--host` flag to `0.0.0.0` so that the server accepts http requests from any client. Not just limited to your localhost.
 
-.. code::bash
+.. code:: bash
 
      1763  python -m ml_dash.server -h
      1764  python -m ml_dash.server --port 8090 --workers 4 --host 0.0.0.0 --logdir ~/runs
@@ -51,7 +51,7 @@ Configuring the Dashboard
 2. access token is currently not supported (leave empty)
 3. Username should be the root folder of your logging directory. For mine, it currently look like this
 
-.. code::
+.. code:: bash
 
     ~>ubuntu: tree runs -L 3
     runs
@@ -92,13 +92,13 @@ For launch I use jaynes_, with a thunk that configures the logging prefix. For n
 
 alternatively you can do (where “your root” begins with “file://”):
 
-.. code::python
+.. code:: python
 
     logger.configure(log_directory="your root", prefix="username/experiment/run-id")
 
 If you want to log to a logging server, run something like these:
 
-.. code::bash
+.. code:: bash
 
     python -m ml_logger.server -h
     python -m ml_logger.server --port 8081 --host 0.0.0.0 --data-dir ~/runs --workers 4

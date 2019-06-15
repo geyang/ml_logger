@@ -60,54 +60,55 @@ if __name__ == "__main__":
     response = es.indices.delete(index='ml-dash', ignore=[400, 404])
     cprint('deleted the index', 'green')
 
-    response = es.indices.create(index="ml-dash",
-                                 body=dict(mappings=dict(
-                                     dynamic=False,
-                                     _source=dict(excludes=["index.*"]),
-                                     properties={
-                                         "data": dict(type="object", enabled=False),
-                                         "index": {
-                                             "enabled": True,
-                                             "properties": {
-                                                 "key": {"type": "keyword", },
-                                                 "string": {
-                                                     "type": "text",
-                                                     "fields": {
-                                                         "keyword": {
-                                                             "type": "keyword",
-                                                             "ignore_above": 2014
-                                                         }
-                                                     }
-                                                 },
-                                                 "boolean": {"type": "boolean"},
-                                                 "date": {"type": "date",
-                                                          "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"},
-                                                 "long": {"type": "long"},
-                                                 "float": {"type": "float"},
-                                                 "null": {"type": "boolean", "null_value": False}
-                                             }
-                                         }
-                                     }
-                                 )))
-    # es.index.put_setting(index="ml_dash")
-    # es.indices.put_mapping(index="ml-dash", )
+    # note: how th nested index works
+    #  https://www.elastic.co/guide/en/elasticsearch/reference/current/nested.html
+    response = es.indices.create(
+        index="ml-dash",
+        body=dict(mappings=dict(
+            dynamic=False,
+            _source=dict(excludes=["index.*"]),
+            properties={
+                "data": dict(type="object", enabled=False),
+                "index": {
+                    "type": "nested",
+                    "enabled": True,
+                    "properties": {
+                        "key": {"type": "keyword", },
+                        "string": {
+                            "type": "text",
+                            "fields": {
+                                "keyword": {"type": "keyword", "ignore_above": 2014}
+                            }
+                        },
+                        "boolean": {"type": "boolean"},
+                        "date": {"type": "date",
+                                 "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"},
+                        "long": {"type": "long"},
+                        "float": {"type": "float"},
+                        "null": {"type": "boolean", "null_value": False}
+                    }
+                }
+            }
+        )))
 
-    for chunk in tqdm(chunked(parameter_files, 1000)):
+    for chunk in tqdm(chunked(parameter_files, 1000), desc="Uploading..."):
         parameters = [reduce(assign, [
             *(read_json(join(cwd, f['path'])) or []), {"dir": f['dir']}
         ]) for f in chunk]
-    actions = [{"index": dict(_id=p['dir'], )} for p in parameters]
-    documents = [dict(index=[dict(key=k, **v) for k, v in typify(dot_flatten(p)).items()], **p)
-                 for p in parameters]
+        actions = [{"index": dict(_id=p['dir'], )} for p in parameters]
+        documents = [dict(index=[dict(key=k, **v) for k, v in typify(dot_flatten(p)).items()], **p)
+                     for p in parameters]
 
-    print(documents[0]['index'])
-    # https://stackoverflow.com/questions/20288770/how-to-use-bulk-api-to-store-the-keywords-in-es-by-using-python
-    response = es.bulk(index='ml-dash', body=interleave(actions, documents))
+        # documents[0]
+
+        # https://stackoverflow.com/questions/20288770/how-to-use-bulk-api-to-store-the-keywords-in-es-by-using-python
+        response = es.bulk(index='ml-dash', body=interleave(actions, documents))
+
+        if response['errors']:
+            for i, item in enumerate(response['items']):
+                if item['index']['status'] >= 300:
+                    print(item['index'])
+                    print(documents[i])
+                    break
 
     cprint('finished', 'green')
-    if response['errors']:
-        for i, item in enumerate(response['items']):
-            if item['index']['status'] >= 300:
-                print(item['index'])
-                print(documents[i])
-                break

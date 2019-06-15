@@ -197,8 +197,6 @@ function ExperimentDash({
     return keys; // for testing
   }
 
-  console.log(dashConfig);
-
   // dashConfigMutations
   function addMetricCell(keyConfig) {
     const data = dashConfig.yaml || {
@@ -215,16 +213,6 @@ function ExperimentDash({
     };
     updateDashConfig(dashConfig.id, {...data, charts: [...data.charts, chartConfig]})
   }
-
-  // function updateMetricCell(keyConfig) {
-  //   const data = dashConfig.yaml;
-  //   updateDashConfig(dashConfig.id, {...data, keys: [...data.keys, keyConfig]})
-  // }
-  //
-  // function updateChart(chartConfig) {
-  //   const data = dashConfig.yaml;
-  //   updateDashConfig(dashConfig.id, {...data, charts: [...data.charts, chartConfig]})
-  // }
 
   const [selected, setSelected] = useState([]);
   const [inlineChartRows, setInlineChartRows] = useState(new Set());
@@ -325,7 +313,7 @@ export default createFragmentContainer(ExperimentDash, {
           node {id name text stem relPath yaml}
         }
       }
-      fullExperiments: experiments (first:100) @connection(key: "ExperimentDash_fullExperiments") {
+      fullExperiments: experiments (first:1000) @connection(key: "ExperimentDash_fullExperiments") {
         edges { node {
           id name path
           parameters { keys flat}

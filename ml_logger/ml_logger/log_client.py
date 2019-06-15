@@ -214,8 +214,8 @@ class LogClient:
         self._log(key, data, dtype="log", options=LogOptions(**options))
 
     # appends text
-    def log_text(self, key, text):
-        self._log(key, text, dtype="text")
+    def log_text(self, key, text, **options):
+        self._log(key, text, dtype="text", options=LogOptions(**options))
 
     # appends yaml
     def log_yaml(self, key, data):

@@ -1300,7 +1300,7 @@ class ML_Logger:
             self.log_text(self.print_buffer, filename=file, silent=False)
         self.print_buffer = ""
 
-    def log_text(self, text: str = None, filename=None, dedent=False, silent=True):
+    def log_text(self, text: str = None, filename=None, dedent=False, silent=True, overwrite=False):
         """
         logging and printing a string object.
 
@@ -1326,7 +1326,7 @@ class ML_Logger:
             from textwrap import dedent
             text = dedent(text)
         if text is not None:
-            self.client.log_text(key=os.path.join(self.prefix, filename), text=text)
+            self.client.log_text(key=os.path.join(self.prefix, filename), text=text, overwrite=overwrite)
             if not silent:
                 print(text, end="")
 
