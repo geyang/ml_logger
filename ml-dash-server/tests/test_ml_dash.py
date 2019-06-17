@@ -170,13 +170,13 @@ def test_directory(log_dir):
                 id
                 name 
                 readme {
-                    id name path relPath
+                    id name path 
                     text(stop:11)
                 }
                 dashConfigs(first:10) {
                     edges {
                         node {
-                            id name path relPath
+                            id name path 
                             yaml
                             text(stop:11)
                         }
@@ -418,3 +418,27 @@ def test_schema(log_dir):
     else:
         _ = r['data']['user']
         show(_)
+
+
+def test_node(log_dir):
+    from ml_dash.config import Args
+    Args.logdir = log_dir
+    client = Client(schema)
+    query = """
+        query AppQuery ($id:ID!) {
+            node (id: $id) {
+                id
+                ... on File {
+                    name
+                    text
+                }
+            }
+        }
+    """
+    path = "/episodeyang/cpc-belief/README.md"
+    r = client.execute(query, variables=dict(id=to_global_id("File", path)))
+    if 'errors' in r:
+        raise RuntimeError(r['errors'])
+    else:
+        print(">>")
+        show(r['data'])

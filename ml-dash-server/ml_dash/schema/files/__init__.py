@@ -14,12 +14,14 @@ class File(ObjectType):
 
     name = String(description='name of the directory')
     stem = String(description="stem of the file name")
+    path = String(description='path to the file')
 
     def resolve_stem(self, info, ):
         return self.name.split('.')[0]
 
-    path = String(description='path to the file')
-    rel_path = String(description='relative path to the file')
+    def resolve_path(self, info):
+        return self.id
+
     text = String(description='text content of the file',
                   start=Int(required=False, default_value=0),
                   stop=Int(required=False, default_value=None))
@@ -69,7 +71,7 @@ class FileConnection(relay.Connection):
 
 
 def get_file(id):
-    return File(id=id, name=basename(id[1:]))
+    return File(id=id, name=basename(id), path=id)
 
 
 def find_files_by_query(cwd, query="**/*.*", **kwargs):
@@ -81,8 +83,7 @@ def find_files_by_query(cwd, query="**/*.*", **kwargs):
         # note: not sure about the name.
         File(id=join(cwd.rstrip('/'), p['path']),
              name=basename(p['path']),
-             path=join(cwd.rstrip('/'), p['path']),
-             rel_path=p['path'], )
+             path=join(cwd.rstrip('/'), p['path']))
         for p in parameter_files
     ]
 

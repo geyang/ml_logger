@@ -28,6 +28,8 @@ class Experiment(ObjectType):
         return files.parameters.get_parameters(self.parameters)
 
     def resolve_metrics(self, info):
+        # note: when called with wrong path, parasitically
+        #  slow b/c list all metric files.
         for m in find_metrics(self.id):
             return m
         return None

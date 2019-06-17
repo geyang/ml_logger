@@ -56,7 +56,7 @@ class MetricsConnection(relay.Connection):
 
 
 def get_metrics(id):
-    return Metrics(id=id, name=basename(id[1:]))
+    return Metrics(id=id, name=basename(id), path=id)
 
 
 def find_metrics(cwd, **kwargs):
