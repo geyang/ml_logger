@@ -134,6 +134,7 @@ def test_experiment(log_dir):
             experiment ( id:  $id ) { 
                 id
                 name 
+                parameters { id name }
                 files (first:10) {
                     edges {
                         node {

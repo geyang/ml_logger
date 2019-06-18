@@ -1,9 +1,9 @@
 from functools import reduce
-from os.path import split, join, basename
+from os.path import split, join, basename, realpath
 from graphene import ObjectType, relay, String, List
 from graphene.types.generic import GenericScalar
 from ml_dash.config import Args
-from ml_dash.schema.files.file_helpers import read_json
+from ml_dash.schema.files.file_helpers import read_json, find_files
 from ml_dash.schema.helpers import assign, dot_keys, dot_flatten
 
 
@@ -53,3 +53,11 @@ class ParameterConnection(relay.Connection):
 
 def get_parameters(id):
     return Parameters(id=id)
+
+
+def find_parameters(cwd, **kwargs):
+    from ml_dash.config import Args
+    _cwd = realpath(join(Args.logdir, cwd[1:]))
+    parameter_files = find_files(_cwd, "parameters.pkl", **kwargs)
+    for p in parameter_files:
+        yield Parameters(id=join(cwd, p['path']))

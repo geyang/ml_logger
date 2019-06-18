@@ -6,6 +6,7 @@ from ml_dash import schema
 from ml_dash.schema import files
 from ml_dash.schema.files.file_helpers import find_files
 from ml_dash.schema.files.metrics import find_metrics
+from ml_dash.schema.files.parameters import find_parameters
 
 
 class Experiment(ObjectType):
@@ -25,7 +26,11 @@ class Experiment(ObjectType):
         return readmes[0] if readmes else None
 
     def resolve_parameters(self, info):
-        return files.parameters.get_parameters(self.parameters)
+        # note: when called with wrong path, parasitically
+        #  slow b/c list all metric files.
+        for p in find_parameters(self.id):
+            return p
+        return None
 
     def resolve_metrics(self, info):
         # note: when called with wrong path, parasitically
