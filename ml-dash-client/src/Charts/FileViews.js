@@ -14,6 +14,7 @@ import LineChart from "./LineChart";
 import {commitMutation} from "react-relay";
 import MonacoEditor from "react-monaco-editor";
 import {toGlobalId} from "../lib/relay-helpers";
+import Ellipsis from "../components/Form/Ellipsis";
 
 const globQuery = graphql`
     query FileViewsQuery ($cwd: String!, $glob: String) {
@@ -220,9 +221,9 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
   return <>
     <Box>
       <StyledTitle onClick={() => toggleShowConfig(!showConfig)}>
-        <div className="title" title={selected && selected.path}>
-          {selected ? selected.name : (title || "N/A")}
-        </div>
+        <Ellipsis className="title" title={selected && selected.path}
+                  text={selected ? selected.name : (title || "N/A")}
+                  padding="2em"/>
       </StyledTitle>{viewer}
     </Box>
     {showConfig
@@ -268,7 +269,9 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
 export function InlineChart({yKey, ...chart}) {
   return <Box>
     <StyledTitle onClick={() => null}>
-      <div className="title" title={yKey}>{yKey}</div>
+      <Ellipsis className="title" title={yKey || "N/A"}
+                text={yKey || "N/A"}
+                padding="2em"/>
     </StyledTitle>
     <MainContainer>
       <LineChart yKey={yKey} {...chart}/>

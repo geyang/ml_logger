@@ -18,18 +18,14 @@ function fetchQuery(
   const queryID = operation.text;
   const isMutation = operation.operationKind === 'mutation';
   const isQuery = operation.operationKind === 'query';
-  const forceFetch = cacheConfig && cacheConfig.force;
 
-  // Try to get data from cache on queries
-  const fromCache = cache.get(queryID, variables);
-  if (
-      isQuery &&
-      fromCache !== null &&
-      !forceFetch
-  ) {
-    return fromCache;
-  }
-  // Otherwise, fetch data from server
+  // note: Try to get data from cache on queries
+  const forceFetch = cacheConfig && cacheConfig.force;
+  // const fromCache = cache.get(queryID, variables);
+  // if (isQuery && fromCache !== null && !forceFetch)
+  //   return fromCache;
+
+  // note: Otherwise, fetch data from server
   const controller = new AbortController();
   // promise.abort = () => controller.abort();
   return fetch(

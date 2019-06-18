@@ -11,6 +11,7 @@ import {Resizable} from "re-resizable";
 import ProfileBlock from "../../components/ProfileBlock";
 import {fetchTextFile, fetchYamlFile, TextEditor, TextView} from "../../Charts/FileViews";
 import ChartGridView from "./chart-grid-view";
+import Ellipsis from "../../components/Form/Ellipsis";
 
 const SquareBadge = styled.div`
   width: 42px;
@@ -65,7 +66,9 @@ const GroupHeader = styled(GradientBackDrop)`
   font-size: 15px;
   font-weight: 400;
   .badge {
+    width: auto;
     min-width: 42px;
+    max-width: 400px;
     height: 1.5em;
     border-radius: 5px;
     margin-left: 1em;
@@ -237,7 +240,7 @@ export default function Dash({match, router, ..._props}) {
                   selected.map((expPath, i) =>
                       <ColContainer key={expPath} overflow={false}>
                         <GroupHeader>
-                          RUN:<span className="badge">{expPath}</span>
+                          RUN:<Ellipsis className="badge" title={expPath} text={expPath} padding="1em"/>
                         </GroupHeader>
                         <GroupBody minHeight="250px"><ChartGridView expPath={expPath} chartsConfig={dashConfig.charts}/></GroupBody>
                       </ColContainer>
@@ -248,19 +251,22 @@ export default function Dash({match, router, ..._props}) {
                                     defaultSize={{width: "auto", height: 200}}
                 ><TextEditor path={pathJoin(firstSelection, ".charts.yml")}/></Resizable>
                   <ColContainer overflow={false}>
-                    <GroupHeader>CHARTS</GroupHeader>
+                    <GroupHeader>
+                      RUN:<Ellipsis className="badge" title={firstSelection} text={firstSelection} padding="1em"/>
+                    </GroupHeader>
                     <GroupBody minHeight="250px">{firstSelection ?
                         <ChartGridView expPath={firstSelection}/> : null}</GroupBody>
                   </ColContainer></>;
               case "details":
               default:
-                firstSelection = selected[0];
                 return <><Resizable key={"details-readme"}
                                     enable={{"bottom": true}}
                                     defaultSize={{width: "auto", height: 200}}
                 ><TextEditor path={pathJoin(firstSelection, "README.md")}/></Resizable>
                   <ColContainer overflow={false}>
-                    <GroupHeader>CHARTS</GroupHeader>
+                    <GroupHeader>
+                      RUN:<Ellipsis className="badge" title={firstSelection} text={firstSelection} padding="1em"/>
+                    </GroupHeader>
                     <GroupBody minHeight="250px">{firstSelection ?
                         <ChartGridView expPath={firstSelection}/> : null}</GroupBody>
                   </ColContainer></>;

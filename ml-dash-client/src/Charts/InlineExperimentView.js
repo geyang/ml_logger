@@ -10,6 +10,7 @@ import store from "../local-storage";
 import {pathJoin} from "../lib/path-join";
 import {Box} from "grommet";
 import {displayType} from "./file-types";
+import Ellipsis from "../components/Form/Ellipsis";
 
 const {commitMutation} = require("react-relay");
 
@@ -94,7 +95,9 @@ function InlineFile({path, name}) {
   };
   return <Box>
     <StyledTitle>
-      <div className="title" title={name}>{name}</div>
+      <Ellipsis className="title" title={name || "N/A"}
+                text={name || "N/A"}
+                padding="2em"/>
     </StyledTitle>
     {_()}
   </Box>;
@@ -109,7 +112,9 @@ function InlineMetrics({path, name, keys, addMetricCell, addChart, ..._metrics})
   return <>
     <Box>
       <StyledTitle>
-        <div className="title" title={name}>{name}</div>
+        <Ellipsis className="title" title={name || "N/A"}
+                  text={name || "N/A"}
+                  padding="2em"/>
       </StyledTitle>
       <StyledContainer>
         {keys.map(k => <StyledItem key={k} onClick={() => select(k)}>{k}</StyledItem>)}

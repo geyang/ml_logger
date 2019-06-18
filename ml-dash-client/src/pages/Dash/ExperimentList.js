@@ -7,14 +7,17 @@ import {modernEnvironment} from "../../data";
 import {toGlobalId} from "../../lib/relay-helpers";
 import {Col, ColContainer, RowContainer} from "../../components/layouts";
 import {VariableSizeGrid as Grid} from 'react-window';
-
+// ? (p.odd ? "rgba(27,124,195,0.26)" : "rgba(37,170,255,0.13)")
 const StyledCell = styled.div`
   cursor: pointer;
-  background: ${p => p.odd ? "#f6f6f6" : "white"}
+  ${props => props.hover
+    ? "background:" + (props.odd ? "rgba(27,124,195,0.26)" : "rgba(37,170,255,0.13)")
+    : "background:" + (props.odd ? "#f6f6f6" : "white")};
+  ${props => props.selected ?
+    // "background: repeating-linear-gradient( 45deg, #e0f3ff, #e0f3ff 5px, #ffffff 5px, #ffffff 10px ) !important;"
+    "background: rgba(255, 200, 200, 1) !important;"
+    : null}
   line-height: 30px;
-  &.hover {
-    background: ${p => p.odd ? "rgba(27,124,195,0.26)" : "rgba(37,170,255,0.13)"}
-  }
 `;
 
 function isOdd(i) {
@@ -49,33 +52,38 @@ function ExperimentList({
     switch (columnIndex) {
       case(0):
         return <StyledCell odd={isOdd(rowIndex)}
+                           hover={hovered === rowIndex}
+                           selected={selected.indexOf(node.path) >= 0}
                            onMouseDown={(e) => onSelect(e, node)}
                            onMouseEnter={() => setHoveredRowIndex(rowIndex)}
-                           className={hovered === rowIndex ? "hover" : null}
                            {..._props}></StyledCell>;
       case(1):
         return <StyledCell odd={isOdd(rowIndex)}
+                           hover={hovered === rowIndex}
+                           selected={selected.indexOf(node.path) >= 0}
                            onMouseDown={(e) => onSelect(e, node)}
                            onMouseEnter={() => setHoveredRowIndex(rowIndex)}
-                           className={hovered === rowIndex ? "hover" : null}
                            {..._props}>{rowIndex + 1}</StyledCell>;
       case(2):
         return <StyledCell odd={isOdd(rowIndex)}
+                           hover={hovered === rowIndex}
+                           selected={selected.indexOf(node.path) >= 0}
                            onMouseDown={(e) => onSelect(e, node)}
                            onMouseEnter={() => setHoveredRowIndex(rowIndex)}
-                           className={hovered === rowIndex ? "hover" : null}
                            {..._props}>{node.name}</StyledCell>;
       case(3):
         return <StyledCell odd={isOdd(rowIndex)}
+                           hover={hovered === rowIndex}
+                           selected={selected.indexOf(node.path) >= 0}
                            onMouseDown={(e) => onSelect(e, node)}
                            onMouseEnter={() => setHoveredRowIndex(rowIndex)}
-                           className={hovered === rowIndex ? "hover" : null}
                            {..._props}>{node.path}</StyledCell>;
       default:
         return <StyledCell odd={isOdd(rowIndex)}
+                           hover={hovered === rowIndex}
+                           selected={selected.indexOf(node.path) >= 0}
                            onMouseDown={(e) => onSelect(e, node)}
                            onMouseEnter={() => setHoveredRowIndex(rowIndex)}
-                           className={hovered === rowIndex ? "hover" : null}
                            {..._props}>...</StyledCell>;
 
     }

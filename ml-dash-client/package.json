@@ -18,6 +18,7 @@
     "is-glob": "^4.0.1",
     "json5": "^2.1.0",
     "jsonwebtoken": "^8.5.0",
+    "measure-text": "latest",
     "minimatch": "^3.0.4",
     "polished": "^3.0.0",
     "rc-table": "^6.4.3",
@@ -28,10 +29,12 @@
     "react-fade": "^1.1.1",
     "react-feather": "^1.1.6",
     "react-json-view": "^1.19.1",
+    "react-middle-truncate": "^1.0.0",
     "react-monaco-editor": "^0.24.0",
     "react-relay": "^2.0.0",
     "react-resizable": "^1.7.5",
     "react-scripts": "2.1.3",
+    "react-text-overflow-middle-ellipsis": "^1.3.10-test4",
     "react-textfit": "^1.1.0",
     "react-use": "^5.5.5",
     "react-vis": "^1.11.6",
@@ -41,6 +44,7 @@
     "styled-components": "^4.1.3",
     "styled-container-query": "^1.3.2",
     "throttle-debounce": "^2.1.0",
+    "units-css": "latest",
     "window": "^4.2.6"
   },
   "scripts": {
@@ -68,6 +72,7 @@
   "devDependencies": {
     "babel-plugin-relay": "^2.0.0-rc.2",
     "graphql": "^14.1.1",
+    "lodash.tofinite": "^4.12.1",
     "relay-compiler": "^2.0.0"
   }
 }
