@@ -19,7 +19,7 @@ class Parameters(ObjectType):
     flat = GenericScalar(description="the raw data object for the parameters")
 
     def resolve_name(self, info):
-        return basename(self.id),
+        return basename(self.id)
 
     def resolve_path(self, info):
         return self.id
