@@ -1,5 +1,5 @@
 from functools import reduce
-from os.path import split, join
+from os.path import split, join, basename
 from graphene import ObjectType, relay, String, List
 from graphene.types.generic import GenericScalar
 from ml_dash.config import Args
@@ -11,11 +11,18 @@ class Parameters(ObjectType):
     class Meta:
         interfaces = relay.Node,
 
-    _path = String(description="The true path to the parameter file. Internal use only")
+    name = String(description="The true path to the parameter file. Internal use only")
+    path = String(description="The true path to the parameter file. Internal use only")
     keys = List(String, description="list of parameter keys")
     value = GenericScalar(description="the json value for the parameters")
     raw = GenericScalar(description="the raw data object for the parameters")
     flat = GenericScalar(description="the raw data object for the parameters")
+
+    def resolve_name(self, info):
+        return basename(self.id),
+
+    def resolve_path(self, info):
+        return self.id
 
     def resolve_keys(self, info):
         value = reduce(assign, read_json(join(Args.logdir, self.id[1:])) or [{}])
@@ -45,5 +52,4 @@ class ParameterConnection(relay.Connection):
 
 
 def get_parameters(id):
-    # path = os.path.join(Args.logdir, id[1:])
     return Parameters(id=id)
