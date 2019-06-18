@@ -6,18 +6,21 @@ import {fetchQuery} from 'relay-runtime';
 import {Box, Image, Video, RangeInput} from "grommet";
 import Ansi from "ansi-to-react";
 
-import {modernEnvironment} from "../data";
+import {modernEnvironment, inc} from "../data";
 import {by, commonPrefix, strOrder, subPrefix} from "../lib/string-sort";
 import {pathJoin} from "../lib/path-join";
 import store from "../local-storage";
 import LineChart from "./LineChart";
+import {commitMutation} from "react-relay";
+import MonacoEditor from "react-monaco-editor";
+import {toGlobalId} from "../lib/relay-helpers";
 
 const globQuery = graphql`
-  query FileViewsQuery ($cwd: String!, $glob: String) {
-    glob ( cwd: $cwd, query: $glob) {
-      id name path
+    query FileViewsQuery ($cwd: String!, $glob: String) {
+        glob ( cwd: $cwd, query: $glob) {
+            id name path
+        }
     }
-  }
 `;
 
 
@@ -25,28 +28,111 @@ function globFiles({cwd, glob}) {
   return fetchQuery(modernEnvironment, globQuery, {cwd, glob});
 }
 
-//todo: add chunked loading
-const textFileQuery = graphql`
-  query FileViewsTextFileQuery ($id: ID!) {
-    file (id: $id) { text }
-  }
-`;
+export function fetchTextFile(path) {
+  let id = toGlobalId("File", path);
+  return fetchQuery(modernEnvironment, graphql`
+      query FileViewsTextFileQuery ($id: ID!) {
+          node (id: $id) {
+              id
+              ... on File { text }
+          }
+      }`, {id})
+}
 
-function fetchFile(id) {
-  return fetchQuery(modernEnvironment, textFileQuery, {id})
+export function fetchYamlFile(path) {
+  let id = toGlobalId("File", path);
+  return fetchQuery(modernEnvironment, graphql`
+      query FileViewsYamlFileQuery ($id: ID!) {
+          node (id: $id) {
+              id
+              ... on File { text yaml }
+          }
+      }`, {id})
+}
+
+function updateText(path, text) {
+  // returns a relay.Disposable
+  let id = toGlobalId("File", path);
+  return commitMutation(modernEnvironment, {
+    mutation: graphql`
+        mutation FileViewsTextMutation($input: MutateTextFileInput!) {
+            updateText (input: $input) {
+                file { id name path text yaml}
+            }
+        }
+    `,
+    variables: {
+      input: {id, text, clientMutationId: inc()},
+    },
+    configs: []
+  });
+}
+
+//note: use the same resolver as the writer
+function updateYaml(path, data) {
+  let id = toGlobalId("File", path);
+  return commitMutation(modernEnvironment, {
+    mutation: graphql`
+        mutation FileViewsYamlMutation($input: MutateYamlFileInput!) {
+            updateYaml (input: $input) {
+                file { id name path text yaml}
+            }
+        }
+    `,
+    variables: {
+      input: {id, data, clientMutationId: inc()},
+    },
+    configs: []
+  });
 }
 
 const StyledText = styled.pre`
   overflow: auto
 `;
 
-export function TextView({id, ansi = false, width = "100%", height = "100%"}) {
+export function TextView({path, ansi = false}) {
   //todo: add scroll bar
   const [text, setText] = useState("");
   useEffect(() => {
-    fetchFile(id).then(({file, errors}) => setText(file.text))
-  }, [id]);
+    let running = true;
+    const abort = () => running = false;
+    fetchTextFile(path).then(({node, errors}) => {
+      if (running) {
+        if (node) setText(node.text || "");
+        else setText("");
+      }
+    });
+    return abort;
+  }, [path, setText]);
   return <StyledText>{ansi ? <Ansi>{text}</Ansi> : text}</StyledText>;
+}
+
+export function TextEditor({path, ..._props}) {
+  //todo: add scroll bar
+  const [text, setText] = useState("");
+  useEffect(() => {
+    let running = true;
+    const abort = () => running = false;
+    fetchTextFile(path).then(({node, errors}) => {
+      if (running) {
+        if (node) setText(node.text || "");
+        else setText("");
+      }
+    });
+    return abort;
+  }, [path, setText, ...Object.values(_props)]);
+  return <MonacoEditor width="100%"
+                       height="100%"
+                       language="yaml"
+                       theme="vs-github"
+                       value={text}
+                       options={{
+                         selectOnLineNumbers: true,
+                         folding: true,
+                         automaticLayout: true
+                       }}
+                       onChange={(value) => updateText(path, value)}
+                       editorDidMount={() => null}/>
 }
 
 export function ImageView({width = "100%", height = "100%", src}) {
@@ -60,6 +146,8 @@ export function ImageView({width = "100%", height = "100%", src}) {
 
 export function VideoView({width = "100%", height = "100%", src}) {
   //todo: add scroll bar
+  console.log(src);
+  if (!src) return <span>still loading</span>;
   return <Video style={{
     maxWidth: width, maxHeight: height,
     objectFit: "contain",
@@ -79,10 +167,15 @@ export const StyledTitle = styled.div`
   > .title {
     display: inline-block;
     border-radius: 10px;
-    height: 18px;
-    color: white;
-    background: #23aaff;
+    color: #555;
+    font-weight: 500;
+    &:hover {
+      color: white;
+      background: #23aaff;
+    }
     padding: 0 1em;
+    height: 1.5em;
+    line-height: 1.5em;
   }
 `;
 
@@ -103,24 +196,26 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
   if (typeof cwd === 'object') return null;
 
   useEffect(() => {
-    globFiles({cwd, glob}).then(data => {
-      if (data && data.glob)
-        setFiles([...data.glob].sort(by(strOrder, "path")));
+    let running = true;
+    const abort = () => running = false;
+    globFiles({cwd, glob}).then(({glob, errors}) => {
+      if (running && glob)
+        setFiles([...glob].sort(by(strOrder, "path")));
     });
-  }, [cwd, glob]);
+    return abort;
+  }, [cwd, glob, setFiles]);
+
   const selected = files[index >= 0 ? index : (files.length + index)];
   const pathPrefix = commonPrefix(files.map(({path}) => path));
 
   src = src || (selected
-      ? pathJoin(store.value.profile.url + "/files", selected.path.slice(1))
+      ? pathJoin(store.value.profile.url, "files", selected.path.slice(1))
       : null);
 
   // if type === "file" type = fileTypes(src);
   let viewer; // only render if src is valid. Otherwise breaks the video component.
   if (type === "video" && src) viewer = <VideoView src={encodeURI(src)}/>;
   else viewer = <MainContainer><ImageView src={encodeURI(src)}/></MainContainer>;
-
-  console.log(type, src, encodeURI(src));
 
   return <>
     <Box>

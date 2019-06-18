@@ -72,7 +72,6 @@ type File implements Node {
   name: String
   stem: String
   path: String
-  relPath: String
   text(start: Int = 0, stop: Int): String
   json: GenericScalar
   yaml: GenericScalar
@@ -100,6 +99,8 @@ type Metrics implements Node {
 }
 
 input MutateJSONFileInput {
+  id: ID
+  data: GenericScalar
   clientMutationId: String
 }
 
@@ -120,6 +121,8 @@ type MutateTextFilePayload {
 }
 
 input MutateYamlFileInput {
+  id: ID
+  data: GenericScalar
   clientMutationId: String
 }
 
@@ -184,7 +187,7 @@ type Query {
   metrics(id: ID!): Metrics
   directory(id: ID!): Directory
   file(id: ID!): File
-  glob(cwd: String!, query: String): [File]
+  glob(cwd: String!, query: String, start: Int, stop: Int): [File]
 }
 
 type Series implements Node {

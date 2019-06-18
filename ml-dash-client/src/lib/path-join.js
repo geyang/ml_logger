@@ -27,3 +27,13 @@ export function pathJoin(...parts) {
   });
   return parts.join(separator);
 }
+
+export function relPath(root, path) {
+  let _root = root.split('/');
+  let _path = path.split('/');
+  return _path.slice(_root.length).join('/');
+}
+
+export function basename(path) {
+  return path.split('/').slice(-1)[0];
+}

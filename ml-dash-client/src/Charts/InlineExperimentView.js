@@ -4,7 +4,7 @@ import graphql from "babel-plugin-relay/macro";
 import {fetchQuery} from 'relay-runtime';
 import {modernEnvironment} from "../data";
 import {by, strOrder} from "../lib/string-sort";
-import {fromGlobalId} from "../lib/relay-helpers";
+import {fromGlobalId, toGlobalId} from "../lib/relay-helpers";
 import {ImageView, StyledTitle, TextView, VideoView} from "./FileViews";
 import store from "../local-storage";
 import {pathJoin} from "../lib/path-join";
@@ -13,24 +13,7 @@ import {displayType} from "./file-types";
 
 const {commitMutation} = require("react-relay");
 
-const expQuery = graphql`
-  query InlineExperimentViewQuery($id: ID!) {
-    experiment (id: $id) {
-      id name path
-      metrics { id keys }
-      directories(first:10000) { edges {node { id name path } } }
-      files(first:10000) { edges { node { id name path } } }
-    }
-  }`;
-
-const dirQuery = graphql`
-  query InlineExperimentViewDirectoryQuery($id: ID!) {
-    directory (id: $id) {
-      id name path
-      directories(first:1000) { edges {node { id name path } } }
-      files(first:1000) { edges { node { id name path } } }
-    }
-  }`;
+//todo: change to node() {... on Experimen}
 const StyledContainer = styled.div`
   padding: 10px;
   overflow-y: auto;
@@ -63,18 +46,34 @@ function File({name, ..._}) {
   return <StyledItem {..._}>{name}</StyledItem>
 }
 
-function fetchExperiment(inputs) {
-  return fetchQuery(modernEnvironment, expQuery, inputs);
+function fetchExperiment(path) {
+  let id = toGlobalId("Experiment", path);
+  return fetchQuery(modernEnvironment, graphql`
+      query InlineExperimentViewQuery($id: ID!) {
+          experiment (id: $id) {
+              id name path
+              metrics { name path keys }
+              directories(first:100) { edges {node { name path } } }
+              files(first:100) { edges { node { name path } } }
+          }
+      }`, {id});
 }
 
-function fetchDirectory(inputs) {
-  return fetchQuery(modernEnvironment, dirQuery, inputs);
+function fetchDirectory(path) {
+  let id = toGlobalId("Directory", path);
+  return fetchQuery(modernEnvironment, graphql`
+      query InlineExperimentViewDirectoryQuery($id: ID!) {
+          directory (id: $id) {
+              id name path
+              directories(first:100) { edges {node { name path } } }
+              files(first:100) { edges { node { name path } } }
+          }
+      }`, {id});
 }
 
-function InlineFile({id, name}) {
-  const {type, id: path} = fromGlobalId(id);
-  const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
-  console.log(name, displayType(name), src);
+function InlineFile({path, name}) {
+  const src = pathJoin(store.value.profile.url, "files", path.slice(1));
+  console.log(displayType(name, src));
   const _ = () => {
     switch (displayType(name)) {
       case "image":
@@ -82,13 +81,15 @@ function InlineFile({id, name}) {
       case "video":
         return <VideoView src={encodeURI(src)}/>;
       case "ansi":
-        return <TextView id={id} key={id} ansi={true}/>;
+        return <TextView path={path} key={path} ansi={true}/>;
       case "markdown":
-        return <TextView id={id} key={id} ansi={true}/>;
+        return <TextView path={path} key={path} ansi={true}/>;
       case "text":
-        return <TextView id={id} key={id}/>;
+        return <TextView path={path} key={path}/>;
       default:
-        return null;
+        // return null;
+        // note: if no type is detected, show as text file.
+        return <TextView path={path} key={path}/>;
     }
   };
   return <Box>
@@ -100,92 +101,103 @@ function InlineFile({id, name}) {
 }
 
 
-function InlineMetrics({id, name, keys, addMetricCell, addChart, ..._metrics}) {
-  const [selected, setSelection] = useState();
-  const {type, id: path} = fromGlobalId(id);
-  const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
+function InlineMetrics({path, name, keys, addMetricCell, addChart, ..._metrics}) {
+  const id = toGlobalId("Metrics", path);
+  const [selectedKey, select] = useState();
+  //todo: for downloading the file
+  // const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
   return <>
     <Box>
       <StyledTitle>
         <div className="title" title={name}>{name}</div>
       </StyledTitle>
       <StyledContainer>
-        {keys.map(k => <StyledItem onClick={() => setSelection(k)}>{k}</StyledItem>)}
+        {keys.map(k => <StyledItem key={k} onClick={() => select(k)}>{k}</StyledItem>)}
       </StyledContainer>
     </Box>
-    {selected
+    {selectedKey
         ? <Box>
           <StyledContainer>
-            <StyledItem onClick={() => addChart({yKey: selected})}>+ Line Chart</StyledItem>
-            <StyledItem onClick={() => addMetricCell({metrics: selected})}>+ Metric Cell</StyledItem>
+            <StyledItem onClick={() => addChart({yKey: selectedKey})}>+ Line Chart</StyledItem>
+            <StyledItem onClick={() => addMetricCell({metrics: selectedKey})}>+ Metric Cell</StyledItem>
           </StyledContainer>
         </Box>
         : null}
   </>;
 }
 
-function InlineDirView({id, showHidden, onSubmit}) {
+function InlineDirView({path, showHidden, onSubmit}) {
   const [{directories, files}, setState] = useState({directories: [], files: []});
   const [queryError, setError] = useState();
-  const [selected, select] = useState({id: null});
-  const selectedType = selected.id ? fromGlobalId(selected.id).type : null;
+  const [selected, select] = useState({});
 
   useEffect(() => {
-    fetchDirectory({id}).then(({directory, error}) => {
+    let running = true;
+    const abort = () => running = false;
+    fetchDirectory(path).then(({directory, error}) => {
       if (!!error) return setError(error);
       if (!directory) return null;
       let {files, directories} = directory;
-      setState({
-        directories: directories.edges.map(({node}) => node).sort(by(strOrder, "name")),
-        files: files.edges.map(({node}) => node).sort(by(strOrder, "name"))
-      })
+      if (running)
+        setState({
+          directories: directories.edges.map(({node}) => node).sort(by(strOrder, "name")),
+          files: files.edges.map(({node}) => node).sort(by(strOrder, "name"))
+        });
     });
-  }, [id, showHidden]);
+    return abort;
+  }, [path, showHidden]);
 
   return <>
     <StyledContainer>
       {queryError ? <div>{queryError.toString()}</div> : null}
-      {directories.map(f => <Directory active={selected.id === f.id} onClick={() => select(f)} {...f}/>)}
-      {files.map(f => <File active={selected.id === f.id} onClick={() => select(f)} {...f}/>)}
+      {directories.map(f => <Directory key={f.name} active={selected.path === f.path} {...f}
+                                       onClick={() => select({type: "Directory", ...f})}/>)}
+      {files.map(f => <File key={f.name} active={selected.path === f.path} {...f}
+                            onClick={() => select({type: "File", ...f})}/>)}
     </StyledContainer>
-    {selectedType === "Directory" ? <InlineDirView key={selected.id} {...selected}/> : null}
-    {selectedType === "File" ? <InlineFile key={selected.id} {...selected}/> : null}
+    {selected.type === "Directory" ? <InlineDirView key={selected.path} {...selected}/> : null}
+    {selected.type === "File" ? <InlineFile key={selected.path} {...selected}/> : null}
   </>
 }
 
-export default function InlineExperimentView({id, showHidden, onSubmit, addMetricCell, addChart}) {
+export default function InlineExperimentView({path, showHidden, onSubmit, addMetricCell, addChart}) {
   const [{metrics, directories, files}, setState] = useState({metrics: {}, directories: [], files: []});
   const [queryError, setError] = useState();
-  const [selected, select] = useState({id: null});
-  const selectedType = selected.id ? fromGlobalId(selected.id).type : null;
-
+  const [selected, select] = useState({});
   useEffect(() => {
-    fetchExperiment({id}).then(({experiment, error}) => {
+    let running = true;
+    const abort = () => running = false;
+    fetchExperiment(path).then(({experiment, error}) => {
       if (!!error) return setError(error);
       if (!experiment) return null;
       let {metrics, files, directories} = experiment;
-      setState({
-        metrics,
-        directories: directories.edges.map(({node}) => node).sort(by(strOrder, "name")),
-        files: files.edges.map(({node}) => node).sort(by(strOrder, "name"))
-      })
+      if (running)
+        setState({
+          metrics,
+          directories: directories.edges.map(({node}) => node).sort(by(strOrder, "name")),
+          files: files.edges.map(({node}) => node).sort(by(strOrder, "name"))
+        });
     });
-  }, [id, showHidden]);
+    return abort;
+  }, [path, showHidden]);
 
   return <>
     <StyledContainer>
       {queryError ? <div>{queryError.toString()}</div> : null}
-      {directories.map(f => <Directory active={selected.id === f.id} onClick={() => select(f)} {...f}/>)}
+      {directories.map(f => <Directory key={f.name} active={selected.path === f.path}
+                                       onClick={() => select({type: "Directory", ...f})} {...f}/>)}
       {files.map(f => (f.name === "metrics.pkl")
-          ? <Metrics name="metrics.pkl" active={selected.id === metrics.id} onClick={() => select(metrics)}/>
-          : <File active={selected.id === f.id} onClick={() => select(f)} {...f}/>)}
+          ? <Metrics key={f.name}
+                     name="metrics.pkl" active={selected === metrics.id}
+                     onClick={() => select({type: "Metrics", ...f})}/>
+          : <File key={f.name} active={selected.path === f.path}
+                  onClick={() => select({type: "File", ...f})} {...f}/>)}
     </StyledContainer>
-    {/*this is a hack, the name for metrics need to be added to the file.*/}
-    {selectedType === "Metrics"
+    {selected.type === "Metrics" //hack: the name for metrics need to be added to the file.
         ? <InlineMetrics name="Metrics" addMetricCell={addMetricCell} addChart={addChart} {...metrics}/>
         : null}
-    {selectedType === "Directory" ? <InlineDirView key={selected.id} {...selected}/> : null}
-    {selectedType === "File" ? <InlineFile key={selected.id} {...selected}/> : null}
+    {selected.type === "Directory" ? <InlineDirView key={selected} {...selected}/> : null}
+    {selected.type === "File" ? <InlineFile key={selected} {...selected}/> : null}
   </>;
 }
 

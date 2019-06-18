@@ -20,26 +20,26 @@ import Color from 'color';
 import {chartColors} from "./chart-theme";
 
 const seriesQuery = graphql`
-  query LineChartsQuery(
-    $prefix: String,
-    $xKey: String,
-    $xAlign: String,
-    $yKey: String,
-    $yKeys: [String],
-    $k: Int,
-    $metricsFiles: [String]!
-  ) {
-    series (
-      metricsFiles: $metricsFiles
-      prefix: $prefix
-      k: $k
-      xKey: $xKey
-      yKey: $yKey
-      yKeys: $yKeys
-      xAlign: $xAlign
-      # k: 10                    
-    ) {id xKey yKey xData yMean y25 y75}
-  }
+    query LineChartsQuery(
+        $prefix: String,
+        $xKey: String,
+        $xAlign: String,
+        $yKey: String,
+        $yKeys: [String],
+        $k: Int,
+        $metricsFiles: [String]!
+    ) {
+        series (
+            metricsFiles: $metricsFiles
+            prefix: $prefix
+            k: $k
+            xKey: $xKey
+            yKey: $yKey
+            yKeys: $yKeys
+            xAlign: $xAlign
+            # k: 10                    
+        ) {id xKey yKey xData yMean y25 y75}
+    }
 `;
 
 const browser = detect();
@@ -56,6 +56,8 @@ let yLabelStyles = {
 };
 
 function fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k,}) {
+  // const controller = new AbortController();
+  // const signal = controller.signal;
   return fetchQuery(modernEnvironment, seriesQuery, {
     metricsFiles: metricsFiles.filter(_ => !!_),
     prefix, xKey, xAlign, yKey, yKeys, k
@@ -127,13 +129,17 @@ function LineChart({
   }
 
   useEffect(() => {
-    if (!lines.length) fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k})
+    // if (!lines.length)
+    let running = true;
+    const abort = () => running = false;
+    fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k})
         .then((data) => {
-          if (data) setLines([{
+          if (running && data) setLines([{
             mean: seriesToRecords(data.series),
             quarter: seriesToAreaRecords(data.series)
           }])
         });
+    return abort;
   }, [...metricsFiles, prefix, xKey, yKey, yKeys, k]);
 
   return <FlexibleXYPlot onMouseLeave={_onMouseLeave} {..._props}>

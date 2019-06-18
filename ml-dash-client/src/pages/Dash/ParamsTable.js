@@ -112,20 +112,20 @@ function TableCell({children, ...rest}) {
 }
 
 const metricsQuery = graphql`
-  query ParamsTableQuery(
-    $metricsFiles: [String]!,
-    $prefix: String,
-    $yKey: String,
-    $tail: Int,
-  ) {
-    series (
-      metricsFiles: $metricsFiles
-      prefix: $prefix
-      yKey: $yKey
-      k: 1
-      tail: $tail
-    ) {id yKey yMean y25 y75}
-  }
+    query ParamsTableQuery(
+        $metricsFiles: [String]!,
+        $prefix: String,
+        $yKey: String,
+        $tail: Int,
+    ) {
+        series (
+            metricsFiles: $metricsFiles
+            prefix: $prefix
+            yKey: $yKey
+            k: 1
+            tail: $tail
+        ) {id yKey yMean y25 y75}
+    }
 `;
 
 function fetchMetrics({metricsFiles, prefix, yKey, yKeys, tail}) {
@@ -163,7 +163,13 @@ function MetricsCell({metricKey, precision = 2, metricsFiles, prefix, last = 10,
   const ask = () => fetchMetrics({metricsFiles, prefix, yKey: metricKey, tail: last})
       .then(({series, errors}) => setState({value: series, errors}));
   useEffect(() => {
-    if (!state.value) ask();
+    let running = true;
+    const abort = () => running = false;
+    fetchMetrics({metricsFiles, prefix, yKey: metricKey, tail: last})
+        .then(({series, errors}) => {
+          if (running) setState({value: series, errors});
+        });
+    return abort;
   }, [...metricsFiles, metricKey]);
   if (state.errors)
     return <TableCell title={"loading..."} {...rest}>{`${state.errors}`}<RefreshButton onClick={ask}/></TableCell>;
@@ -490,7 +496,7 @@ export default function ParamsTable({
                             return null;
                         }
                       })}
-                      <InlineExperimentView id={exp.id}
+                      <InlineExperimentView path={exp.path}
                                             showHidden={true}
                                             onClick={() => null}
                                             addMetricCell={addMetricCell}

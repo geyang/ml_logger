@@ -9,7 +9,7 @@ export default function Profiles({match, router, ..._props}) {
   const [newProfile, setNewProfile] = useState({});
   const [{profile = {}, profiles = []}, setStoreValue] = useState(store.value);
 
-  useEffect(() => store.subscribe(setStoreValue));
+  useEffect(() => store.subscribe(setStoreValue), []);
 
   return (<Box fill={true} direction="row" justify='stretch'>
     <Box alignSelf={'center'} justifySelt={'center'} fill="horizontal" direction="column" align="center">

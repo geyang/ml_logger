@@ -1,16 +1,19 @@
 import React, {} from "react";
 import styled from "styled-components";
+import {StyledBase} from "./layouts";
 
-const Styled = styled.div`
+const Styled = styled(StyledBase)`
   position: fixed;
   height: 42px;
   right: 0;
   top: 0;
   padding: 12px 20px;
   line-height: 24px;
+  color: white;
   height: 48px;
   cursor: pointer;
   box-sizing: border-box;
+  z-index: 1;
   &:hover {
     background: rgba(0, 0, 0, 0.1);
   }`;

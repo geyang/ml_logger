@@ -7,7 +7,7 @@ import {Resolver} from 'found-relay';
 import FrontPage from './pages/FrontPage';
 import Profile, {ProfileQuery, render as ProfileRender} from "./pages/Profile";
 import KitchenSink from "./pages/KitchenSink";
-import Dash, {DashPrepareVariables, DashQuery} from "./pages/Dash";
+import Dash from "./pages/Dash";
 import Theme from "./Theme";
 import Settings from "./pages/Settings";
 import Profiles from "./pages/Profiles";
@@ -26,10 +26,7 @@ const Router = createFarceRouter({
         <Route path=":username" Component={Profile}
                prepareVariables={(params) => params} query={ProfileQuery}
                render={ProfileRender}/>
-        <Route path=":username/:project/:path*"
-               Component={Dash}
-               query={DashQuery}
-               prepareVariables={DashPrepareVariables}/>
+        <Route path=":username/:project/:path*" Component={Dash}/>
       </Route>
   ),
 

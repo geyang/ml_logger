@@ -21,7 +21,7 @@ function updateText(fileId, text) {
     mutation: graphql`
       mutation ExperimentDashUpdateMutation($input: MutateTextFileInput!) {
         updateText (input: $input) {
-          file { id name path relPath text yaml}
+          file { id name path text yaml}
         }
       }
     `,
@@ -38,7 +38,7 @@ function updateDashConfig(fileId, dashConfig) {
     mutation: graphql`
       mutation ExperimentDashYamlUpdateMutation($input: MutateYamlFileInput!) {
         updateYaml (input: $input) {
-          file { id name path relPath text yaml}
+          file { id name path text yaml}
         }
       }
     `,
@@ -306,20 +306,20 @@ export default createFragmentContainer(ExperimentDash, {
           node { id name }
         }
       }
-      readme { id name path relPath text }
+      readme { id name path text }
       dashConfigs (first:10) {
         edges{
           cursor
-          node {id name text stem relPath yaml}
+          node {id name text stem yaml}
         }
       }
-      fullExperiments: experiments (first:1000) @connection(key: "ExperimentDash_fullExperiments") {
-        edges { node {
-          id name path
-          parameters { keys flat}
-          metrics {id keys name path}
-        } }
-      }
+#      fullExperiments: experiments (first:1000) @connection(key: "ExperimentDash_fullExperiments") {
+#        edges { node {
+#          id name path
+#          parameters { keys flat}
+#          metrics {id keys name path}
+#        } }
+#      }
     }
   `
 });
