@@ -53,6 +53,7 @@ export const StyledHero = styled(StyledBase)`
     font-weight: 300;
   }
   .path {
+    cursor: pointer;
     width: fit-content;
     margin-right: 0.5em;
     padding: 0 0.7em;

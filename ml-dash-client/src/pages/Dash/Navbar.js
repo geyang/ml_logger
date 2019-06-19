@@ -48,24 +48,19 @@ function Navbar({width, minWidth, height, fill, selected, print, directory, load
       .reverse();
 
   return (
-      <ColContainer
-          style={{
-            width, height,
-            minWidth,
-            boxShadow: "inset -20px 0 20px -8px rgba(245,245,250,0.9)",
-            background: "rgba(245,245,250,0.27)",
-          }}
-          fill={fill}
-          {..._props}>
-        <div>
-          {sortedDirectories.map((node) =>
-              <StyledButton
-                  key={node.path}
-                  onClick={() => onClickDir(node.path)}
-                  selected={selected === node.path}>
-                {node.name}
-              </StyledButton>)}
-        </div>
+      <ColContainer fill={fill}
+                    style={{
+                      width, height, minWidth,
+                      boxShadow: "inset -20px 0 20px -8px rgba(245,245,250,0.9)",
+                      background: "rgba(245,245,250,0.27)",
+                    }} {..._props}>
+        {sortedDirectories.map((node) =>
+            <StyledButton
+                key={node.path}
+                onClick={() => onClickDir(node.path)}
+                selected={selected === node.path}>
+              {node.name}
+            </StyledButton>)}
         <GrayButton onClick={loadMore}>Load More..</GrayButton>
       </ColContainer>);
 }

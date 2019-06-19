@@ -12,6 +12,7 @@ export default function ChartGridView({expPath, chartsConfig}) {
 
   let [yaml, setYaml] = useState([]);
   useEffect(() => {
+    if (chartsConfig && chartsConfig.length) return;
     let running = true;
     const abort = () => running = false;
     fetchYamlFile(chartPath).then(({node, errors}) => {
@@ -19,8 +20,6 @@ export default function ChartGridView({expPath, chartsConfig}) {
     });
     return abort;
   }, [expPath]);
-
-  console.log(chartsConfig);
 
   const inlineCharts = (chartsConfig || (yaml && yaml.charts) || [])
       .filter(c => c !== null)

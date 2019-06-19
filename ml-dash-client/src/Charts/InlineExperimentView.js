@@ -34,6 +34,9 @@ const StyledItem = styled.div`
   }
 `;
 
+function Parameters({name, ..._}) {
+  return <StyledItem {..._}>{name}</StyledItem>
+}
 
 function Metrics({name, ..._}) {
   return <StyledItem {..._}>{name}</StyledItem>
@@ -53,6 +56,7 @@ function fetchExperiment(path) {
       query InlineExperimentViewQuery($id: ID!) {
           experiment (id: $id) {
               id name path
+              parameters { name path flat }
               metrics { name path keys }
               directories(first:100) { edges {node { name path } } }
               files(first:100) { edges { node { name path } } }
@@ -72,40 +76,37 @@ function fetchDirectory(path) {
       }`, {id});
 }
 
-function InlineFile({path, name}) {
+function InlineFile({path, name, style={}}) {
   const src = pathJoin(store.value.profile.url, "files", path.slice(1));
-  console.log(displayType(name, src));
-  const _ = () => {
-    switch (displayType(name)) {
-      case "image":
-        return <ImageView src={encodeURI(src)}/>;
-      case "video":
-        return <VideoView src={encodeURI(src)}/>;
-      case "ansi":
-        return <TextView path={path} key={path} ansi={true}/>;
-      case "markdown":
-        return <TextView path={path} key={path} ansi={true}/>;
-      case "text":
-        return <TextView path={path} key={path}/>;
-      default:
-        // return null;
-        // note: if no type is detected, show as text file.
-        return <TextView path={path} key={path}/>;
-    }
-  };
-  return <Box>
+  let view, type = displayType(name);
+  switch (type) {
+    case "image":
+      view = <ImageView src={encodeURI(src)}/>;
+      break;
+    case "video":
+      view = <VideoView src={encodeURI(src)}/>;
+      break;
+    case "ansi":
+      view = <TextView path={path} key={path} ansi={true}/>;
+      break;
+    case "markdown":
+    case "text":
+    default: // note: if no type is detected, show as text file.
+      view = <TextView path={path} key={path}/>;
+      style['gridColumn'] = "span 2";
+  }
+  return <Box style={style}>
     <StyledTitle>
       <Ellipsis className="title" title={name || "N/A"}
                 text={name || "N/A"}
                 padding="2em"/>
     </StyledTitle>
-    {_()}
+    {view}
   </Box>;
 }
 
 
 function InlineMetrics({path, name, keys, addMetricCell, addChart, ..._metrics}) {
-  const id = toGlobalId("Metrics", path);
   const [selectedKey, select] = useState();
   //todo: for downloading the file
   // const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
@@ -131,6 +132,30 @@ function InlineMetrics({path, name, keys, addMetricCell, addChart, ..._metrics})
   </>;
 }
 
+function InlineParameters({path, name, flat, addKey, ..._metrics}) {
+  const [selectedKey, select] = useState();
+  //todo: for downloading the file
+  // const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
+  console.log(flat);
+  return <>
+    <Box style={{gridColumn: "span 2"}}>
+      <StyledTitle>
+        <div className="title" title={name || "N/A"}>{name || "N/A"}</div>
+      </StyledTitle>
+      <StyledContainer>
+        {Object.entries(flat || {})
+            .map(([k, v], i) =>
+                <StyledItem key={k} onClick={() => select(k)}>{k}:{v}</StyledItem>)}
+      </StyledContainer>
+    </Box>
+    {selectedKey
+        ? <StyledContainer>
+          <StyledItem onClick={() => addKey({yKey: selectedKey})}>+ add to table</StyledItem>
+        </StyledContainer>
+        : null}
+  </>;
+}
+
 function InlineDirView({path, showHidden, onSubmit}) {
   const [{directories, files}, setState] = useState({directories: [], files: []});
   const [queryError, setError] = useState();
@@ -139,8 +164,8 @@ function InlineDirView({path, showHidden, onSubmit}) {
   useEffect(() => {
     let running = true;
     const abort = () => running = false;
-    fetchDirectory(path).then(({directory, error}) => {
-      if (!!error) return setError(error);
+    fetchDirectory(path).then(({directory, errors}) => {
+      if (!!errors) return setError(errors);
       if (!directory) return null;
       let {files, directories} = directory;
       if (running)
@@ -166,18 +191,20 @@ function InlineDirView({path, showHidden, onSubmit}) {
 }
 
 export default function InlineExperimentView({path, showHidden, onSubmit, addMetricCell, addChart}) {
-  const [{metrics, directories, files}, setState] = useState({metrics: {}, directories: [], files: []});
+  const [{parameters, metrics, directories, files}, setState] =
+      useState({parameters: {}, metrics: {}, directories: [], files: []});
   const [queryError, setError] = useState();
   const [selected, select] = useState({});
   useEffect(() => {
     let running = true;
     const abort = () => running = false;
-    fetchExperiment(path).then(({experiment, error}) => {
-      if (!!error) return setError(error);
+    fetchExperiment(path).then(({experiment, errors}) => {
+      if (!!errors) return setError(errors);
       if (!experiment) return null;
-      let {metrics, files, directories} = experiment;
+      let {parameters, metrics, files, directories} = experiment;
       if (running)
         setState({
+          parameters,
           metrics,
           directories: directories.edges.map(({node}) => node).sort(by(strOrder, "name")),
           files: files.edges.map(({node}) => node).sort(by(strOrder, "name"))
@@ -191,15 +218,27 @@ export default function InlineExperimentView({path, showHidden, onSubmit, addMet
       {queryError ? <div>{queryError.toString()}</div> : null}
       {directories.map(f => <Directory key={f.name} active={selected.path === f.path}
                                        onClick={() => select({type: "Directory", ...f})} {...f}/>)}
-      {files.map(f => (f.name === "metrics.pkl")
-          ? <Metrics key={f.name}
-                     name="metrics.pkl" active={selected === metrics.id}
-                     onClick={() => select({type: "Metrics", ...f})}/>
-          : <File key={f.name} active={selected.path === f.path}
-                  onClick={() => select({type: "File", ...f})} {...f}/>)}
+      {files.map(f => {
+        switch (f.name) {
+          case "parameters.pkl":
+            return <Parameters key={f.name}
+                               name="parameters.pkl" active={selected === parameters.path}
+                               onClick={() => select({type: "Parameters", ...f})}/>;
+          case "metrics.pkl":
+            return <Metrics key={f.name}
+                            name="metrics.pkl" active={selected === metrics.path}
+                            onClick={() => select({type: "Metrics", ...f})}/>;
+          default:
+            return <File key={f.name} active={selected.path === f.path}
+                         onClick={() => select({type: "File", ...f})} {...f}/>;
+        }
+      })}
     </StyledContainer>
     {selected.type === "Metrics" //hack: the name for metrics need to be added to the file.
         ? <InlineMetrics name="Metrics" addMetricCell={addMetricCell} addChart={addChart} {...metrics}/>
+        : null}
+    {selected.type === "Parameters" //hack: the name for metrics need to be added to the file.
+        ? <InlineParameters name="Parameter" addParameter={() => null} {...parameters}/>
         : null}
     {selected.type === "Directory" ? <InlineDirView key={selected} {...selected}/> : null}
     {selected.type === "File" ? <InlineFile key={selected} {...selected}/> : null}

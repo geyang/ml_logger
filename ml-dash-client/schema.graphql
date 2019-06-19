@@ -152,7 +152,8 @@ type PageInfo {
 
 type Parameters implements Node {
   id: ID!
-  Path: String
+  name: String
+  path: String
   keys: [String]
   value: GenericScalar
   raw: GenericScalar

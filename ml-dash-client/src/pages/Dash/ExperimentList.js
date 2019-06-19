@@ -7,6 +7,9 @@ import {modernEnvironment} from "../../data";
 import {toGlobalId} from "../../lib/relay-helpers";
 import {Col, ColContainer, RowContainer} from "../../components/layouts";
 import {VariableSizeGrid as Grid} from 'react-window';
+import {useBoolean} from "react-use";
+import {between, nOr} from "../../lib/range";
+import {relPath} from "../../lib/path-join";
 // ? (p.odd ? "rgba(27,124,195,0.26)" : "rgba(37,170,255,0.13)")
 const StyledCell = styled.div`
   cursor: pointer;
@@ -25,6 +28,7 @@ function isOdd(i) {
 }
 
 function ExperimentList({
+                          path,
                           width, height,
                           selected, onSelect,
                           breadCrumbs, directory, loadMore, ..._props
@@ -33,56 +37,70 @@ function ExperimentList({
   const [sorted, setExperiments] = useState([]);
 
   useEffect(() => {
-    setExperiments((experiments && experiments.edges || [])
-        .filter(_ => _ !== null)
-        .map(({node}) => node)
-        .filter(_ => _ !== null)
-        .sort(by(strOrder, "path"))
-        .reverse());
+    setExperiments(
+        (experiments && experiments.edges || [])
+            .filter(_ => _ !== null)
+            .map(({node}) => node)
+            .filter(_ => _ !== null)
+            .sort(by(strOrder, "path"))
+            .reverse());
   }, [experiments]);
 
   const [hovered, setHoveredRowIndex] = useState(null);
   const itemData = useMemo(() => ({hovered, setHoveredRowIndex}), [hovered]);
+  const [shiftIndex, setShift] = useState(null);
+
 
   function Cell({columnIndex, rowIndex, data, ..._props}) {
     const {hovered, setHoveredRowIndex} = data;
     let node = sorted[rowIndex];
     if (!node)
       return <StyledCell onClick={loadMore} {..._props}>Load More..</StyledCell>;
+    const mouseDown = (e) => {
+      if (e.shiftKey) {
+        if (shiftIndex === null) setShift(rowIndex);
+        else {
+          let [min, max] = [shiftIndex, rowIndex].sort();
+          setShift(null);
+          onSelect(e, ...sorted.slice(min, max + 1));
+        }
+      } else
+        onSelect(e, node);
+    };
     switch (columnIndex) {
       case(0):
         return <StyledCell odd={isOdd(rowIndex)}
-                           hover={hovered === rowIndex}
+                           hover={between(rowIndex, nOr(shiftIndex, hovered), hovered)}
                            selected={selected.indexOf(node.path) >= 0}
-                           onMouseDown={(e) => onSelect(e, node)}
+                           onMouseDown={mouseDown}
                            onMouseEnter={() => setHoveredRowIndex(rowIndex)}
-                           {..._props}></StyledCell>;
+                           {..._props}/>;
       case(1):
         return <StyledCell odd={isOdd(rowIndex)}
-                           hover={hovered === rowIndex}
+                           hover={between(rowIndex, nOr(shiftIndex, hovered), hovered)}
                            selected={selected.indexOf(node.path) >= 0}
-                           onMouseDown={(e) => onSelect(e, node)}
+                           onMouseDown={mouseDown}
                            onMouseEnter={() => setHoveredRowIndex(rowIndex)}
                            {..._props}>{rowIndex + 1}</StyledCell>;
       case(2):
         return <StyledCell odd={isOdd(rowIndex)}
-                           hover={hovered === rowIndex}
+                           hover={between(rowIndex, nOr(shiftIndex, hovered), hovered)}
                            selected={selected.indexOf(node.path) >= 0}
-                           onMouseDown={(e) => onSelect(e, node)}
+                           onMouseDown={mouseDown}
                            onMouseEnter={() => setHoveredRowIndex(rowIndex)}
                            {..._props}>{node.name}</StyledCell>;
       case(3):
         return <StyledCell odd={isOdd(rowIndex)}
-                           hover={hovered === rowIndex}
+                           hover={between(rowIndex, nOr(shiftIndex, hovered), hovered)}
                            selected={selected.indexOf(node.path) >= 0}
-                           onMouseDown={(e) => onSelect(e, node)}
+                           onMouseDown={mouseDown}
                            onMouseEnter={() => setHoveredRowIndex(rowIndex)}
-                           {..._props}>{node.path}</StyledCell>;
+                           {..._props}>{relPath(path, node.path)}</StyledCell>;
       default:
         return <StyledCell odd={isOdd(rowIndex)}
-                           hover={hovered === rowIndex}
+                           hover={between(rowIndex, nOr(shiftIndex, hovered), hovered)}
                            selected={selected.indexOf(node.path) >= 0}
-                           onMouseDown={(e) => onSelect(e, node)}
+                           onMouseDown={mouseDown}
                            onMouseEnter={() => setHoveredRowIndex(rowIndex)}
                            {..._props}>...</StyledCell>;
 
@@ -102,7 +120,10 @@ function ExperimentList({
       <ColContainer ref={el}
                     fill={true}
                     shrink={true}
-                    onMouseLeave={() => setHoveredRowIndex(null)}
+                    onMouseLeave={() => {
+                      setHoveredRowIndex(null);
+                      setShift(null);
+                    }}
                     style={{width, height,}} {..._props}>
         <Grid width={measure.width}
               height={measure.height}
@@ -153,6 +174,6 @@ export default function ({path, ..._props}) {
             }}
         `}
       render={
-        ({error, props, retry}) => <ExperimentList loadMore={loadMore} {...props} {..._props}/>
+        ({error, props, retry}) => <ExperimentList path={path} loadMore={loadMore} {...props} {..._props}/>
       }/>;
 }

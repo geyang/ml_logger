@@ -12,6 +12,8 @@ import ProfileBlock from "../../components/ProfileBlock";
 import {fetchTextFile, fetchYamlFile, TextEditor, TextView} from "../../Charts/FileViews";
 import ChartGridView from "./chart-grid-view";
 import Ellipsis from "../../components/Form/Ellipsis";
+import {intersect, minus, union} from "../../lib/sigma-algebra";
+import ParameterRow from "../../Charts/ParameterRow";
 
 const SquareBadge = styled.div`
   width: 42px;
@@ -65,19 +67,48 @@ const GroupHeader = styled(GradientBackDrop)`
   color: white;
   font-size: 15px;
   font-weight: 400;
+  overflow-x: hidden;
+  white-space: nowrap;
+  > .item {
+    height: 100%;
+    position: relative;
+    > . { 
+      display: inline-block !important; 
+     }
+    .root {
+      position: absolute;
+      left: 0;
+      top: 0.5em;
+      height: 10px;
+      line-height: 10px;
+      font-size: 10px;
+      color: white
+      font-weight: 600;
+    }
+  }
+  .badge.long {
+    /* this is a hack! */
+    direction: rtl;
+    text-align: left;
+    min-width: 150px;
+  }
+  .badge:not(.long) {
+    max-width: 200px;
+  }
   .badge {
+    overflow: hidden;
     width: auto;
-    min-width: 42px;
-    max-width: 400px;
+    display: inline-block;
+    text-overflow: ellipsis;
     height: 1.5em;
     border-radius: 5px;
-    margin-left: 1em;
+    margin: 0 0.5em 0 0.25em;
     padding: 0 0.5em;
     box-sizing: border-box;
     background: #ffffff2b;
     color: white;
     line-height: 1.5em;
-    vertical-align: baseline;
+    vertical-align: middle;
     align-self: center;
   }
 `;
@@ -112,10 +143,8 @@ export default function Dash({match, router, ..._props}) {
     const abort = () => running = false;
     fetchYamlFile(pathJoin(breadCrumb.slice(-1)[0], ".dash.yml"))
         .then(({node, errors}) => {
-          if (running) {
-            if (node) setDashConfig(node.yaml || {keys: [], charts: []});
-            else setDashConfig({keys: [], charts: []});
-          }
+          if (running)
+            setDashConfig({keys: [], charts: [], ...(node && node.yaml || {})})
         });
     return abort;
   }, [breadCrumb.slice(-1)[0], setDashConfig]);
@@ -124,17 +153,24 @@ export default function Dash({match, router, ..._props}) {
   const [sideCar, setSideCar] = useState("readme");
   const [selected, select] = useState([]);
 
-  const onSelect = (e, experiment) => {
+  const onSelect = (e, ...experiments) => {
     if (e.ctrlKey || e.metaKey) {
+      e.stopPropagation();
       if (!selected) {
-      } else if (selected.indexOf(experiment.path) === -1) {
-        select([...selected, experiment.path]);
+      } else if (selected.indexOf(experiments[0].path) === -1) {
+        select([...selected, experiments[0].path]);
         setSideCar('all');
       } else {
-        select(selected.filter(_ => _ !== experiment.path));
+        select(selected.filter(_ => _ !== experiments[0].path));
       }
+    } else if (e.shiftKey) {
+      let newPaths = experiments.map(_ => _.path);
+      let newSelection = minus(union(selected, newPaths), intersect(selected, newPaths));
+      select(newSelection);
+      if (newSelection.length > 1) setSideCar('all');
+      else if (newSelection.length == 1) setSideCar('details');
     } else {
-      select([experiment.path]);
+      select([experiments[0].path]);
       if (sideCar !== 'charts') setSideCar('details');
     }
   };
@@ -154,6 +190,7 @@ export default function Dash({match, router, ..._props}) {
         <ColContainer><h1>{project}</h1></ColContainer>
         <RowContainer>
           <Link className="path" to={pathJoin(fullPath, "../")}>../</Link>
+          <div className="path" onClick={() => set(breadCrumb.slice(0, 1))}>{basename(fullPath)}</div>
           {breadCrumb.slice(1).map((path, ind) =>
               <Link className="path" key={path} to={path}>{basename(path)}</Link>)}
         </RowContainer>
@@ -179,8 +216,8 @@ export default function Dash({match, router, ..._props}) {
               return <RowContainer height="calc(100% - 10px)" background={"#f5f5f5"} ref={el}>{
                 breadCrumb.map((path, depth) =>
                     <ColumnFinder key={path}
-                                  width="250px"
-                                  minWidth="250px"
+                        // width="250px"
+                        // minWidth="250px"
                                   height="100%"
                                   fill={depth === (breadCrumb.length - 1)}
                                   path={path}
@@ -207,11 +244,6 @@ export default function Dash({match, router, ..._props}) {
                    style={{marginLeft: "20px", marginTop: "50px"}}
                    overflow={false}
                    boxShadow="0 0 20px rgba(0, 0, 0, 0.1)">
-      {/*detail view, start with chart view*/}
-      {/*<Resizable*/}
-      {/*    enable={{"bottom": true}}*/}
-      {/*    defaultSize={{width: "auto", height: 400}}><pre><TextView*/}
-      {/*    path={breadCrumb.slice(-1)[0] + "/README.md"}/></pre></Resizable>*/}
       <ColContainer overflow={false}>
         <PaddedRowContainer height="56px" background="white">
           <Button className={sideCar === "readme" ? "selected" : null}
@@ -240,36 +272,49 @@ export default function Dash({match, router, ..._props}) {
                   selected.map((expPath, i) =>
                       <ColContainer key={expPath} overflow={false}>
                         <GroupHeader>
-                          RUN:<Ellipsis className="badge" title={expPath} text={expPath} padding="1em"/>
+                          RUN: <div className="badge long" title={expPath}>{expPath}</div>
+                          {/* start with keys */}
+                          <ParameterRow path={firstSelection} paramKeys={dashConfig.keys}/>
                         </GroupHeader>
                         <GroupBody minHeight="250px"><ChartGridView expPath={expPath} chartsConfig={dashConfig.charts}/></GroupBody>
                       </ColContainer>
                   )}</>;
               case "charts":
-                return <><Resizable key={"charts-editor"}
-                                    enable={{"bottom": true}}
-                                    defaultSize={{width: "auto", height: 200}}
-                ><TextEditor path={pathJoin(firstSelection, ".charts.yml")}/></Resizable>
-                  <ColContainer overflow={false}>
-                    <GroupHeader>
-                      RUN:<Ellipsis className="badge" title={firstSelection} text={firstSelection} padding="1em"/>
-                    </GroupHeader>
-                    <GroupBody minHeight="250px">{firstSelection ?
-                        <ChartGridView expPath={firstSelection}/> : null}</GroupBody>
-                  </ColContainer></>;
+                return <>
+                  <Resizable key={"charts-editor"}
+                             enable={{"bottom": true}}
+                             defaultSize={{width: "auto", height: 200}}>
+                    <TextEditor path={pathJoin(firstSelection, ".charts.yml")}/>
+                  </Resizable>
+                  {firstSelection
+                      ? <ColContainer overflow={false}>
+                        <GroupHeader>
+                          RUN: <div className="badge long" title={firstSelection}>{firstSelection}</div>
+                          {/* start with keys */}
+                          <ParameterRow path={firstSelection}/>
+                        </GroupHeader>
+                        <GroupBody minHeight="250px">{firstSelection ?
+                            <ChartGridView expPath={firstSelection}/> : null}</GroupBody>
+                      </ColContainer> : null}
+                </>;
               case "details":
               default:
-                return <><Resizable key={"details-readme"}
-                                    enable={{"bottom": true}}
-                                    defaultSize={{width: "auto", height: 200}}
-                ><TextEditor path={pathJoin(firstSelection, "README.md")}/></Resizable>
-                  <ColContainer overflow={false}>
-                    <GroupHeader>
-                      RUN:<Ellipsis className="badge" title={firstSelection} text={firstSelection} padding="1em"/>
-                    </GroupHeader>
-                    <GroupBody minHeight="250px">{firstSelection ?
-                        <ChartGridView expPath={firstSelection}/> : null}</GroupBody>
-                  </ColContainer></>;
+                return <>
+                  <Resizable key={"details-readme"}
+                             enable={{"bottom": true}}
+                             defaultSize={{width: "auto", height: 200}}>
+                    <TextEditor path={pathJoin(firstSelection, "README.md")}/>
+                  </Resizable>
+                  {firstSelection
+                      ? <ColContainer overflow={false}>
+                        <GroupHeader>
+                          RUN: <div className="badge long" title={firstSelection}>{firstSelection}</div>
+                          <ParameterRow path={firstSelection}/>
+                        </GroupHeader>
+                        <GroupBody minHeight="250px">
+                          <ChartGridView expPath={firstSelection}/></GroupBody>
+                      </ColContainer> : null}
+                </>;
             }
           })()
         }</div>

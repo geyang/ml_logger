@@ -16,15 +16,16 @@ export function realPath(path) {
 
 export function pathJoin(...parts) {
   const separator = '/';
-  parts = parts.map((part, index) => {
-    if (index) {
-      part = part.replace(new RegExp('^' + separator), '');
-    }
-    if (index !== parts.length - 1) {
-      part = part.replace(new RegExp(separator + '$'), '');
-    }
-    return part;
-  });
+  parts = parts.filter(p => p !== null && typeof p !== 'undefined')
+      .map((part, index) => {
+        if (index) {
+          part = part.replace(new RegExp('^' + separator), '');
+        }
+        if (index !== parts.length - 1) {
+          part = part.replace(new RegExp(separator + '$'), '');
+        }
+        return part;
+      });
   return parts.join(separator);
 }
 
@@ -35,5 +36,5 @@ export function relPath(root, path) {
 }
 
 export function basename(path) {
-  return path.split('/').slice(-1)[0];
+  return path.split('/').filter(_=>_).slice(-1)[0];
 }
