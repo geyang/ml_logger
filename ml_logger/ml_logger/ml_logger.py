@@ -1337,6 +1337,13 @@ class ML_Logger:
         a leanding slash (`/`) to escape the logging prefix. Use two leanding slashes for
         the absolute path in the host for the logging server.
 
+        .. code:: python
+
+            with logger.PrefixContext("<your-run-prefix>"):
+                runs = logger.glob('**/metrics.pkl')
+                for _ in runs:
+                    exp_log = logger.load_pkl(_)
+                    
         :param query:
         :param wd: defaults to the current prefix. When trueful values are given, uses:
             > wd = os.path.join(self.prefix, wd)
