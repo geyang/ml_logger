@@ -113,7 +113,6 @@ function InlineFile({path, name, style = {}}) {
 
 function InlineMetrics({path, name, keys, addMetricCell, addChart, ..._metrics}) {
   const [selectedKey, select] = useState();
-  console.log(keys, _metrics);
   //todo: for downloading the file
   // const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
   return <>

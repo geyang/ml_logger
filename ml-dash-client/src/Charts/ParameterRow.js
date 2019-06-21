@@ -41,7 +41,7 @@ export default function ParameterRow({path, paramKeys}) {
     if (!paramKeys || !paramKeys.length)
       fetchChartConfig(pathJoin(path, ".charts.yml")).then(({node, errors}) => {
         if (!!errors || !node) return null;
-        if (running && node.yaml) setKeys(node.yaml.keys);
+        if (running && node.yaml) setKeys(node.yaml.keys || []);
       });
     else setKeys(paramKeys);
     return abort;
@@ -60,7 +60,8 @@ export default function ParameterRow({path, paramKeys}) {
                     : "-"
                 }</div>
             } else {
-              return <div className="item" key={k}>
+              return <div className="item" key={k.metrics}>
+                <div className="root">metrics.</div>
                 <span className="key">{k.metrics}:</span>
                 <span className="value">N/A</span>
               </div>

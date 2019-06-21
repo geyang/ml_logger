@@ -5,30 +5,37 @@ import {pathJoin} from "../../lib/path-join";
 import InlineExperimentView from "../../Charts/InlineExperimentView";
 import JSON5 from "json5";
 
+function preproc(charts) {
+  return (charts || [])
+      .filter(c => c !== null)
+      .map(c => (typeof c === 'string') ? {type: "series", yKey: c} : c)
+      .filter(c => (!c.prefix && !c.metricsFiles))
+      .map(c => ({...c, type: c.type || "series"}));
+}
+
+
 //highlevel interface:
 export default function ChartGridView({expPath, chartsConfig}) {
   const chartPath = pathJoin(expPath, ".charts.yml");
   const metricsPath = pathJoin(expPath, "metrics.pkl");
 
-  let [yaml, setYaml] = useState([]);
+  let [charts, setCharts] = useState([]);
+
   useEffect(() => {
     if (chartsConfig && chartsConfig.length) return;
     let running = true;
     const abort = () => running = false;
-    fetchYamlFile(chartPath).then(({node, errors}) => {
-      if (running) setYaml(node.yaml)
-    });
+    if (!chartsConfig || !chartsConfig.length)
+      fetchYamlFile(chartPath).then(({node, errors}) => {
+        if (!!errors || !node) return null;
+        if (running && node.yaml) setCharts(preproc(node.yaml.charts || []))
+      });
+    else setCharts(preproc(chartsConfig || []));
     return abort;
-  }, [expPath]);
-
-  const inlineCharts = (chartsConfig || (yaml && yaml.charts) || [])
-      .filter(c => c !== null)
-      .map(c => (typeof c === 'string') ? {type: "series", yKey: c} : c)
-      .filter(c => (!c.prefix && !c.metricsFiles))
-      .map(c => ({...c, type: c.type || "series"}));
+  }, [expPath, setCharts]);
 
   return <Grid>
-    {inlineCharts.map(({type, ...chart}, i) => {
+    {charts.map(({type, ...chart}, i) => {
       switch (type) {
         case "series":
           //todo: add title
