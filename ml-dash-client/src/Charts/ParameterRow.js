@@ -5,6 +5,7 @@ import {fetchQuery} from "react-relay";
 import {pathJoin} from "../lib/path-join";
 import graphql from "babel-plugin-relay/macro";
 import JSON5 from "json5";
+import Ellipsis from "../components/Ellipsis-2";
 
 function fetchChartConfig(path) {
   let id = toGlobalId("File", path);
@@ -48,15 +49,22 @@ export default function ParameterRow({path, paramKeys}) {
   if (keys && keys.length)
     return <>{
       keys.map(k => {
-            const head = k.split('.');
-            const last = head.pop();
-            return <div className="item" key={k}>
-              {head ? <div className="root">{head.join('.') + '.'}</div> : null}
-              <span>{last}:</span>
-              {flatParams
-                  ? <span className="badge">{JSON5.stringify(flatParams[k])}</span>
-                  : "-"
-              }</div>
+            if (typeof k === 'string') {
+              const head = k.split('.');
+              const last = head.pop();
+              return <div className="item" key={k}>
+                {head ? <div className="root">{head.join('.') + '.'}</div> : null}
+                <span>{last}:</span>
+                {flatParams
+                    ? <Ellipsis className="badge">{JSON5.stringify(flatParams[k])}</Ellipsis>
+                    : "-"
+                }</div>
+            } else {
+              return <div className="item" key={k}>
+                <span className="key">{k.metrics}:</span>
+                <span className="value">N/A</span>
+              </div>
+            }
           }
       )}</>;
   return null;

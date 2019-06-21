@@ -11,7 +11,7 @@ import {Resizable} from "re-resizable";
 import ProfileBlock from "../../components/ProfileBlock";
 import {fetchTextFile, fetchYamlFile, TextEditor, TextView} from "../../Charts/FileViews";
 import ChartGridView from "./chart-grid-view";
-import Ellipsis from "../../components/Form/Ellipsis";
+import Ellipsis from "../../components/Ellipsis-2";
 import {intersect, minus, union} from "../../lib/sigma-algebra";
 import ParameterRow from "../../Charts/ParameterRow";
 
@@ -92,7 +92,7 @@ const GroupHeader = styled(GradientBackDrop)`
     text-align: left;
     min-width: 150px;
   }
-  .badge:not(.long) {
+  .badge:not(.long):not(:hover) {
     max-width: 200px;
   }
   .badge {
@@ -181,7 +181,8 @@ export default function Dash({match, router, ..._props}) {
     <StyledBase as="aside" width="80px" background="white" boxShadow="0 0 5px rgba(0, 0, 0, 0.1)" zIndex={1}>
       <StyledBase><SquareBadge
           as={"img"}
-          src="/ml-dash_logo.png" alt="ml-dash logo"
+          title={"ML-Dash | Make Research Fun"}
+          src="/ml-dash_logo.png" alt="ML-Dash | Make Research Fun | logo"
           width={48} height={48}/></StyledBase>
     </StyledBase>
     <ColContainer fill={true} shrink={true} background="transparent">
@@ -272,9 +273,9 @@ export default function Dash({match, router, ..._props}) {
                   selected.map((expPath, i) =>
                       <ColContainer key={expPath} overflow={false}>
                         <GroupHeader>
-                          RUN: <div className="badge long" title={expPath}>{expPath}</div>
+                          RUN: <Ellipsis className="badge long" title={expPath}>{expPath}</Ellipsis>
                           {/* start with keys */}
-                          <ParameterRow path={firstSelection} paramKeys={dashConfig.keys}/>
+                          <ParameterRow path={expPath} paramKeys={dashConfig.keys}/>
                         </GroupHeader>
                         <GroupBody minHeight="250px"><ChartGridView expPath={expPath} chartsConfig={dashConfig.charts}/></GroupBody>
                       </ColContainer>
@@ -289,7 +290,7 @@ export default function Dash({match, router, ..._props}) {
                   {firstSelection
                       ? <ColContainer overflow={false}>
                         <GroupHeader>
-                          RUN: <div className="badge long" title={firstSelection}>{firstSelection}</div>
+                          RUN: <Ellipsis className="badge long" title={firstSelection}>{firstSelection}</Ellipsis>
                           {/* start with keys */}
                           <ParameterRow path={firstSelection}/>
                         </GroupHeader>
@@ -308,7 +309,7 @@ export default function Dash({match, router, ..._props}) {
                   {firstSelection
                       ? <ColContainer overflow={false}>
                         <GroupHeader>
-                          RUN: <div className="badge long" title={firstSelection}>{firstSelection}</div>
+                          RUN: <Ellipsis className="badge long" title={firstSelection}>{firstSelection}</Ellipsis>
                           <ParameterRow path={firstSelection}/>
                         </GroupHeader>
                         <GroupBody minHeight="250px">

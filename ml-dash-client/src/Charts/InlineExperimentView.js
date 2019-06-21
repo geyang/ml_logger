@@ -11,6 +11,8 @@ import {pathJoin} from "../lib/path-join";
 import {Box} from "grommet";
 import {displayType} from "./file-types";
 import Ellipsis from "../components/Form/Ellipsis";
+import JSON5 from "json5";
+import ParameterRow from "./ParameterRow";
 
 const {commitMutation} = require("react-relay");
 
@@ -76,7 +78,7 @@ function fetchDirectory(path) {
       }`, {id});
 }
 
-function InlineFile({path, name, style={}}) {
+function InlineFile({path, name, style = {}}) {
   const src = pathJoin(store.value.profile.url, "files", path.slice(1));
   let view, type = displayType(name);
   switch (type) {
@@ -88,12 +90,15 @@ function InlineFile({path, name, style={}}) {
       break;
     case "ansi":
       view = <TextView path={path} key={path} ansi={true}/>;
+      style['gridColumn'] = "span 3";
+      style['gridRow'] = "span 3";
       break;
     case "markdown":
     case "text":
     default: // note: if no type is detected, show as text file.
       view = <TextView path={path} key={path}/>;
-      style['gridColumn'] = "span 2";
+      style['gridColumn'] = "span 3";
+      style['gridRow'] = "span 3";
   }
   return <Box style={style}>
     <StyledTitle>
@@ -108,18 +113,21 @@ function InlineFile({path, name, style={}}) {
 
 function InlineMetrics({path, name, keys, addMetricCell, addChart, ..._metrics}) {
   const [selectedKey, select] = useState();
+  console.log(keys, _metrics);
   //todo: for downloading the file
   // const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
   return <>
-    <Box>
+    <Box style={{gridColumn: "span 3", gridRow: "span 2"}}>
       <StyledTitle>
         <Ellipsis className="title" title={name || "N/A"}
                   text={name || "N/A"}
                   padding="2em"/>
       </StyledTitle>
-      <StyledContainer>
-        {keys.map(k => <StyledItem key={k} onClick={() => select(k)}>{k}</StyledItem>)}
-      </StyledContainer>
+      {(keys && keys.length) ?
+          <StyledContainer>
+            {keys.map(k => <StyledItem key={k} onClick={() => select(k)}>{k}</StyledItem>)}
+          </StyledContainer>
+          : null}
     </Box>
     {selectedKey
         ? <Box>
@@ -132,20 +140,58 @@ function InlineMetrics({path, name, keys, addMetricCell, addChart, ..._metrics})
   </>;
 }
 
+const StyledParamItem = styled.div`
+  position: relative;
+  margin: 0.5em 0.5em;
+  .root {
+    position: absolute;
+    font-size: 10px;
+    left: 0;
+    top: -1em;
+    font-weight: 600;
+    color: #f92a12;
+  }
+  .value {
+    border-radius: 4px;
+    background: #f0f0f0;
+    color: #f92a12;
+    padding: 0.15em 0.3em;
+    margin: 0 0.3em;
+    line-height: 16px;
+    font-size: 12px;
+    vertical-align: middle;
+  }
+`;
+
+function ParameterItem({paramKey, value}) {
+  if (typeof paramKey === "string") {
+    const head = paramKey.split('.');
+    const tail = head.pop();
+    return <StyledParamItem>
+      <span className="root">{head.join('.') + '.'}</span>
+      <span className="key">{tail}:</span>
+      <span className="value">{JSON5.stringify(value)}</span>
+    </StyledParamItem>
+  } else {
+    return <StyledParamItem>
+      <span className="key">{paramKey.metrics}:</span>
+      <span className="value">{JSON5.stringify(value)}</span>
+    </StyledParamItem>
+  }
+}
+
 function InlineParameters({path, name, flat, addKey, ..._metrics}) {
   const [selectedKey, select] = useState();
   //todo: for downloading the file
   // const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
-  console.log(flat);
   return <>
-    <Box style={{gridColumn: "span 2"}}>
+    <Box style={{gridColumn: "span 3", gridRow: "span 2"}}>
       <StyledTitle>
         <div className="title" title={name || "N/A"}>{name || "N/A"}</div>
       </StyledTitle>
       <StyledContainer>
         {Object.entries(flat || {})
-            .map(([k, v], i) =>
-                <StyledItem key={k} onClick={() => select(k)}>{k}:{v}</StyledItem>)}
+            .map(([k, v], i) => <ParameterItem key={k} paramKey={k} value={v}/>)}
       </StyledContainer>
     </Box>
     {selectedKey
