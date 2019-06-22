@@ -1,8 +1,6 @@
 from ml_dash.schema import schema
 from sanic_graphql import GraphQLView
 
-from .file_handlers import get_path, remove_path, batch_get_path
-
 from sanic import Sanic
 from sanic_cors import CORS
 
@@ -23,14 +21,12 @@ app.add_route(GraphQLView.as_view(schema=schema, batch=True),
               '/graphql/batch',
               methods=['GET', 'POST', 'FETCH', 'OPTIONS'])
 
-# # Serving static app
-# app.add_route(get_path, '/*', methods=['GET', 'OPTIONS'])
-
-# old RPC endpoints
-app.add_route(get_path, '/files/', methods=['GET', 'OPTIONS'])
-app.add_route(get_path, '/files/<file_path:path>', methods=['GET', 'OPTIONS'])
-app.add_route(batch_get_path, '/batch-files', methods=['GET', 'OPTIONS'])
-app.add_route(remove_path, '/files/<file_path:path>', methods=['DELETE'])
+@app.listener('before_server_start')
+def setup_static(app, loop):
+    from . import config
+    from os.path import expanduser
+    app.static('/files', expanduser(config.Args.logdir),
+               use_modified_since=True, use_content_range=True, stream_large_files=True)
 
 # note: currently disabled, file events API.
 # from .file_events import file_events, setup_watch_queue
