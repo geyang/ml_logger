@@ -19,11 +19,11 @@ let tempID = 0;
 function updateText(fileId, text) {
   return commitMutation(modernEnvironment, {
     mutation: graphql`
-      mutation ExperimentDashUpdateMutation($input: MutateTextFileInput!) {
-        updateText (input: $input) {
-          file { id name path text yaml}
+        mutation ExperimentDashUpdateMutation($input: MutateTextFileInput!) {
+            updateText (input: $input) {
+                file { id name path text yaml}
+            }
         }
-      }
     `,
     variables: {
       input: {id: fileId, text, clientMutationId: tempID++},
@@ -36,11 +36,11 @@ function updateText(fileId, text) {
 function updateDashConfig(fileId, dashConfig) {
   return commitMutation(modernEnvironment, {
     mutation: graphql`
-      mutation ExperimentDashYamlUpdateMutation($input: MutateYamlFileInput!) {
-        updateYaml (input: $input) {
-          file { id name path text yaml}
+        mutation ExperimentDashYamlUpdateMutation($input: MutateYamlFileInput!) {
+            updateYaml (input: $input) {
+                file { id name path text yaml}
+            }
         }
-      }
     `,
     variables: {
       input: {id: fileId, data: dashConfig, clientMutationId: tempID++},
@@ -50,14 +50,15 @@ function updateDashConfig(fileId, dashConfig) {
 }
 
 
-function deleteFile(fileId) {
+export function deleteFile(path) {
+  const fileId = toGlobalId('File', path);
   return commitMutation(modernEnvironment, {
     mutation: graphql`
-      mutation ExperimentDashDeleteMutation(
-        $input: DeleteFileInput!
-      ) {
-        deleteFile (input: $input) { ok id }
-      }
+        mutation ExperimentDashDeleteMutation(
+            $input: DeleteFileInput!
+        ) {
+            deleteFile (input: $input) { ok id }
+        }
     `,
     variables: {
       input: {id: fileId, clientMutationId: tempID++},
@@ -69,17 +70,18 @@ function deleteFile(fileId) {
   });
 }
 
-function deleteDirectory(fileId) {
+export function deleteDirectory(path) {
+  const dirId = toGlobalId('Directory', path);
   return commitMutation(modernEnvironment, {
     mutation: graphql`
-      mutation ExperimentDashDeleteDirectoryMutation(
-        $input: DeleteDirectoryInput!
-      ) {
-        deleteDirectory (input: $input) { ok id }
-      }
+        mutation ExperimentDashDeleteDirectoryMutation(
+            $input: DeleteDirectoryInput!
+        ) {
+            deleteDirectory (input: $input) { ok id }
+        }
     `,
     variables: {
-      input: {id: fileId, clientMutationId: tempID++},
+      input: {id: dirId, clientMutationId: tempID++},
     },
     configs: [{
       type: 'NODE_DELETE',
@@ -297,30 +299,30 @@ function ExperimentDash({
 
 export default createFragmentContainer(ExperimentDash, {
   directory: graphql`
-    fragment ExperimentDash_directory on Directory {
-      name
-      path
-      files ( first:5 ) @connection(key: "ExperimentDash_files"){
-        edges {
-          cursor
-          node { id name }
-        }
+      fragment ExperimentDash_directory on Directory {
+          name
+          path
+          files ( first:5 ) @connection(key: "ExperimentDash_files"){
+              edges {
+                  cursor
+                  node { id name }
+              }
+          }
+          readme { id name path text }
+          dashConfigs (first:10) {
+              edges{
+                  cursor
+                  node {id name text stem yaml}
+              }
+          }
+          #      fullExperiments: experiments (first:1000) @connection(key: "ExperimentDash_fullExperiments") {
+          #        edges { node {
+          #          id name path
+          #          parameters { keys flat}
+          #          metrics {id keys name path}
+          #        } }
+          #      }
       }
-      readme { id name path text }
-      dashConfigs (first:10) {
-        edges{
-          cursor
-          node {id name text stem yaml}
-        }
-      }
-#      fullExperiments: experiments (first:1000) @connection(key: "ExperimentDash_fullExperiments") {
-#        edges { node {
-#          id name path
-#          parameters { keys flat}
-#          metrics {id keys name path}
-#        } }
-#      }
-    }
   `
 });
 

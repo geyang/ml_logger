@@ -1359,5 +1359,65 @@ class ML_Logger:
         wd = os.path.join(self.prefix, wd or "")
         return self.client.glob(query, wd=wd, recursive=recursive, start=start, stop=stop)
 
+    def get_parameters(self, *keys, path="parameters.pkl", **kwargs):
+        """
+        utility to obtain the hyperparameters as a flattened dictionary.
+
+        If keys are passed, returns an array with each item corresponding to those keys
+
+        .. code:: python
+
+            lr, global_metric = logger.get_parameters('Args.lr', 'Args.global_metric')
+            print(lr, global_metric)
+
+        this returns:
+
+        .. code:: bash
+
+            0.03 'ResNet18L2'
+
+        Raises `FileNotFound` error if the parameter file pointed by the path is empty. To
+        avoid this, add a `default` keyword value to the call:
+
+        .. code:: python
+
+            param = logger.get_parameter('does_not_exist', default=None)
+            assert param is None, "should be the default value: None"
+
+
+        :param *keys: A list of strings to specify the parameter keys
+        :param path: Path to the parameters.pkl file. Keyword argument, default to `parameters.pkl`.
+        :param default: Undefined. If the default key is present, return default when param is missing.
+        :return:
+        """
+        _ = self.load_pkl(path)
+        if _ is None:
+            if keys[-1] and "parameters.pkl" in keys[-1]:
+                self.log_line('Your last key looks like a `parameters.pkl` path. Make '
+                              'sure you use a keyword argument to specify the path!', color="yellow")
+            raise FileNotFoundError(f'the parameter file is not found at {path}')
+
+        from functools import reduce
+        from ml_logger.helpers.func_helpers import assign, dot_flatten
+        parameters = dot_flatten(reduce(assign, _))
+        if len(keys) > 1:
+            return [parameters.get(k, kwargs['default']) if 'default' in kwargs else parameters[k] for k in keys]
+        elif len(keys) == 1:
+            return parameters.get(keys[0], kwargs['default']) if 'default' in kwargs else parameters[keys[0]]
+        return parameters
+
+    def abspath(self, *paths):
+        """
+        returns the absolute path w.r.t the logging directory.
+
+        .. code:: python
+
+
+
+        :param *paths: position arguments for each segment of the path.
+        :return: absolute path w.r.t. the logging directory (excluding the prefix)
+        """
+        return "/" + os.path.join(self.prefix, *paths)
+
 
 logger = ML_Logger()

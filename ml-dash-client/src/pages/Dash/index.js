@@ -217,8 +217,6 @@ export default function Dash({match, router, ..._props}) {
               return <RowContainer height="calc(100% - 10px)" background={"#f5f5f5"} ref={el}>{
                 breadCrumb.map((path, depth) =>
                     <ColumnFinder key={path}
-                        // width="250px"
-                        // minWidth="250px"
                                   height="100%"
                                   fill={depth === (breadCrumb.length - 1)}
                                   path={path}
