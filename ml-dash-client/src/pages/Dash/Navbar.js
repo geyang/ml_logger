@@ -47,6 +47,11 @@ function Navbar({width, minWidth, height, fill, selected, print, directory, load
       .sort(by(strOrder, "name"))
       .reverse();
 
+  const loadMoreButton = directories && directories.pageInfo.hasNextPage && (
+      <GrayButton onClick={loadMore}>Load More..</GrayButton>
+  );
+    console.log(loadMoreButton);
+
   return (
       <ColContainer
           style={{
@@ -66,7 +71,7 @@ function Navbar({width, minWidth, height, fill, selected, print, directory, load
                 {node.name}
               </StyledButton>)}
         </div>
-        <GrayButton onClick={loadMore}>Load More..</GrayButton>
+        {loadMoreButton}
       </ColContainer>);
 }
 

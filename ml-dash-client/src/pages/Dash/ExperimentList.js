@@ -44,8 +44,13 @@ function ExperimentList({
   function Cell({columnIndex, rowIndex, data, ..._props}) {
     const {hovered, setHoveredRowIndex} = data;
     let node = sorted[rowIndex];
-    if (!node)
-      return <StyledCell onClick={loadMore} {..._props}>Load More..</StyledCell>;
+      if (!node) {
+          if (experiments && experiments.pageInfo.hasNextPage) {
+              return <StyledCell onClick={loadMore} {..._props}>Load More ..</StyledCell>;
+          } else {
+              return <StyledCell {..._props}></StyledCell>;
+          }
+      }
     switch (columnIndex) {
       case(0):
         return <StyledCell odd={isOdd(rowIndex)}

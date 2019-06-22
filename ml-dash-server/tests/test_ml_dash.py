@@ -215,6 +215,44 @@ def test_directory(log_dir):
         show(r['data'])
 
 
+def test_directory_page_info(log_dir):
+    from ml_dash.config import Args
+    Args.logdir = log_dir
+    client = Client(schema)
+    query = """
+        query AppQuery ($id: ID!) {
+            directory ( id:  $id ) { 
+                id
+                name 
+                directories (first:10) {
+                    edges {
+                        node {
+                            id name path
+                            directories (first:2) {
+                                edges {
+                                    node {
+                                        id name
+                                    }
+                                }
+                                pageInfo { endCursor hasNextPage }
+                            }
+                        }
+                    }
+                    pageInfo { endCursor hasNextPage }
+                }
+            }
+        }
+    """
+    path = "/episodeyang/cpc-belief/mdp"
+    r = client.execute(query, variables=dict(id=to_global_id("Directory", path)))
+    if 'errors' in r:
+        raise RuntimeError(r['errors'])
+    else:
+        print(">>")
+        show(r['data'])
+
+
+
 # todo: add chunked loading for the text field. Necessary for long log files.
 def test_reac_text_file(log_dir):
     from ml_dash.config import Args

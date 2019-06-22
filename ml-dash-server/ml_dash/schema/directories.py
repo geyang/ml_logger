@@ -26,8 +26,9 @@ class Directory(ObjectType):
     experiments = relay.ConnectionField(lambda: schema.experiments.ExperimentConnection)
 
     def resolve_experiments(self, info, first=None, **kwargs):
+        # TODO: return generator in the future
         if first is not None:
-            return schema.experiments.find_experiments(cwd=self.id, stop=first)
+            return schema.experiments.find_experiments(cwd=self.id)
         return schema.experiments.find_experiments(cwd=self.id)
 
     directories = relay.ConnectionField(lambda: schema.directories.DirectoryConnection)
