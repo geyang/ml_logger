@@ -36,6 +36,15 @@ def file_stat(file_path, no_stat=True):
     )
 
 
+def fast_glob(query, wd, skip_children=False):
+    """
+    ignore subtree when file is found under a certain directory.
+    :param skip_childre:
+    :return:
+    """
+    raise NotImplementedError()
+
+
 def find_files(cwd, query, start=None, stop=None, no_stat=True, show_progress=False):
     """
     find files by iGlob.
@@ -48,14 +57,14 @@ def find_files(cwd, query, start=None, stop=None, no_stat=True, show_progress=Fa
     :return:
     """
     from itertools import islice
+    from tqdm import tqdm
+
     with cwdContext(cwd):
+        _ = islice(iglob(query, recursive=True), start, stop)
         if show_progress:
-            from tqdm import tqdm
-            file_paths = list(tqdm(islice(iglob(query, recursive=True), start, stop), desc=f"glob@{query}"))
-        else:
-            file_paths = list(islice(iglob(query, recursive=True), start, stop))
-        files = [file_stat(_, no_stat) for _ in file_paths]
-        return files
+            _ = tqdm(_, desc="@find_files")
+        for i, file_path in enumerate(_):
+            yield file_stat(file_path, no_stat=no_stat)
 
 
 def read_dataframe(path, k=200):

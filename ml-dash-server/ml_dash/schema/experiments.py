@@ -64,7 +64,7 @@ class ExperimentConnection(relay.Connection):
         node = Experiment
 
 
-def find_experiments(cwd, **kwargs):
+def find_experiments(cwd, stop, **kwargs):
     """
     find all experiments
 
@@ -76,7 +76,7 @@ def find_experiments(cwd, **kwargs):
     from ml_dash.config import Args
     assert isabs(cwd), "the current work directory need to be an absolute path."
     _cwd = realpath(join(Args.logdir, cwd[1:])).rstrip('/')
-    parameter_files = find_files(_cwd, "**/parameters.pkl", **kwargs)
+    parameter_files = find_files(_cwd, "**/parameters.pkl", stop=stop + 1, **kwargs)
     return [
         # note: not sure about the name.
         Experiment(id=join(cwd.rstrip('/'), p['dir']),
