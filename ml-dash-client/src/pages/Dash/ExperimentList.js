@@ -165,7 +165,8 @@ export default function ({path, ..._props}) {
                                 id
                                 name
                                 path
-                                metrics { value }
+                                # parameters { value }
+                                # metrics { value }
                             }
                         }
 

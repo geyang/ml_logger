@@ -22,15 +22,16 @@ export default function ChartGridView({expPath, chartsConfig}) {
   let [charts, setCharts] = useState([]);
 
   useEffect(() => {
-    if (chartsConfig && chartsConfig.length) return;
+    if (chartsConfig && chartsConfig.length) {
+      setCharts(preproc(chartsConfig || []));
+      return;
+    }
     let running = true;
     const abort = () => running = false;
-    if (!chartsConfig || !chartsConfig.length)
-      fetchYamlFile(chartPath).then(({node, errors}) => {
-        if (!!errors || !node) return null;
-        if (running && node.yaml) setCharts(preproc(node.yaml.charts || []))
-      });
-    else setCharts(preproc(chartsConfig || []));
+    fetchYamlFile(chartPath).then(({node, errors}) => {
+      if (!!errors || !node || !node.yaml || typeof node.yaml.charts === 'function') return null;
+      if (running) setCharts(preproc(node.yaml.charts || []))
+    });
     return abort;
   }, [expPath, setCharts]);
 

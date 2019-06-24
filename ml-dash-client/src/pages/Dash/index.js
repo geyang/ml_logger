@@ -11,9 +11,9 @@ import {Resizable} from "re-resizable";
 import ProfileBlock from "../../components/ProfileBlock";
 import {fetchTextFile, fetchYamlFile, TextEditor, TextView} from "../../Charts/FileViews";
 import ChartGridView from "./chart-grid-view";
-import Ellipsis from "../../components/Ellipsis-2";
 import {intersect, minus, union} from "../../lib/sigma-algebra";
 import ParameterRow from "../../Charts/ParameterRow";
+import Ellipsis from "../../components/Ellipsis-2";
 
 const SquareBadge = styled.div`
   width: 42px;
@@ -24,6 +24,7 @@ const SquareBadge = styled.div`
 `;
 
 const PaddedRowContainer1 = styled(RowContainer)`
+  will-change: transform;
   position: sticky;
   top: 0;
   color: #23A6D5;
@@ -37,6 +38,7 @@ const Button1 = styled(StyledBase)`
   &:hover { background: #fafafa; }
 `;
 const PaddedRowContainer = styled(RowContainer)`
+  will-change: transform;
   position: sticky;
   top: 0;
   color: #23A6D5;
@@ -58,6 +60,7 @@ const Button = styled(StyledBase)`
 `;
 
 const GroupHeader = styled(GradientBackDrop)`
+  will-change: transform;
   position: sticky;
   top: 56px;
   z-index: 1000;
@@ -87,9 +90,6 @@ const GroupHeader = styled(GradientBackDrop)`
     }
   }
   .badge.long {
-    /* this is a hack! */
-    direction: rtl;
-    text-align: left;
     min-width: 150px;
   }
   .badge:not(.long):not(:hover) {
@@ -179,7 +179,7 @@ export default function Dash({match, router, ..._props}) {
     <FixedHeroBackDrop/>
     <ProfileBlock profile={store.value.profile}/>
     <StyledBase as="aside" width="80px" background="white" boxShadow="0 0 5px rgba(0, 0, 0, 0.1)" zIndex={1}>
-      <StyledBase><SquareBadge
+      <StyledBase as="a" href="/favicon.ico"><SquareBadge
           as={"img"}
           title={"ML-Dash | Make Research Fun"}
           src="/ml-dash_logo.png" alt="ML-Dash | Make Research Fun | logo"

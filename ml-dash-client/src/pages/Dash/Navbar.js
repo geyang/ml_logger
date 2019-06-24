@@ -16,9 +16,10 @@ const StyledButton = styled(Button)`
   flex: 0 0 auto;
   height: 24px;
   line-height: 24px
-  padding: 0 10px;
+  padding: 0 1.5em 0 10px;
   text-decoration: none;
   top: 0; botton: 0;
+  will-change: transform;
   ${props => props.selected ? "position: sticky;" : null}
   width: ${props => props.selected ? "100%" : "none"};
   color: ${props => props.selected ? "white" : "inherit!important"};
@@ -28,10 +29,19 @@ const StyledButton = styled(Button)`
     box-shadow: 0 0 1px 0 #23aaff;
     background-color: #23aaff;
     color: white !important;
+    .right-button { 
+      opacity: 0.4; 
+      :before { content: "☰" }
+    }
   }
   user-select: none;
   position: relative;
   .right-button {
+    :before { content: "⋮" }
+    font-weight: 900;
+    font-height: 14px;
+    font-size: 14px;
+    padding-bottom: 1px;
     background: transparent;
     margin-left: 0.5em;
     display: inline-block;
@@ -45,14 +55,15 @@ const StyledButton = styled(Button)`
     width: 24px;
     height: 24px;
     border-radius: ${props => props.selected ? "0" : "0 12px 12px 0"};
-    opacity: 0.4;
+    opacity: 0.1;
     svg { stroke-width: 3; }
     :hover { 
+      :before { content: "☱" }
       opacity: 1;
-      box-shadow: 0 0 50px #4BA7E2;
-    }
-    :active:note(:active) {
-      box-shadow: inset 0 0 5px #1E7CBB;
+     }
+    :active:note(:active) { 
+      :before { content: "☱" }
+      box-shadow: inset 0 0 5px #1E7CBB; 
     }
   }
 `;
@@ -121,7 +132,7 @@ function Navbar({
       .sort(by(strOrder, "name"))
       .reverse();
 
-  const numOfDir = directory ? directories.edges.length : 0;
+  const numOfDir = directories ? directories.edges.length : 0;
   const numOfFiles = files ? files.edges.length : 0;
 
   const [show, toggle] = useState(false);
@@ -151,9 +162,7 @@ function Navbar({
               selected={selected === node.path}>
             {node.name}
             <div className="right-button" title="more directory options"
-                 onClick={() => toggle(show ? false : node.path)}>
-              <MoreVertical width="0.8em" height="0.8em"/>
-            </div>
+                 onClick={() => toggle(show ? false : node.path)}/>
           </StyledButton>)}
       <GrayButton onClick={loadMore}>Load More..</GrayButton>
     </StyledContainer>

@@ -10,9 +10,9 @@ import store from "../local-storage";
 import {pathJoin} from "../lib/path-join";
 import {Box} from "grommet";
 import {displayType} from "./file-types";
-import Ellipsis from "../components/Form/Ellipsis";
 import JSON5 from "json5";
-import ParameterRow from "./ParameterRow";
+import {Download, Close, XCircle, X} from "react-feather";
+import {ColContainer} from "../components/layouts";
 
 const {commitMutation} = require("react-relay");
 
@@ -78,7 +78,7 @@ function fetchDirectory(path) {
       }`, {id});
 }
 
-function InlineFile({path, name, style = {}}) {
+function InlineFile({path, name, style = {}, onClose}) {
   const src = pathJoin(store.value.profile.url, "files", path.slice(1));
   let view, type = displayType(name);
   switch (type) {
@@ -102,25 +102,29 @@ function InlineFile({path, name, style = {}}) {
   }
   return <Box style={style}>
     <StyledTitle>
-      <Ellipsis className="title" title={name || "N/A"}
-                text={name || "N/A"}
-                padding="2em"/>
+      <span className="spacer"/>
+      <a className="control" href={src} download={name} title={`press alt + click to download from ${src}`}><Download
+          height={12} width={12}/></a>
+      <span className="title">{name || "N/A"}</span>
+      {onClose ? <span className="control" onClick={onClose}><X height={12} width={12}/></span> : null}
+      <span className="spacer"/>
     </StyledTitle>
     {view}
   </Box>;
 }
 
 
-function InlineMetrics({path, name, keys, addMetricCell, addChart, ..._metrics}) {
+function InlineMetrics({path, name, keys, addMetricCell, addChart, onClose, ..._metrics}) {
   const [selectedKey, select] = useState();
   //todo: for downloading the file
   // const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
   return <>
     <Box style={{gridColumn: "span 3", gridRow: "span 2"}}>
       <StyledTitle>
-        <Ellipsis className="title" title={name || "N/A"}
-                  text={name || "N/A"}
-                  padding="2em"/>
+        <span className="spacer"/>
+        <span className="title" title={name || "N/A"}>{name || "N/A"}</span>
+        {onClose ? <span className="control" onClick={onClose}><X height={12} width={12}/></span> : null}
+        <span className="spacer"/>
       </StyledTitle>
       {(keys && keys.length) ?
           <StyledContainer>
@@ -179,14 +183,17 @@ function ParameterItem({paramKey, value}) {
   }
 }
 
-function InlineParameters({path, name, flat, addKey, ..._metrics}) {
+function InlineParameters({path, name, flat, addKey, onClose, ..._metrics}) {
   const [selectedKey, select] = useState();
   //todo: for downloading the file
   // const src = pathJoin(store.value.profile.url + "/files", path.slice(1));
   return <>
     <Box style={{gridColumn: "span 3", gridRow: "span 2"}}>
       <StyledTitle>
-        <div className="title" title={name || "N/A"}>{name || "N/A"}</div>
+        <span className="spacer"/>
+        <span className="title" title={name || "N/A"}>{name || "N/A"}</span>
+        {onClose ? <span className="control" onClick={onClose}><X height={12} width={12}/></span> : null}
+        <span className="spacer"/>
       </StyledTitle>
       <StyledContainer>
         {Object.entries(flat || {})
@@ -201,7 +208,7 @@ function InlineParameters({path, name, flat, addKey, ..._metrics}) {
   </>;
 }
 
-function InlineDirView({path, showHidden, onSubmit}) {
+function InlineDirView({name, path, showHidden, onClose, onSubmit}) {
   const [{directories, files}, setState] = useState({directories: [], files: []});
   const [queryError, setError] = useState();
   const [selected, select] = useState({});
@@ -222,16 +229,28 @@ function InlineDirView({path, showHidden, onSubmit}) {
     return abort;
   }, [path, showHidden]);
 
+  function _onClose() {
+    select(false);
+  }
+
   return <>
-    <StyledContainer>
-      {queryError ? <div>{queryError.toString()}</div> : null}
-      {directories.map(f => <Directory key={f.name} active={selected.path === f.path} {...f}
-                                       onClick={() => select({type: "Directory", ...f})}/>)}
-      {files.map(f => <File key={f.name} active={selected.path === f.path} {...f}
-                            onClick={() => select({type: "File", ...f})}/>)}
-    </StyledContainer>
-    {selected.type === "Directory" ? <InlineDirView key={selected.path} {...selected}/> : null}
-    {selected.type === "File" ? <InlineFile key={selected.path} {...selected}/> : null}
+    <ColContainer>
+      <StyledTitle>
+        <span className="spacer"/>
+        <span className="title" title={name || "N/A"}>{name || "N/A"}</span>
+        {onClose ? <span className="control" onClick={onClose}><X height={12} width={12}/></span> : null}
+        <span className="spacer"/>
+      </StyledTitle>
+      <StyledContainer>
+        {queryError ? <div>{queryError.toString()}</div> : null}
+        {directories.map(f => <Directory key={f.name} active={selected.path === f.path} {...f}
+                                         onClick={() => select({type: "Directory", ...f})}/>)}
+        {files.map(f => <File key={f.name} active={selected.path === f.path} {...f}
+                              onClick={() => select({type: "File", ...f})}/>)}
+      </StyledContainer>
+    </ColContainer>
+    {selected.type === "Directory" ? <InlineDirView key={selected.path} onClose={_onClose} {...selected}/> : null}
+    {selected.type === "File" ? <InlineFile key={selected.path} onClose={_onClose} {...selected}/> : null}
   </>
 }
 
@@ -258,6 +277,10 @@ export default function InlineExperimentView({path, showHidden, onSubmit, addMet
     return abort;
   }, [path, showHidden]);
 
+  function onClose() {
+    select(false)
+  }
+
   return <>
     <StyledContainer>
       {queryError ? <div>{queryError.toString()}</div> : null}
@@ -280,13 +303,14 @@ export default function InlineExperimentView({path, showHidden, onSubmit, addMet
       })}
     </StyledContainer>
     {selected.type === "Metrics" //hack: the name for metrics need to be added to the file.
-        ? <InlineMetrics name="Metrics" addMetricCell={addMetricCell} addChart={addChart} {...metrics}/>
+        ?
+        <InlineMetrics name="Metrics" addMetricCell={addMetricCell} addChart={addChart} onClose={onClose}{...metrics}/>
         : null}
     {selected.type === "Parameters" //hack: the name for metrics need to be added to the file.
-        ? <InlineParameters name="Parameter" addParameter={() => null} {...parameters}/>
+        ? <InlineParameters name="Parameter" addParameter={() => null} onClose={onClose} {...parameters}/>
         : null}
-    {selected.type === "Directory" ? <InlineDirView key={selected} {...selected}/> : null}
-    {selected.type === "File" ? <InlineFile key={selected} {...selected}/> : null}
+    {selected.type === "Directory" ? <InlineDirView key={selected} onClose={onClose} {...selected}/> : null}
+    {selected.type === "File" ? <InlineFile key={selected} {...selected} onClose={onClose}/> : null}
   </>;
 }
 

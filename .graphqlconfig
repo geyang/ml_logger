@@ -1,0 +1,13 @@
+{
+  "schemaPath": "ml-dash-client/schema.graphql",
+  "extensions": {
+    "endpoints": {
+      "http://localhost:8091/graphql": {
+        "url": "http://localhost:8091/graphql",
+        "headers": {
+          "user-agent": "JS GraphQL"
+        }
+      }
+    }
+  }
+}

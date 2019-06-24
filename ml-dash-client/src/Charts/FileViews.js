@@ -15,6 +15,7 @@ import {commitMutation} from "react-relay";
 import MonacoEditor from "react-monaco-editor";
 import {toGlobalId} from "../lib/relay-helpers";
 import Ellipsis from "../components/Form/Ellipsis";
+import {RowContainer} from "../components/layouts";
 
 const globQuery = graphql`
     query FileViewsQuery ($cwd: String!, $glob: String) {
@@ -159,13 +160,17 @@ export function VideoView({width = "100%", height = "100%", src}) {
   </Video>
 }
 
-export const StyledTitle = styled.div`
+export const StyledTitle = styled(RowContainer)`
   height: 18px;
   margin: 3px 0;
+  box-sizing: border-box;
+  height: 1.5em;
   text-align: center;
   cursor: pointer;
+  overflow: hidden;
   
   > .title {
+    flex: 0 0 auto;
     display: inline-block;
     border-radius: 10px;
     color: #555;
@@ -177,6 +182,47 @@ export const StyledTitle = styled.div`
     padding: 0 1em;
     height: 1.5em;
     line-height: 1.5em;
+    position:relative;
+    .close {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      margin: auto 3px;
+    }
+  }
+  > .spacer {
+    flex: 1 1 auto;
+  }
+  > .control {
+    flex: 0 0 auto;
+    display: inline-block;
+    color: black;
+    opacity: 0.6;
+    margin: 0 3px;
+    border-radius: 10px;
+    width: 1.5em;
+    height: 1.5em;
+    padding: 0 0.7em;
+    &:hover {
+      color: white;
+      background: gray;
+    }
+    position: relative;
+    svg {
+      stroke-width: 3;
+      width: 12px;
+      height: 12px;
+      stroke-width: 3;
+      width: 12px;
+      height: 12px;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      margin: auto;
+    }
   }
 `;
 
@@ -221,9 +267,10 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
   return <>
     <Box>
       <StyledTitle onClick={() => toggleShowConfig(!showConfig)}>
-        <Ellipsis className="title" title={selected && selected.path}
-                  text={selected ? selected.name : (title || "N/A")}
-                  padding="2em"/>
+        <span className="spacer"/>
+        <span className="title" title={selected && selected.path}
+              padding="2em">{selected ? selected.name : (title || "N/A")}</span>
+        <span className="spacer"/>
       </StyledTitle>{viewer}
     </Box>
     {showConfig
@@ -269,9 +316,10 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
 export function InlineChart({yKey, ...chart}) {
   return <Box>
     <StyledTitle onClick={() => null}>
-      <Ellipsis className="title" title={yKey || "N/A"}
-                text={yKey || "N/A"}
-                padding="2em"/>
+      <span className="spacer"/>
+      <span className="title" title={yKey || "N/A"}
+            padding="2em">{yKey || "N/A"}</span>
+      <span className="spacer"/>
     </StyledTitle>
     <MainContainer>
       <LineChart yKey={yKey} {...chart}/>

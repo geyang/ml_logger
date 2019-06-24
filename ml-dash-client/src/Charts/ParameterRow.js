@@ -40,8 +40,8 @@ export default function ParameterRow({path, paramKeys}) {
     const abort = () => running = false;
     if (!paramKeys || !paramKeys.length)
       fetchChartConfig(pathJoin(path, ".charts.yml")).then(({node, errors}) => {
-        if (!!errors || !node) return null;
-        if (running && node.yaml) setKeys(node.yaml.keys || []);
+        if (!!errors || !node || !node.yaml || typeof node.yaml.keys === 'function') return null;
+        if (running) setKeys(node.yaml.keys || []);
       });
     else setKeys(paramKeys);
     return abort;
