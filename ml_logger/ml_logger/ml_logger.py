@@ -415,7 +415,7 @@ class ML_Logger:
         """
         return os.path.splitext(path)[0]
 
-    def diff(self, diff_directory=".", diff_filename="index.diff", silent=False):
+    def diff(self, diff_directory=".", diff_filename="index.diff", ref="HEAD", silent=False):
         """
         example usage:
         --------------
@@ -426,13 +426,15 @@ class ML_Logger:
 
             logger.diff()  # => this writes a diff file to the root of your logging directory.
 
+        :param ref: the ref w.r.t which you want to diff against. Default to HEAD
         :param diff_directory: The root directory to call `git diff`, default to current directory.
         :param diff_filename: The file key for saving the diff file.
-        :return: None
+
+        :return: string containing the content of the patch
         """
         import subprocess
         try:
-            cmd = f'cd "{os.path.realpath(diff_directory)}" && git status -vv'
+            cmd = f'cd "{os.path.realpath(diff_directory)}" && git diff {ref} --binary'
             if not silent: self.log_line(cmd)
             p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
             patch = p.decode('utf-8').strip()
