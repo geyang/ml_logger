@@ -178,16 +178,21 @@ export default function Dash({match, router, ..._props}) {
   return <RootRow background="transparent">
     <FixedHeroBackDrop/>
     <ProfileBlock profile={store.value.profile}/>
-    <StyledBase as="aside" width="80px" background="white" boxShadow="0 0 5px rgba(0, 0, 0, 0.1)" zIndex={1}>
+    <StyledBase as="aside" width="80px" background="white" boxShadow="0 0 20px rgba(0, 0, 0, 0.1)" zIndex={20}>
       <StyledBase as="a" href="/favicon.ico"><SquareBadge
           as={"img"}
           title={"ML-Dash | Make Research Fun"}
           src="/ml-dash_logo.png" alt="ML-Dash | Make Research Fun | logo"
           width={48} height={48}/></StyledBase>
     </StyledBase>
-    <ColContainer fill={true} shrink={true} background="transparent">
+    <ColContainer as={Resizable}
+                  enable={{"right": true}}
+                  defaultSize={{width: "35%", height: "100%vh"}}
+                  handleStyles={{right: {zIndex: 1000}}}
+                  fill={false} shrink={false}
+                  background="transparent">
       {/*header/navbar*/}
-      <StyledHero>
+      <StyledHero style={{paddingRight: 0}}>
         <ColContainer><h1>{project}</h1></ColContainer>
         <RowContainer>
           <Link className="path" to={pathJoin(fullPath, "../")}>../</Link>
@@ -232,17 +237,15 @@ export default function Dash({match, router, ..._props}) {
       </ColContainer>
     </ColContainer>
 
-    <ColContainer as={Resizable}
-                  fill={true} shrink={false}
+    <ColContainer fill={true} shrink={true}
                   overflow={"visible"}
                   background="transparent"
-                  enable={{"left": true}}
-                  defaultSize={{width: "50%", height: "100%vh"}}
+                  style={{marginLeft: "-20px"}}
     ><ColContainer height="auto"
                    background="white"
-                   style={{marginLeft: "20px", marginTop: "50px"}}
+                   style={{marginLeft: "20px", marginTop: "50px", zIndex: 100}}
                    overflow={false}
-                   boxShadow="0 0 20px rgba(0, 0, 0, 0.1)">
+                   boxShadow="0 0 20px rgba(0, 0, 0, 0.3)">
       <ColContainer overflow={false}>
         <PaddedRowContainer height="56px" background="white">
           <Button className={sideCar === "readme" ? "selected" : null}
