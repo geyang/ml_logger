@@ -233,7 +233,7 @@ export default function Dash({match, router, ..._props}) {
     </ColContainer>
 
     <ColContainer as={Resizable}
-                  fill={true} shrink={true}
+                  fill={true} shrink={false}
                   overflow={"visible"}
                   background="transparent"
                   enable={{"left": true}}
