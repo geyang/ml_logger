@@ -12,6 +12,8 @@ class Result:
     def text(self):
         return self.response.data.decode('utf8')
 
+    def ok(self):
+        return self.response.ok
 
 class Response:
     def __init__(self, response):
