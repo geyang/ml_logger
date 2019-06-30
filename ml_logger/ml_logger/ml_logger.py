@@ -778,7 +778,7 @@ class ML_Logger:
         from pathlib import Path
         bytes = Path(file_path).read_bytes()
         basename = os.path.basename(file_path)
-        self.client.log_buffer(key=os.path.join(target_folder, basename), buf=bytes)
+        self.client.log_buffer(key=os.path.join(self.prefix, target_folder, basename), buf=bytes)
 
     def upload_dir(self, dir_path, target_folder='', excludes=tuple(), gzip=True, unzip=False):
         """log a directory, or upload an entire directory."""
