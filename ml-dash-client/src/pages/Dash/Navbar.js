@@ -142,7 +142,8 @@ function Navbar({
     toggle(false);
   }, [name, path, numOfDir]);
 
-  function onDelete() {
+  function onDelete(e) {
+    e.stopPropagation();
     toggle(false);
     toggleShowConfirm(false);
     deleteDirectory(show);
@@ -158,11 +159,17 @@ function Navbar({
       {sortedDirectories.map((node) =>
           <StyledButton
               key={node.path}
-              onClick={() => onClickDir(node.path)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClickDir(node.path)
+              }}
               selected={selected === node.path}>
             {node.name}
             <div className="right-button" title="more directory options"
-                 onClick={() => toggle(show ? false : node.path)}/>
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   toggle(show ? false : node.path)
+                 }}/>
           </StyledButton>)}
       <GrayButton onClick={loadMore}>Load More..</GrayButton>
     </StyledContainer>
@@ -171,12 +178,18 @@ function Navbar({
           <ActionButton><FolderPlus width={10} height={10}/>New Folder</ActionButton>
           <ActionButton><Edit3 width={10} height={10}/>Rename</ActionButton>
           <ActionButton><ArrowUpLeft width={10} height={10}/>Move</ActionButton>
-          <ActionButton color="#ff0000e0" onClick={() => toggleShowConfirm(true)}>
+          <ActionButton color="#ff0000e0" onClick={(e) => {
+            e.stopPropagation();
+            toggleShowConfirm(true)
+          }}>
             <Trash2 width={10} height={10}/>Delete</ActionButton>
           {showConfirm ?
               <>
-                <ActionButton onClick={() => toggleShowConfirm(false)}><XCircle width={10}
-                                                                                height={10}/>Cancel</ActionButton>
+                <ActionButton onClick={(e) => {
+                  e.stopPropagation();
+                  toggleShowConfirm(false)
+                }}><XCircle width={10}
+                            height={10}/>Cancel</ActionButton>
                 <ActionButton color="red" onClick={onDelete}><AlertCircle width={10} height={10}/>Confirm</ActionButton>
               </> : null}
           <ActionButton onClick={() => toggle(false)}><XCircle width={10} height={10}/>Close</ActionButton>
@@ -192,7 +205,8 @@ export default function ({path, ..._props}) {
   const [limit, setLimit] = useState(50);
   const [last, setLast] = useState();
 
-  function loadMore() {
+  function loadMore(e) {
+    e.stopPropagation();
     setLimit(limit + 50)
   }
 
