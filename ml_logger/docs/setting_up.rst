@@ -18,7 +18,7 @@ ML-Dash tutorial
 ----------------------------
 
 .. image:: _static/ml-dash-v3.gif
-   :scale: 40 %
+   :scale: 50 %
    :align: right
 
 Launch the Dashboard Web-app
