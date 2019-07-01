@@ -2,7 +2,7 @@
 
 [![Downloads](http://pepy.tech/badge/ml-dash)](http://pepy.tech/project/ml-dash)
 
-<img alt="hyperparameter column" src="https://github.com/episodeyang/ml_logger/raw/master/ml-dash-server/figures/ml-dash-v3.png" align="right" width="50%"/>
+<img alt="Dashboard that has super power" src="https://raw.githubusercontent.com/episodeyang/ml_logger/master/ml-dash-server/figures/ml-dash-v3.gif" align="right" width="50%"/>
 
 *For detailed codumentation, see [ml-dash-tutorial]*
 
