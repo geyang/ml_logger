@@ -1,4 +1,4 @@
-# ML-Dash, A Beautiful Visualization Dashboard for Machine Learning
+# ML-Dash, A Beautiful Visualization Dashboard for ML
 
 [![Downloads](http://pepy.tech/badge/ml-dash)](http://pepy.tech/project/ml-dash)
 
