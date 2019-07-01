@@ -21,7 +21,6 @@ ML-Dash tutorial
    :scale: 40 %
    :align: right
 
-
 Launch the Dashboard Web-app
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
