@@ -1,8 +1,8 @@
-# ML-Logger, A Simple and Scalable Logging Utility With a Beautiful Visualization Dashboard
+# ML-Logger, A Simple and Scalable Logging Utility With a Beautiful Visualization Dashboard That Is Super Fast
 
 [![Downloads](http://pepy.tech/badge/ml-logger)](http://pepy.tech/project/ml-logger)
 
-<img alt="hyperparameter column demo" src="figures/hyperparameter-column.gif" align="right" width="50%"/>
+<img alt="fast" src="figures/ml-dash-v3.gif" align="right" width="50%"/>
 
 ML-Logger makes it easy to:
 

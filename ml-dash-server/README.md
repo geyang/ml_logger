@@ -2,19 +2,25 @@
 
 [![Downloads](http://pepy.tech/badge/ml-dash)](http://pepy.tech/project/ml-dash)
 
-<img alt="hyperparameter column" src="https://github.com/episodeyang/ml_logger/raw/master/ml-dash-server/figures/visualization_column.png" align="right" width="50%"/>
+<img alt="hyperparameter column" src="https://github.com/episodeyang/ml_logger/raw/master/ml-dash-server/figures/ml-dash-v3.png" align="right" width="50%"/>
 
-ML-dash replaces visdom and tensorboard. It allows you to see real-time updates, review 1000+ of experiments quickly, and dive in-depth into individual experiments with minimum mental effort.
+*For detailed codumentation, see [ml-dash-tutorial]*
+
+[ml-dash-tutorial]: https://ml-logger.readthedocs.io/en/latest/setting_up.html#ml-dash-tutorial
+
+ML-dash replaces visdom and tensorboard. It allows you to see real-time updates, review 1000+ 
+of experiments quickly, and dive in-depth into individual experiments with minimum mental effort.
 
 - **Parallel Coordinates**
-- **Aggregating Over Multiple Runs (with differetn seeds)**
-- **Preview Videos, figures, and images.**
+- **Aggregating Over Multiple Runs (with different seeds)**
+- **Preview Videos, `matplotlib` figures, and images.**
 
 ## Usage
 
 To make sure you **install** the newest version of `ml_dash`:
+
 ```bash
-pip install ml-dash --upgrade --no-cache
+pip install ml-logger ml-dash --upgrade --no-cache
 ```
 
 There are two servers: 
@@ -39,7 +45,8 @@ There are two servers:
     ```
     
     **Note: the server accepts requests from `localhost` only by default
-     for safety reasons.**
+     for safety reasons.** To overwrite this, see the documentation here:
+     [ml-dash-tutorial]
 
 
 ### Implementation Notes
