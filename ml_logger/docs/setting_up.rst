@@ -17,6 +17,11 @@ To make sure you use the newest version:
 ML-Dash tutorial
 ----------------------------
 
+.. image:: _static/ml-dash-v3.png
+   :scale: 40 %
+   :align: right
+
+
 Launch the Dashboard Web-app
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
