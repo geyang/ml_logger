@@ -17,7 +17,7 @@ To make sure you use the newest version:
 ML-Dash tutorial
 ----------------------------
 
-.. image:: _static/ml-dash-v3.png
+.. image:: _static/ml-dash-v3.gif
    :scale: 40 %
    :align: right
 
