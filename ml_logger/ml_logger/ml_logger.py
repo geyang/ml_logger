@@ -796,7 +796,7 @@ class ML_Logger:
                           'individual' are implemented.
         :return: None
         """
-        stack = stack if hasattr(stack, 'dtype') else np.array(stack)
+        stack = stack if hasattr(stack, 'dtype') else np.stack(stack)
 
         n_cols = n_cols or len(stack)
         n_rows = n_rows or 1
