@@ -343,7 +343,7 @@ In your project files, do:
        T_lr = 1e-4
        plot_interval = 10
        log_dir = "http://54.71.92.65:8081"
-       log_prefix = "https://github.com/episodeyang/ml_logger/blob/master/runs"
+       log_prefix = "ml-logger-debug"
 
    logger.configure(log_directory="http://some.ip.address.com:2000", prefix="your-experiment-prefix!")
    logger.log_params(Args=vars(Args))

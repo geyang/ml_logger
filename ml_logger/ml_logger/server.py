@@ -168,7 +168,7 @@ class LoggingServer:
         elif dtype == 'read_text':
             try:
                 with open(abs_path, 'r') as f:
-                    return f.decode('utf-8')
+                    return f.read().decode('utf-8')
             except FileNotFoundError as e:
                 return None
         elif dtype == 'read_pkl':

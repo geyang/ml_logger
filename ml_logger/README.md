@@ -58,7 +58,7 @@ for i in range(1):
 
 **Skip this if you just want to log locally.** When training in parallel, you want to kickstart an logging server (Instrument Server). To do so, run:
 ```bash
-python -m ml_logger.server --log-dir /home/yourname/runs --host 0.0.0.0 --port 8081
+python -m ml_logger.server --log-dir /home/yourname/ml-logger-debug --host 0.0.0.0 --port 8081
 ```
 Use ssh tunnel if you are running on a managed cluster.
 

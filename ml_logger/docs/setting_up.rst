@@ -39,8 +39,8 @@ The important thing is that you want to set the `--host` flag to `0.0.0.0` so th
 .. code:: bash
 
      1763  python -m ml_dash.server -h
-     1764  python -m ml_dash.server --port 8090 --workers 4 --host 0.0.0.0 --logdir ~/runs
-     1765  python -m ml_dash.server --port 8090 --workers 1 --host 0.0.0.0 --logdir ~/runs
+     1764  python -m ml_dash.server --port 8090 --workers 4 --host 0.0.0.0 --logdir ~/ml-logger-debug
+     1765  python -m ml_dash.server --port 8090 --workers 1 --host 0.0.0.0 --logdir ~/ml-logger-debug
 
 
 .. image:: _static/profile_config.png
@@ -105,7 +105,7 @@ If you want to log to a logging server, run something like these:
 .. code:: bash
 
     python -m ml_logger.server -h
-    python -m ml_logger.server --port 8081 --host 0.0.0.0 --data-dir ~/runs --workers 4
+    python -m ml_logger.server --port 8081 --host 0.0.0.0 --data-dir ~/ml-logger-debug --workers 4
 
 Old Tutorial [delete soon]
 ==========================
@@ -171,7 +171,7 @@ To do so, run:
 
 .. code-block:: bash
 
-   python -m ml_logger.server --log-dir /home/yourname/runs --host 0.0.0.0 --port 8081
+   python -m ml_logger.server --log-dir /home/yourname/ml-logger-debug --host 0.0.0.0 --port 8081
 
 Use ssh tunnel if you are running on a managed cluster.
 
