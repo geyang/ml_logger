@@ -351,8 +351,9 @@ class ML_Logger:
         :param fmt: formating string, i.e. "%Y-%m-%d-%H-%M-%S-%f"
         :return: OneOf[datetime, string]
         """
+        # todo: add time zone support
         from datetime import datetime
-        now = datetime.now()
+        now = datetime.now().astimezone()
         return now.strftime(fmt) if fmt else now
 
     def truncate(self, path, depth=-1):
@@ -1361,9 +1362,13 @@ class ML_Logger:
         wd = os.path.join(self.prefix, wd or "")
         return self.client.glob(query, wd=wd, recursive=recursive, start=start, stop=stop)
 
-    def get_parameters(self, *keys, path="parameters.pkl", **kwargs):
+    def get_parameters(self, *keys, path="parameters.pkl", silent=False, **kwargs):
         """
         utility to obtain the hyperparameters as a flattened dictionary.
+
+        1. returns a dot-flattened dictionary if no keys are passed.
+        2. returns a single value if only one key is passed.
+        3. returns a list of values if multiple keys are passed.
 
         If keys are passed, returns an array with each item corresponding to those keys
 
@@ -1388,15 +1393,18 @@ class ML_Logger:
 
 
         :param *keys: A list of strings to specify the parameter keys
+        :param silent: bool, prevents raising an exception.
         :param path: Path to the parameters.pkl file. Keyword argument, default to `parameters.pkl`.
         :param default: Undefined. If the default key is present, return default when param is missing.
         :return:
         """
         _ = self.load_pkl(path)
         if _ is None:
-            if keys[-1] and "parameters.pkl" in keys[-1]:
+            if keys and keys[-1] and "parameters.pkl" in keys[-1]:
                 self.log_line('Your last key looks like a `parameters.pkl` path. Make '
                               'sure you use a keyword argument to specify the path!', color="yellow")
+            if silent:
+                return
             raise FileNotFoundError(f'the parameter file is not found at {path}')
 
         from functools import reduce
