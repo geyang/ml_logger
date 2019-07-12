@@ -1298,6 +1298,10 @@ class ML_Logger:
 
     print = log_line
 
+    def pprint(self, *args, **kwargs):
+        from pprint import pformat
+        return self.print(pformat(*args), **kwargs)
+
     def flush_print_buffer(self, file=None):
         if self.print_buffer:
             self.log_text(self.print_buffer, filename=file, silent=False)
@@ -1346,7 +1350,7 @@ class ML_Logger:
                 runs = logger.glob('**/metrics.pkl')
                 for _ in runs:
                     exp_log = logger.load_pkl(_)
-                    
+
         :param query:
         :param wd: defaults to the current prefix. When trueful values are given, uses:
             > wd = os.path.join(self.prefix, wd)
