@@ -767,19 +767,20 @@ class ML_Logger:
         self.flush_metrics()
         self.flush_print_buffer()
 
-    def upload_file(self, file_path: str = None, target_folder: str = "files") -> None:
+    def upload_file(self, file_path: str = None, target_path: str = "files/") -> None:
         """
         uploads a file (through a binary byte string) to a target_folder. Default
         target is "files"
 
         :param file_path: the path to the file to be uploaded
-        :param target_folder: the target folder for the file, preserving the filename of the file.
+        :param target_path: the target folder for the file, preserving the filename of the file.
+            if end of `/`, uses the original file name.
         :return: None
         """
         from pathlib import Path
         bytes = Path(file_path).read_bytes()
-        basename = os.path.basename(file_path)
-        self.client.log_buffer(key=os.path.join(self.prefix, target_folder, basename), buf=bytes)
+        basename = [os.path.basename(file_path)] if target_path.endswith('/') else []
+        self.client.log_buffer(key=os.path.join(self.prefix, target_path, *basename), buf=bytes)
 
     def upload_dir(self, dir_path, target_folder='', excludes=tuple(), gzip=True, unzip=False):
         """log a directory, or upload an entire directory."""
