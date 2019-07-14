@@ -948,6 +948,15 @@ class ML_Logger:
         """
         Save torch module. Overwrites existing file.
 
+        Now Supports `nn.DataParallel` modules. First
+        try to access the state dict, if not available
+        try the module.module attribute.
+
+        .. code:: python
+
+            module = nn.DataParallel(lenet)
+            logger.save_module(module, "checkpoint.pk")
+
         When the model is large, this function uploads the weight dictionary (state_dict) in
         chunks. You can specify the size for the chunks, measured in number of tensors.
 
@@ -967,7 +976,14 @@ class ML_Logger:
         :return: None
         """
         # todo: raise error if particular weight file is too big
-        _ = module.state_dict().items()
+        # to support data parallel modules.
+        if hasattr(module, "state_dict"):
+            _ = module.state_dict().items()
+        elif hasattr(module, "module"):
+            _ = module.module.state_dict().items()
+        else:
+            raise AttributeError('module does not have `.state_dict` attribute or a valid `.module`.')
+
         if show_progress:
             from tqdm import tqdm
             _ = tqdm(_, desc=show_progress if isinstance(show_progress, str) else path[-24:])
