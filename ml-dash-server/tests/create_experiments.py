@@ -4,7 +4,7 @@ import numpy as np
 
 from ml_logger import logger
 
-DEBUG_DIR = expanduser('~/ml-logger-debug/runs')
+DEBUG_DIR = expanduser('~/ml-logger-debug')
 
 if __name__ == "__main__":
     from scipy.misc import face

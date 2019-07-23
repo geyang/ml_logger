@@ -28,9 +28,12 @@ class File(ObjectType):
 
     def resolve_text(self, info, start=0, stop=None):
         from ml_dash.config import Args
-        with open(join(Args.logdir, self.id[1:]), "r") as f:
-            lines = list(f)[start: stop]
-            return "".join(lines)
+        try:
+            with open(join(Args.logdir, self.id[1:]), "r") as f:
+                lines = list(f)[start: stop]
+                return "".join(lines)
+        except FileNotFoundError:
+            return None
 
     json = GenericScalar(description="the json content of the file")
 
@@ -57,8 +60,11 @@ class File(ObjectType):
             load_fn = yaml.load
 
         from ml_dash.config import Args
-        with open(join(Args.logdir, self.id[1:]), "r") as f:
-            return load_fn('\n'.join(f))
+        try:
+            with open(join(Args.logdir, self.id[1:]), "r") as f:
+                return load_fn('\n'.join(f))
+        except FileNotFoundError:
+            return None
 
     @classmethod
     def get_node(cls, info, id):

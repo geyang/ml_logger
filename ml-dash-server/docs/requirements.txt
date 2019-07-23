@@ -12,7 +12,6 @@ scipy
 python_dateutil
 cloudpickle
 dill
-hachiko
 imageio
 more-itertools
 numpy

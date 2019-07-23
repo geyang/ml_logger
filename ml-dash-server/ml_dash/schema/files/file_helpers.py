@@ -57,11 +57,11 @@ def find_files(cwd, query, start=None, stop=None, no_stat=True, show_progress=Fa
     :return:
     """
     from itertools import islice
-    from tqdm import tqdm
 
     with cwdContext(cwd):
         _ = islice(iglob(query, recursive=True), start, stop)
         if show_progress:
+            from tqdm import tqdm
             _ = tqdm(_, desc="@find_files")
         for i, file_path in enumerate(_):
             yield file_stat(file_path, no_stat=no_stat)
