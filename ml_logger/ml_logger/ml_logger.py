@@ -1004,12 +1004,59 @@ class ML_Logger:
         # data = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
         # self.log_data(data=data, path=path, overwrite=True)
 
-    def load_module(self, module, path="weights.pkl", stream=True, tries=5):
+    def load_module(self, module, path="weights.pkl", stream=True, tries=5, matcher=None):
         """
         Load torch module from file.
 
+        Now supports:
+
+        - streaming mode: where multiple segments of the same model is
+            saved as chunks in a pickel file.
+        - partial, or prefixed load with ..code::`matcher`.
+        - multiple tires: on unreliable networks (coffee shop!)
+
+        To manipulate the prefix of a checkpoint file you can do
+
+        Using Matcher for Partial or Prefixed load
+        ------------------------------------------
+
+        Imaging you are trying to load weights from a different module
+        that is missing a prefix for their keys. (For example you
+        have a L2 metric function, and is trying to load from a VAE
+        embedding function baseline (only half of the netowrk)).
+
+        .. code:: python
+
+            from ml_logger import logger
+
+            net = models.ResNet()
+            logger.load_module(
+                   net,
+                   path="/checkpoint/geyang/resnet.pkl",
+                   matcher=lambda d, k, p: d[k.replace('embed.')])
+
+        To fill-in if there are missing keys:
+
+        .. code:: python
+
+            from ml_logger import logger
+
+            net = models.ResNet()
+            logger.load_module(
+                   net,
+                   path="/checkpoint/geyang/resnet.pkl",
+                   matcher=lambda d, k, p: d[k] if k in d else p[k])
+
         :param module: target torch module you want to load
         :param path: the weight file containing the weights
+        :param stream:
+        :param tries:
+        :param matcher: function to remove prefix, repeat keys, partial load (by).
+                    Should take in 2 or three arguments:
+
+                    .. code:: python
+
+                        def matcher(checkpoint_dict, key, current_dict):
         :return: None
         """
         import torch
@@ -1020,7 +1067,7 @@ class ML_Logger:
         assert d, f"the datafile can not be empty: [d == {{{d.keys()}...}}]"
 
         module.load_state_dict({
-            k: torch.tensor(d[k], dtype=p.dtype).to(p.device)
+            k: torch.tensor(matcher(d, k, p) if matcher else d[k], dtype=p.dtype).to(p.device)
             for k, p in module.state_dict().items()
         })
 
