@@ -1011,7 +1011,7 @@ class ML_Logger:
         Now supports:
 
         - streaming mode: where multiple segments of the same model is
-            saved as chunks in a pickel file.
+            saved as chunks in a pickle file.
         - partial, or prefixed load with :code:`matcher`.
         - multiple tires: on unreliable networks (coffee shop!)
 
