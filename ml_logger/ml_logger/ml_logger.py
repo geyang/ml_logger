@@ -1012,7 +1012,7 @@ class ML_Logger:
 
         - streaming mode: where multiple segments of the same model is
             saved as chunks in a pickel file.
-        - partial, or prefixed load with ..code::`matcher`.
+        - partial, or prefixed load with :code:`matcher`.
         - multiple tires: on unreliable networks (coffee shop!)
 
         To manipulate the prefix of a checkpoint file you can do
