@@ -20,23 +20,42 @@ export const ProfileQuery = graphql`
     }`;
 
 export default function Index({user}) {
+  let {projects} = user;
+  if (!projects || !projects.edges) projects = [];
+  else projects = projects.edges;
   return (
       <Box fill={true} direction="row" justify='stretch' background="#fafafa">
         <ProfileSwitch/>
         <Box alignSelf={'center'} justifySelt={'center'} fill="horizontal" direction="column" align="center">
-          <Box animation="slideDown">
+          <Box animation="slideDown" style={{maxWidth: "400px"}}>
             {(user && user.username)
                 ? <h1>Welcome, {user.username}!</h1>
                 : <h1>Profile Page</h1>}
-            <p>You have the following projects on the server.</p>
-            <Box gap="small" overflow={"vertical"} style={{marginTop: "2em", marginBottom: "300px"}}>
-              {user.projects.edges
-                  .map(({node}) => node)
-                  .filter(_ => _ !== null)
-                  .map(node =>
-                      <ProjectSnippet key={node.id} username={user.username} name={node.name}/>
-                  )}
-            </Box>
+            {projects.length
+                ? <>
+                  <p>You have the following projects on the server.</p>
+                  <Box gap="small" overflow={"vertical"} style={{marginTop: "2em", marginBottom: "300px"}}>
+                    {projects.map(({node}) => node)
+                        .filter(_ => _ !== null)
+                        .map(node =>
+                            <ProjectSnippet key={node.id} username={user.username} name={node.name}/>
+                        )}
+                  </Box></>
+                : <>
+                  <p>Your logging folder is empty. To create your first run, try
+                    running the following:.</p>
+                  <pre>{`
+from ml_logger import logger
+
+logger.configure(log_directory="this-folder",
+                 prefix='demo-project/first-run')
+for i in range(100):
+    logger.log(loss=0.9 ** i, step=i)
+logger.log_text('charts: [{"yKey": "loss", "xKey": "step"}]', 
+                ".charts.yml")
+                  `}</pre>
+                </>
+            }
           </Box>
         </Box></Box>
   );

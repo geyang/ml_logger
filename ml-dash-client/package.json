@@ -50,7 +50,7 @@
   },
   "scripts": {
     "start": "PORT=3001 react-scripts start",
-    "start-backend": "source activate ml-logger && python -m ml_dash.main --logdir='../runs' --workers 4 --port=8081",
+    "start-backend": "source activate ml-logger && python -m ml_dash.main --logdir='~/ml-logger-debug' --workers 4 --port=8081",
     "create-example-experiments": "source activate ml-lopgger && cd ../ && python ml-dash-server/tests/create_experiments.py",
     "generate-schema": "source activate ml-logger && python scripts/generate_schema.py",
     "relay": "relay-compiler --src ./src --schema ./schema.graphql --extensions js jsx",

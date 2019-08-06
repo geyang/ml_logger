@@ -142,6 +142,8 @@ export function ImageView({width = "100%", height = "100%", src}) {
   return <Image src={src} style={{
     maxWidth: width, maxHeight: height,
     objectFit: "contain",
+    width: width, height: height,
+    imageRendering: "pixelated",
     borderRadius: 10
   }}/>;
 }
