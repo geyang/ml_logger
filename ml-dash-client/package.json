@@ -15,6 +15,7 @@
     "found": "^0.3.20",
     "found-relay": "^0.4.0-alpha.4",
     "grommet": "^2.5.5",
+    "handlebars": "^4.0.14",
     "immutable": "^4.0.0-rc.12",
     "is-glob": "^4.0.1",
     "json5": "^2.1.0",
