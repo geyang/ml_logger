@@ -38,7 +38,9 @@ setup(name="ml-dash",
           "cloudpickle",
           'dill',
           'graphene',
-          "graphql-core",
+          # lock these to because 3.0 breaks things
+          "graphql-core==2.2.1"
+          "multidict==4.6.1",
           "graphql-relay",
           "numpy",
           'pandas',
