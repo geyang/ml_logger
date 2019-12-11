@@ -172,11 +172,20 @@ class SummaryCache:
         return metrics
 
 
+def to_float(item):
+    if item is None:
+        return float('nan')
+    return float(item)
+
+
 def flatten(array):
     """
     Returns a flattened nested arrays. Works with numpy containers with non-equal-length children.
 
     we don't use np.flatten, b/c sometimes you have to iterate through each child.
+
+    Cast None to float('nan') values.
+
     :param array:
     :return:
     """
@@ -185,5 +194,5 @@ def flatten(array):
         for item in array:
             r += flatten(item)
     except TypeError:  # Iterating through a 0-d array
-        r += [float(array)]
+        r += [to_float(array)]
     return r
