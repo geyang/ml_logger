@@ -94,7 +94,7 @@ class ML_Logger:
         :param praefixa: the new prefix
         :return: context object
         """
-        return _PrefixContext(self, os.path.join(*praefixa))
+        return _PrefixContext(self, os.path.relpath(os.path.join(*praefixa)))
 
     def SyncContext(self, clean=False, **kwargs):
         """
@@ -129,6 +129,10 @@ class ML_Logger:
         :return: context object
         """
         return self.client.AsyncContext(clean=clean, **kwargs)
+
+    def __repr__(self):
+        return f'Logger(log_directory="{self.log_directory}",' + "\n" +\
+               f'       prefix="{self.prefix}")'
 
     # noinspection PyInitNewSignature
     def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=None,
@@ -234,6 +238,7 @@ class ML_Logger:
         :param asynchronous:
         :param max_workers:
         :param register_experiment:
+        :param silent: bool, True to turn off the print.
         :return:
         """
 
@@ -256,10 +261,12 @@ class ML_Logger:
             #   that we can discard the old logClient.
             #       To quickly switch back and forth between synchronous and asynchronous calls,
             #   use the `SyncContext` and `AsyncContext` instead.
-            cprint('creating new logging client...', 'yellow', end=' ')
+            if not silent:
+                cprint('creating new logging client...', color='yellow', end=' ')
             self.log_directory = log_directory
             self.client.__init__(url=self.log_directory, asynchronous=asynchronous, max_workers=max_workers)
-            cprint('✓ done', 'green')
+            if not silent:
+                cprint('✓ done', color="green")
 
         if not silent:
             from urllib.parse import quote
@@ -269,7 +276,7 @@ class ML_Logger:
         # now register the experiment
         if register_experiment:
             with logger.SyncContext(clean=True):  # single use SyncContext
-                self.log_params(run=self.run_info())
+                self.log_params(run=self.run_info(), silent=silent)
 
     def run_info(self, **kwargs):
         return {
@@ -589,6 +596,7 @@ class ML_Logger:
             ════════════════════╧═════════════════════
 
         :param path: the file to which we save these parameters
+        :param silent: do not print out
         :param kwargs: list of key/value pairs, each key representing the name of the namespace,
                        and the namespace itself.
         :return: None
@@ -620,7 +628,7 @@ class ML_Logger:
         # todo: add logging hook
         # todo: add yml support
         if table:
-            self.log_line(*table, sep="\n")
+            self.log_line(*table, sep="\n", silent=silent)
         self.log_data(path=path, data=_kwargs)
 
     def log_data(self, data, path=None, overwrite=False):
@@ -654,7 +662,7 @@ class ML_Logger:
         metrics = metrics.copy() if metrics else {}
         if _key_values:
             metrics.update(_key_values)
-        if silent:
+        if not silent:
             self.do_not_print.update(metrics.keys())
         metrics.update({"__timestamp": timestamp})
         cache.update(metrics)
@@ -664,7 +672,7 @@ class ML_Logger:
     def log_key_value(self, key: str, value: Any, silent=False, cache=None) -> None:
         cache = cache or self.key_value_cache
         timestamp = np.datetime64(self.now())
-        if silent:
+        if not silent:
             self.do_not_print.add(key)
         cache.update({key: value, "__timestamp": timestamp})
 
@@ -1109,7 +1117,7 @@ class ML_Logger:
         if keys is None:
             keys = [v.name for v in variables]
         assert len(keys) == len(variables), 'the keys and the variables have to be the same length.'
-        import tensorflow as tf
+        import tensorflow.compat.v1 as tf
         sess = tf.get_default_session()
         vals = sess.run(variables)
         weight_dict = {k.split(":")[0]: v for k, v in zip(keys, vals)}
@@ -1132,7 +1140,7 @@ class ML_Logger:
         every variable's truncated name has to exist inside the loaded weight_dict.
         :return:
         """
-        import tensorflow as tf
+        import tensorflow.compat.v1 as tf
         weight_dict, = logger.load_pkl(path)
         sess = tf.get_default_session()
         if variables:
@@ -1327,7 +1335,7 @@ class ML_Logger:
     def log_json(self):
         raise NotImplementedError
 
-    def log_line(self, *args, sep=' ', end='\n', flush=True, file=None, color=None):
+    def log_line(self, *args, sep=' ', end='\n', flush=True, file=None, color=None, **kwargs):
         """
         this is similar to the print function. It logs *args with a default EOL postfix in the end.
 
@@ -1358,7 +1366,7 @@ class ML_Logger:
         self.print_buffer += text
         # todo: print_buffer is not keyed by file. This is a bug.
         if flush or file or len(self.print_buffer) > self.print_buffer_size:
-            self.flush_print_buffer(file=file)
+            self.flush_print_buffer(file=file, **kwargs)
 
     print = log_line
 
@@ -1366,9 +1374,9 @@ class ML_Logger:
         from pprint import pformat
         return self.print(pformat(*args), **kwargs)
 
-    def flush_print_buffer(self, file=None):
+    def flush_print_buffer(self, file=None, **kwargs):
         if self.print_buffer:
-            self.log_text(self.print_buffer, filename=file, silent=False)
+            self.log_text(self.print_buffer, filename=file, **kwargs)
         self.print_buffer = ""
 
     def log_text(self, text: str = None, filename=None, dedent=False, silent=True, overwrite=False):
@@ -1483,6 +1491,25 @@ class ML_Logger:
         elif len(keys) == 1:
             return parameters.get(keys[0], kwargs['default']) if 'default' in kwargs else parameters[keys[0]]
         return parameters
+
+    def get_metrics(self, *keys, path="metrics.pkl", silent=False, **kwargs):
+        import pandas as pd
+        metrics = self.load_pkl(path)
+        if metrics is None:
+            if keys and keys[-1] and "metrics.pkl" in keys[-1]:
+                self.log_line('Your last key looks like a `metrics.pkl` path. Make '
+                              'sure you use a keyword argument to specify the path!', color="yellow")
+            if silent:
+                return
+            raise FileNotFoundError(f'the metrics file is not found at {path}')
+
+        metrics = pd.DataFrame(metrics)
+
+        if len(keys) > 1:
+            return [metrics.get(k, kwargs['default']) for k in keys] if 'default' in kwargs else metrics[keys]
+        elif len(keys) == 1:
+            return metrics.get(keys[0], kwargs['default']) if 'default' in kwargs else metrics[keys[0]]
+        return metrics
 
     def abspath(self, *paths):
         """

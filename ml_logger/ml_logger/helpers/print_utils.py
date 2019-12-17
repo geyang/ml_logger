@@ -50,17 +50,15 @@ class PrintHelper:
 
     def format_row_table(self, data, max_rows=None, do_not_print_list=tuple(), min_column_width=5):
         """applies to metrics keys with multiple values"""
-        keys = [k for k in data.keys() if k not in do_not_print_list]
         output = ""
 
-        values = [values[:max_rows] if _is_sequence(values) else [values] for values in data.values()]
-        max_key_width = max([min_column_width] + [len(k) for k in keys])
-        max_value_len = max([min_column_width] + [len(self.to_string(v)) for d in values for v in d])
-        max_width = max(max_key_width, max_value_len)
-        output += '|'.join([f"{key.replace('-', ' '):^{max_width}}" for key in keys]) + "\n"
-        output += "┿".join(["━" * max_width] * len(keys)) + "\n"
+        keys = [k for k in data.keys() if k not in do_not_print_list]
+        values = [data[k][:max_rows] if _is_sequence(data[k]) else [data[k]] for k in keys]
+        max_width = [max([min_column_width, len(k)] + [len(self.to_string(v)) for v in d]) for k, d in zip(keys, values)]
+        output += '|'.join([f"{key.replace('-', ' '):^{w}}" for key, w in zip(keys, max_width)]) + "\n"
+        output += "┿".join(["━" * w for w in max_width]) + "\n"
         for row in zip_longest(*values):
-            output += '|'.join([f"{self.to_string(value):^{max_width}}" for value in row]) + "\n"
+            output += '|'.join([f"{self.to_string(value):^{width}}" for value, width in zip(row, max_width)]) + "\n"
         return output
 
 
@@ -74,7 +72,7 @@ if __name__ == "__main__":
     s = p.format_tabular(data)
     print(s)
 
-    data = dict(some=[10], key=[100], text=["hey"], array=np.random.rand(2, 3))
+    data = dict(some=[10], key=[100], text=["short", "hey this is very long"], array=np.random.rand(2, 3))
     p = PrintHelper()
     s = p.format_row_table(data)
     print(s)

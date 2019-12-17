@@ -83,7 +83,7 @@ class SummaryCache:
         :param len:
         :return:
         """
-        return {k: self.data[k][:len] for k in (keys or self.data.keys()) if self.data[k] != []}
+        return {k: self.data[k][-len if len else None:] for k in (keys or self.data.keys()) if self.data[k] != []}
 
     def get(self, key, default=None):
         """
