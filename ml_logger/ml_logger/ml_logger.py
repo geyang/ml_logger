@@ -662,7 +662,8 @@ class ML_Logger:
         metrics = metrics.copy() if metrics else {}
         if _key_values:
             metrics.update(_key_values)
-        if not silent:
+        if silent:
+            # note: this causes subtle unexpected behaviors
             self.do_not_print.update(metrics.keys())
         metrics.update({"__timestamp": timestamp})
         cache.update(metrics)
@@ -672,7 +673,8 @@ class ML_Logger:
     def log_key_value(self, key: str, value: Any, silent=False, cache=None) -> None:
         cache = cache or self.key_value_cache
         timestamp = np.datetime64(self.now())
-        if not silent:
+        if silent:
+            # note: this causes subtle unexpected behaviors
             self.do_not_print.add(key)
         cache.update({key: value, "__timestamp": timestamp})
 

@@ -66,10 +66,10 @@ class SummaryCache:
         :param _key_stats: (**) key value pairs, as a short hand for the key_modes dictionary.
         :return: dictionary of the keys and the statistics requested.
         """
-        _ = self.get_stats(key_stats=key_stats, **_key_stats)
+        summary = self.get_stats(key_stats=key_stats, **_key_stats)
         if force_clear or self.mode == "tiled":
             self.clear()
-        return _
+        return summary
 
     def clear(self):
         self.data.clear()

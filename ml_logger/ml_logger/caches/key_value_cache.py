@@ -3,6 +3,9 @@ class KeyValueCache:
         """ key-value cache for the logger. This one allows one to overwrite old values with new ones. """
         self.data = dict()
 
+    def peek(self):
+        return self.data
+
     def __bool__(self):
         """Returns Trueness of the data dictionary."""
         return bool(self.data)
@@ -14,9 +17,9 @@ class KeyValueCache:
             self.data[k].append(v)
 
     def pop_all(self):
-        _ = self.data.copy()
+        data = self.data.copy()
         self.data.clear()
-        return _
+        return data
 
     def clear(self):
         self.data.clear()
