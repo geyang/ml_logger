@@ -94,7 +94,7 @@ class ML_Logger:
         :param praefixa: the new prefix
         :return: context object
         """
-        return _PrefixContext(self, os.path.relpath(os.path.join(*praefixa)))
+        return _PrefixContext(self, os.path.normpath(os.path.join(*praefixa)))
 
     def SyncContext(self, clean=False, **kwargs):
         """
