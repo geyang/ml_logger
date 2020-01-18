@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import numpy as np
 from collections.abc import Sequence
 from io import BytesIO
+from skimage import img_as_ubyte
 from numbers import Number
 from typing import Any
 
@@ -94,7 +95,7 @@ class ML_Logger:
         :param praefixa: the new prefix
         :return: context object
         """
-        return _PrefixContext(self, os.path.normpath(os.path.join(*praefixa)))
+        return _PrefixContext(self, os.path.normpath(os.path.join(self.prefix, *praefixa)))
 
     def SyncContext(self, clean=False, **kwargs):
         """
@@ -131,7 +132,7 @@ class ML_Logger:
         return self.client.AsyncContext(clean=clean, **kwargs)
 
     def __repr__(self):
-        return f'Logger(log_directory="{self.log_directory}",' + "\n" +\
+        return f'Logger(log_directory="{self.log_directory}",' + "\n" + \
                f'       prefix="{self.prefix}")'
 
     # noinspection PyInitNewSignature
@@ -298,9 +299,20 @@ class ML_Logger:
                             file=_['__globals__']['__file__']
                             )
         """
+        from functools import partial
         from inspect import getmembers
+
+        while True:
+            if hasattr(fn, "__wrapped__"):
+                fn = fn.__wrapped__
+            elif isinstance(fn, partial):
+                fn = fn.func
+            else:
+                break
+
         _ = dict(getmembers(fn))
-        info = dict(name=_['__name__'], doc=_['__doc__'], module=_['__module__'], file=_['__globals__']['__file__'])
+        info = dict(name=_['__name__'], doc=_['__doc__'], module=_['__module__'],
+                    file=_['__globals__']['__file__'])
         return info
 
     def rev_info(self):
@@ -678,6 +690,18 @@ class ML_Logger:
             self.do_not_print.add(key)
         cache.update({key: value, "__timestamp": timestamp})
 
+    def store_key_value(self, key: str, value: Any, silent=None, cache: SummaryCache = None) -> None:
+        """
+        store the key: value awaiting future summary.
+
+        :param key: str, can be `/` separated.
+        :param value: numerical value
+        :param silent:
+        :param cache: 
+        :return: 
+        """
+        self.store_metrics({key: value}, silent=silent, cache=cache)
+
     def store_metrics(self, metrics=None, silent=None, cache: SummaryCache = None, **key_values):
         """
         Store the metric data (with the default summary cache) for making the summary later.
@@ -896,10 +920,10 @@ class ML_Logger:
         # py_logging.getLogger("imageio").setLevel(py_logging.WARNING)
         with tempfile.NamedTemporaryFile(suffix=f'.{format}') as ntp:
             try:
-                imageio.mimsave(ntp.name, frame_stack, format=format, fps=fps, **imageio_kwargs)
+                imageio.mimsave(ntp.name, img_as_ubyte(frame_stack), format=format, fps=fps, **imageio_kwargs)
             except imageio.core.NeedDownloadError:
                 imageio.plugins.ffmpeg.download()
-                imageio.mimsave(ntp.name, frame_stack, format=format, fps=fps, **imageio_kwargs)
+                imageio.mimsave(ntp.name, img_as_ubyte(frame_stack), format=format, fps=fps, **imageio_kwargs)
             ntp.seek(0)
             self.client.log_buffer(key=filename, buf=ntp.read())
 
@@ -1381,7 +1405,7 @@ class ML_Logger:
             self.log_text(self.print_buffer, filename=file, **kwargs)
         self.print_buffer = ""
 
-    def log_text(self, text: str = None, filename=None, dedent=False, silent=True, overwrite=False):
+    def log_text(self, text: str = None, filename=None, dedent=False, silent=False, overwrite=False):
         """
         logging and printing a string object.
 
@@ -1524,6 +1548,8 @@ class ML_Logger:
         :param *paths: position arguments for each segment of the path.
         :return: absolute path w.r.t. the logging directory (excluding the prefix)
         """
+        if self.prefix.startswith("/"):
+            return os.path.join(self.prefix, *paths)
         return "/" + os.path.join(self.prefix, *paths)
 
 
