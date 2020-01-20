@@ -4,7 +4,7 @@ import numpy as np
 
 DEFAULT_FORMATS = {
     # refer to this issue: https://github.com/numpy/numpy/issues/5543 numpy has built-in stringify helper.
-    "numpy": lambda v: np.array2string(v, precision=2, separator=',', suppress_small=True),
+    "numpy": lambda v: np.array2string(v, precision=3, separator=',', suppress_small=True),
     float: lambda v: v.__format__(".3f"),
     int: str,
 }
