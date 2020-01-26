@@ -534,6 +534,11 @@ class ML_Logger:
         raise NotImplementedError
 
     @property
+    def jobId(self):
+        import os
+        return os.getenv("SLURM_JOB_ID", None)
+
+    @property
     def hostname(self):
         import subprocess
         cmd = 'hostname -f'
