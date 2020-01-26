@@ -534,7 +534,7 @@ class ML_Logger:
         raise NotImplementedError
 
     @property
-    def jobId(self):
+    def job_id(self):
         import os
         return os.getenv("SLURM_JOB_ID", None)
 
