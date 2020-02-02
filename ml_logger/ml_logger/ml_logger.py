@@ -663,6 +663,7 @@ class ML_Logger:
         if overwrite:
             kwargs['overwrite'] = overwrite
         self.client.log(**kwargs)
+        return path
 
     def log_metrics(self, metrics=None, silent=None, cache: KeyValueCache = None, flush=None, **_key_values) -> None:
         """
@@ -1039,7 +1040,7 @@ class ML_Logger:
                 size += v.size
                 data_chunk[k] = v
 
-        self.log_data(data=data_chunk, path=path, overwrite=False)
+        return self.log_data(data=data_chunk, path=path, overwrite=False)
         # data = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
         # self.log_data(data=data, path=path, overwrite=True)
 
