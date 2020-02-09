@@ -795,11 +795,12 @@ class ML_Logger:
     log_filename = "outputs.log"
 
     def flush_metrics(self, cache=None, filename=None):
-        key_values = (cache or self.key_value_cache).pop_all()
-        filename = filename or self.metric_filename
-        output = self.print_helper.format_tabular(key_values, self.do_not_print)
-        self.log_text(output, silent=False)  # not buffered
-        self.client.log(key=os.path.join(self.prefix, filename), data=key_values)
+        if cache or self.key_value_cache:
+            key_values = (cache or self.key_value_cache).pop_all()
+            filename = filename or self.metric_filename
+            output = self.print_helper.format_tabular(key_values, self.do_not_print)
+            self.log_text(output, silent=False)  # not buffered
+            self.client.log(key=os.path.join(self.prefix, filename), data=key_values)
         self.do_not_print.reset()
 
     def flush(self):
@@ -1542,6 +1543,8 @@ class ML_Logger:
         elif len(keys) == 1:
             return metrics.get(keys[0], kwargs['default']) if 'default' in kwargs else metrics[keys[0]]
         return metrics
+
+    get_dataframe = get_metrics
 
     def abspath(self, *paths):
         """
