@@ -32,6 +32,12 @@ class SummaryCache:
                 return True
         return False
 
+    def __getitem__(self, item):
+        return self.data.get(item)
+
+    def get(self, key, default):
+        return self.data.get(key, default)
+
     def store(self, metrics=None, **key_values):
         """
         Store the metric data for making the summary later. This allows the logging/saving
