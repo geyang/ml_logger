@@ -1,4 +1,5 @@
 import os
+from os.path import join as pJoin
 from collections import defaultdict
 from contextlib import contextmanager
 
@@ -95,7 +96,7 @@ class ML_Logger:
         :param praefixa: the new prefix
         :return: context object
         """
-        return _PrefixContext(self, os.path.normpath(os.path.join(self.prefix, *praefixa)))
+        return _PrefixContext(self, os.path.normpath(pJoin(self.prefix, *praefixa)))
 
     def SyncContext(self, clean=False, **kwargs):
         """
@@ -588,7 +589,7 @@ class ML_Logger:
         :param path:
         :return:
         """
-        abs_path = os.path.join(self.prefix, path)
+        abs_path = pJoin(self.prefix, path)
         self.client._delete(abs_path)
 
     def log_params(self, path="parameters.pkl", silent=False, **kwargs):
@@ -658,7 +659,7 @@ class ML_Logger:
         :return: None
         """
         path = path or "data.pkl"
-        abs_path = os.path.join(self.prefix, path)
+        abs_path = pJoin(self.prefix, path)
         kwargs = {"key": abs_path, "data": data}
         if overwrite:
             kwargs['overwrite'] = overwrite
@@ -800,7 +801,7 @@ class ML_Logger:
             filename = filename or self.metric_filename
             output = self.print_helper.format_tabular(key_values, self.do_not_print)
             self.log_text(output, silent=False)  # not buffered
-            self.client.log(key=os.path.join(self.prefix, filename), data=key_values)
+            self.client.log(key=pJoin(self.prefix, filename), data=key_values)
         self.do_not_print.reset()
 
     def flush(self):
@@ -821,7 +822,7 @@ class ML_Logger:
         from pathlib import Path
         bytes = Path(file_path).read_bytes()
         basename = [os.path.basename(file_path)] if target_path.endswith('/') else []
-        self.client.log_buffer(key=os.path.join(self.prefix, target_path, *basename), buf=bytes)
+        self.client.log_buffer(key=pJoin(self.prefix, target_path, *basename), buf=bytes)
 
     def upload_dir(self, dir_path, target_folder='', excludes=tuple(), gzip=True, unzip=False):
         """log a directory, or upload an entire directory."""
@@ -885,7 +886,7 @@ class ML_Logger:
                 # todo: remove last index
                 composite[i * h: i * h + h, j * w: j * w + w] = stack[k]
 
-        self.client.send_image(key=os.path.join(self.prefix, key), data=composite)
+        self.client.send_image(key=pJoin(self.prefix, key), data=composite)
 
     def log_image(self, image, key: str, cmap=None, normalize=None):
         """Log a single image.
@@ -922,7 +923,7 @@ class ML_Logger:
                 format = "mp4"
                 key += "." + format
 
-        filename = os.path.join(self.prefix, key)
+        filename = pJoin(self.prefix, key)
         import tempfile, imageio  # , logging as py_logging
         # py_logging.getLogger("imageio").setLevel(py_logging.WARNING)
         with tempfile.NamedTemporaryFile(suffix=f'.{format}') as ntp:
@@ -966,7 +967,7 @@ class ML_Logger:
         fig.savefig(buf, format=format, **kwargs)
         buf.seek(0)
 
-        path = os.path.join(self.prefix, path)
+        path = pJoin(self.prefix, path)
         self.client.log_buffer(path, buf.read())
         return path
 
@@ -1208,7 +1209,7 @@ class ML_Logger:
         :param key: a path string
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        return self.client.read(os.path.join(self.prefix, key))
+        return self.client.read(pJoin(self.prefix, key))
 
     def load_text(self, key):
         """ return the text content of the file (in a single chunk)
@@ -1228,7 +1229,7 @@ class ML_Logger:
         :param key: a path string
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        return self.client.read_text(os.path.join(self.prefix, key))
+        return self.client.read_text(pJoin(self.prefix, key))
 
     def load_pkl(self, key, start=None, stop=None, tries=1, delay=1):
         """
@@ -1273,7 +1274,7 @@ class ML_Logger:
             a random float in [1, 1.5).
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        path = os.path.join(self.prefix, key)
+        path = pJoin(self.prefix, key)
         while tries > 1:
             try:
                 return self.client.read_pkl(path, start, stop)
@@ -1342,7 +1343,7 @@ class ML_Logger:
         :param key: a path string
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        return self.client.read_np(os.path.join(self.prefix, key))
+        return self.client.read_np(pJoin(self.prefix, key))
 
     @staticmethod
     def plt2data(fig):
@@ -1438,7 +1439,7 @@ class ML_Logger:
             from textwrap import dedent
             text = dedent(text)
         if text is not None:
-            self.client.log_text(key=os.path.join(self.prefix, filename), text=text, overwrite=overwrite)
+            self.client.log_text(key=pJoin(self.prefix, filename), text=text, overwrite=overwrite)
             if not silent:
                 print(text, end="")
 
@@ -1458,7 +1459,7 @@ class ML_Logger:
 
         :param query:
         :param wd: defaults to the current prefix. When trueful values are given, uses:
-            > wd = os.path.join(self.prefix, wd)
+            > wd = pJoin(self.prefix, wd)
 
             if you want root of the logging server instance, use abs path headed by `/`.
             If you want root of the server file system, double slash: `//home/directory-name-blah`.
@@ -1468,7 +1469,7 @@ class ML_Logger:
         :param stop:
         :return:
         """
-        wd = os.path.join(self.prefix, wd or "")
+        wd = pJoin(self.prefix, wd or "")
         return self.client.glob(query, wd=wd, recursive=recursive, start=start, stop=stop)
 
     def get_parameters(self, *keys, path="parameters.pkl", silent=False, **kwargs):
@@ -1525,26 +1526,58 @@ class ML_Logger:
             return parameters.get(keys[0], kwargs['default']) if 'default' in kwargs else parameters[keys[0]]
         return parameters
 
-    def get_metrics(self, *keys, path="metrics.pkl", silent=False, **kwargs):
-        import pandas as pd
-        metrics = self.load_pkl(path)
-        if metrics is None:
-            if keys and keys[-1] and "metrics.pkl" in keys[-1]:
-                self.log_line('Your last key looks like a `metrics.pkl` path. Make '
-                              'sure you use a keyword argument to specify the path!', color="yellow")
-            if silent:
-                return
-            raise FileNotFoundError(f'the metrics file is not found at {path}')
+    def read_metrics(self, *keys, path="metrics.pkl", wd=None, silent=False, default=None, verbose=False):
+        """
+        Returns a Pandas.DataFrame object that contains metrics from all files.
 
-        metrics = pd.DataFrame(metrics)
+        :param keys: if non passed, returns the entire dataframe. If 1 key is passed,
+                     return that column. If multiple keys are passed, return  individual columns.
+
+                     If you want to get the joined table for multiple keys, directly filter after
+                     this call.
+
+        :param path: can contain glob patterns, will return concatenated dataframe from
+                     all paths found with the pattern.
+        :param silent:
+        :param default: Default value for columns. Not widely used.
+        :param kwargs: Not used besides the default argument.
+        :return:
+        """
+        import pandas as pd
+        from contextlib import ExitStack
+
+        # todo: remove default from this.
+        paths = self.glob(path, wd=wd) if "*" in path else [path]
+        all_metrics = []
+
+        for path in paths:
+            with self.PrefixContext(wd) if wd else ExitStack():
+                metrics = self.load_pkl(path)
+            if metrics is None:
+                if keys and keys[-1] and "metrics.pkl" in keys[-1]:
+                    self.log_line('Your last key looks like a `metrics.pkl` path. Make '
+                                  'sure you use a keyword argument to specify the path!', color="yellow")
+                if silent:
+                    return
+                raise FileNotFoundError(f'fails to load metric file at {path}')
+
+            if verbose:
+                from IPython.core.display import display, HTML
+                url = os.path.normpath(pJoin(wd or self.prefix, path, "../.."))
+                display(HTML(f"""<a href="http://localhost:3001{url}">{path}</a>"""))
+                # self.print(f"loaded:", path, flush=True)
+
+            all_metrics.append(pd.DataFrame(metrics))
+
+        metrics = pd.concat(all_metrics)
 
         if len(keys) > 1:
-            return [metrics.get(k, kwargs['default']) for k in keys] if 'default' in kwargs else metrics[keys]
+            return [metrics.get(k, default) for k in keys] if default else metrics[keys]
         elif len(keys) == 1:
-            return metrics.get(keys[0], kwargs['default']) if 'default' in kwargs else metrics[keys[0]]
+            return metrics.get(keys[0], default) if default else metrics[keys[0]]
         return metrics
 
-    get_dataframe = get_metrics
+    get_dataframe = read_metrics
 
     def abspath(self, *paths):
         """
@@ -1558,8 +1591,8 @@ class ML_Logger:
         :return: absolute path w.r.t. the logging directory (excluding the prefix)
         """
         if self.prefix.startswith("/"):
-            return os.path.join(self.prefix, *paths)
-        return "/" + os.path.join(self.prefix, *paths)
+            return pJoin(self.prefix, *paths)
+        return "/" + pJoin(self.prefix, *paths)
 
 
 logger = ML_Logger()
