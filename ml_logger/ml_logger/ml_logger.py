@@ -319,6 +319,26 @@ class ML_Logger:
     def rev_info(self):
         return dict(hash=self.__head__, branch=self.__current_branch__)
 
+    def every(self, n=1, key="default"):
+        """
+        returns True every n counts. Use the key to count different intervals.
+
+        Example:
+
+        .. code:: python
+            for i in range(100):
+                if logger.every(10):
+                    print('every tenth count!')
+                if logger.every(100, "hudred"):
+                    print('every 100th count!')
+
+        :param n:
+        :param key:
+        :return:
+        """
+        self.counter[key] = self.counter.get(key, 0) + 1
+        return self.counter[key] % n == 0
+
     # timing functions
     def split(self, *keys):
         """
