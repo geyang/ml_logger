@@ -45,7 +45,7 @@ Log key/value pairs, and metrics:
 
    for i in range(1):
        logger.log(metrics={'some_val/smooth': 10, 'status': f"step ({i})"}, reward=20, timestep=i)
-       ### flush the data, otherwise the value would be overwritten with new values in the next iteration.
+       ## flush the data, otherwise the value would be overwritten with new values in the next iteration.
        logger.flush()
    # outputs ~>
    # ╒════════════════════╤════════════════════════════╕
@@ -61,7 +61,7 @@ Log key/value pairs, and metrics:
    # ╘════════════════════╧════════════════════════════╛
 
 Logging to a Server
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 **Skip this if you just want to log locally.** When training in
 parallel, you want to kickstart an logging server (Instrument Server).
@@ -74,14 +74,14 @@ To do so, run:
 Use ssh tunnel if you are running on a managed cluster.
 
 Allowing Non-local Requests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 The default ``host`` is set to ``127.0.0.1``. This would prevent
 external requests from being accepted. To allow requests from a
 non-localhost client, set ``host`` to ``0.0.0.0``.
 
 Full Readme on the Server
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 ``ml-logger`` uses ``params-proto`` to declaratively define the cli
 interface. To view the help document, you can simply type
@@ -91,7 +91,7 @@ interface. To view the help document, you can simply type
    python -m ml_logger.server --help
 
 Asynchronously log the summary of LOTs of training metrics
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------------
 
 A common scenario is you only want to upload averaged statistics of your
 metrics. A pattern that @jachiam uses is the following:
@@ -176,7 +176,7 @@ Your PR should have both of these two tests working. ToDo: add CI to
 this repo.
 
 To Publish
-~~~~~~~~~~
+----------
 
 You need ``twine``, ``rst-lint`` etc, which are included in the
 ``requirements-dev.txt`` file.
@@ -184,10 +184,10 @@ You need ``twine``, ``rst-lint`` etc, which are included in the
 --------------
 
 Logging Matplotlib pyplots
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 Configuring The Experiment Folder
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------
 
 .. code-block:: python
 
@@ -207,7 +207,7 @@ you could also use the logger constructor
    logger = ML_Logger(log_directory="/tmp/ml-logger-demo", f"deep_Q_learning/{now:%Y%m%d-%H%M%S}")
 
 Logging Text, and Metrics
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 .. code-block:: python
 
@@ -224,7 +224,7 @@ colored output: (where the values are yellow)
    ╘════════════════════╧════════════════════╛
 
 Logging Matplotlib Figures
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 We have optimized ML-Logger, so it supports any format that ``pyplot``
 supports. To save a figure locally or remotely,
@@ -240,7 +240,7 @@ supports. To save a figure locally or remotely,
    logger.savefig('cosine_function.pdf')
 
 Logging Videos
-~~~~~~~~~~~~~~
+--------------
 
 It is especially hard to visualize RL training sessions on a remote
 computer. With ML-Logger this is easy, and super fast. We optimized the
@@ -267,7 +267,7 @@ The compression rate (and speed boost) can be 2000:1.
    logger.log_video(frames, "test_video.mp4")
 
 Saving PyTorch Modules
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 PyTorch has a very nice module saving and loading API that has inspired
 the one in ``Keras``. We make it easy to save this state dictionary
@@ -284,7 +284,7 @@ weights to your code-block repository.
    state_dict, = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
 
 Saving Tensorflow Models
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 The format tensorflow uses to save the models is opaque. I prefer to
 save model weights in ``pickle`` as a dictionary. This way the weight
@@ -323,7 +323,7 @@ from 100+ Experiments.** We make available Google’s internal
 hyperparameter visualization tool, on your own computer.
 
 Searching for Hyper Parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------
 
 Experiments are identified by the ``metrics.pkl`` file. You can log
 multiple times to the same ``metrics.pkl`` file, and the later parameter
@@ -340,7 +340,7 @@ in this file, so each key/value argument you pass into the
    logger.log_parameters(Args=Args)
 
 How to launch the Vis App
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 **This requires node.js and yarn dev environment** at the moment. We
 will streamline this process without these requirements soon.

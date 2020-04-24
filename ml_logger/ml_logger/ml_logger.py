@@ -317,6 +317,7 @@ class ML_Logger:
     def rev_info(self):
         return dict(hash=self.__head__, branch=self.__current_branch__)
 
+    counter = None
     def every(self, n=1, key="default"):
         """
         returns True every n counts. Use the key to count different intervals.
@@ -335,6 +336,8 @@ class ML_Logger:
         :param key:
         :return:
         """
+        if self.counter is None:
+            self.counter = dict()
         self.counter[key] = self.counter.get(key, 0) + 1
         return self.counter[key] % n == 0
 
