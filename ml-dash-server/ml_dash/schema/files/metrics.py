@@ -30,7 +30,7 @@ class Metrics(ObjectType):
 
     def resolve_keys(self, info):
         df = read_dataframe(join(Args.logdir, self.id[1:]))
-        keys = df.dropna().keys()
+        keys = df.keys()
         return list(keys)
 
     # todo: add more complex queries.

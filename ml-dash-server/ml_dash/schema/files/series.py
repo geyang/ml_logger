@@ -22,7 +22,7 @@ class Series(ObjectType):
     label = String(description="the lable for the series")
     x_key = String(description="key for the x")
     y_key = String(description="key for the y axis")
-    y_keys = List(String, description="tuple of keys for the y axis")
+    y_keys = List(String, description="list of keys for the y axis")
 
     # stype = SeriesTyes(description="the type of series data")
 
