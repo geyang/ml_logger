@@ -1592,7 +1592,7 @@ class ML_Logger:
         metrics = pd.concat(all_metrics)
 
         if len(keys) > 1:
-            return [metrics.get(k, default) for k in keys] if default else metrics[keys]
+            return [metrics.get(k, default) for k in keys] if default else metrics[list(keys)]
         elif len(keys) == 1:
             return metrics.get(keys[0], default) if default else metrics[keys[0]]
         return metrics

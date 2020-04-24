@@ -32,6 +32,15 @@ class SummaryCache:
                 return True
         return False
 
+    def __repr__(self):
+        s = "SummaryCache:"
+        for k, v in self.data.items():
+            try:
+                s += f"  {k}: Shape{v[0].shape}[:{len(v)}]\n"
+            except:
+                s +=  f"  {k}: {v[:2]}[:{len(v)}]\n"
+        return s
+
     def store(self, metrics=None, **key_values):
         """
         Store the metric data for making the summary later. This allows the logging/saving

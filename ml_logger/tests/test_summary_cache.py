@@ -30,6 +30,7 @@ def test_flatten_containing_NaN():
 
 
 def save_mock_data(cache: SummaryCache):
+    np.random.seed(0)
     i = 1
     for j in range(500):
         cache.store(
@@ -50,4 +51,29 @@ def test_summary_cache():
         stats = cache.get_stats(reward="mean", activations="quantile", actions="histogram")
         s = print_helper.format_tabular(stats)
         # s = print_helper.format_row_table(stats)
-        print(s)
+
+
+def test_repr():
+    print_helper = PrintHelper()
+    cache = SummaryCache(mode='tiled')
+    print()
+    for i in range(10):
+        save_mock_data(cache)
+        stats = cache.get_stats(reward="mean", activations="quantile", actions="histogram")
+        # s = print_helper.format_tabular(stats)
+        # s = print_helper.format_row_table(stats)
+        # print(s)
+
+    np.mean(cache.get('reward'))
+    from textwrap import dedent
+    assert str(cache) == dedent("""
+    SummaryCache:  reward: Shape()[:5000]
+      activations: [5.370795870404581, 4.241508632737578][:5000]
+      actions: [50.77645686095641, 49.56686189467056][:5000]
+      scalar: Shape()[:5000]
+      uneven_length: Shape(1,)[:5000]
+    """)[1:]
+
+
+if __name__ == '__main__':
+    test_repr()
