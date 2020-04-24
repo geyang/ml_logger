@@ -220,10 +220,9 @@ class ML_Logger:
         If configure is called with a buffer_size not None, the old print buffer would
         be cleared.
 
-        todo: I'm considering also clearing this buffer also when summary-cache is
-          updated.
-              The use-case of changing print_buffer_size is pretty small. Should probaly
-          just deprecate this.
+        todo: I'm considering also clearing this buffer also when summary-cache is updated.
+        The use-case of changing print_buffer_size is pretty small. Should probaly
+        just deprecate this.
 
         # Registering New Experiment
 
@@ -326,6 +325,7 @@ class ML_Logger:
         Example:
 
         .. code:: python
+
             for i in range(100):
                 if logger.every(10):
                     print('every tenth count!')
@@ -459,7 +459,6 @@ class ML_Logger:
     def diff(self, diff_directory=".", diff_filename="index.diff", ref="HEAD", silent=False):
         """
         example usage:
-        --------------
 
         .. code:: python
 
@@ -763,7 +762,6 @@ class ML_Logger:
         `get_only` to True
 
         Modes for the Statistics:
-        =========================
 
         key_mode would be one of:
           - mean:
@@ -1080,7 +1078,6 @@ class ML_Logger:
         To manipulate the prefix of a checkpoint file you can do
 
         Using Matcher for Partial or Prefixed load
-        ------------------------------------------
 
         Imaging you are trying to load weights from a different module
         that is missing a prefix for their keys. (For example you
@@ -1191,7 +1188,7 @@ class ML_Logger:
 
         :param path: path to the saved checkpoint pickle file.
         :param variables: None or a list of tensorflow variables. When this list is supplied,
-        every variable's truncated name has to exist inside the loaded weight_dict.
+            every variable's truncated name has to exist inside the loaded weight_dict.
         :return:
         """
         import tensorflow.compat.v1 as tf
@@ -1605,6 +1602,9 @@ class ML_Logger:
 
         .. code:: python
 
+            print(logger.abspath("some", "path"))
+
+            # /home/ge/some/path
 
 
         :param *paths: position arguments for each segment of the path.

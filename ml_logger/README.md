@@ -38,7 +38,7 @@ Log key/value pairs, and metrics:
 ```python
 for i in range(1):
     logger.log(metrics={'some_val/smooth': 10, 'status': f"step ({i})"}, reward=20, timestep=i)
-    ### flush the data, otherwise the value would be overwritten with new values in the next iteration.
+    ## flush the data, otherwise the value would be overwritten with new values in the next iteration.
     logger.flush()
 # outputs ~>
 # ╒════════════════════╤════════════════════════════╕
@@ -54,7 +54,7 @@ for i in range(1):
 # ╘════════════════════╧════════════════════════════╛
 ```
 
-### Logging to a Server
+## Logging to a Server
 
 **Skip this if you just want to log locally.** When training in parallel, you want to kickstart an logging server (Instrument Server). To do so, run:
 ```bash
@@ -62,11 +62,11 @@ python -m ml_logger.server --log-dir /home/yourname/ml-logger-debug --host 0.0.0
 ```
 Use ssh tunnel if you are running on a managed cluster.
 
-### Allowing Non-local Requests
+## Allowing Non-local Requests
 
 The default `host` is set to `127.0.0.1`. This would prevent external requests from being accepted. To allow requests from a non-localhost client, set `host` to `0.0.0.0`. 
 
-### Full Readme on the Server
+## Full Readme on the Server
 
 `ml-logger` uses `params-proto` to declaratively define the cli interface. To view the help document, you can simply type
 
@@ -74,7 +74,7 @@ The default `host` is set to `127.0.0.1`. This would prevent external requests f
 python -m ml_logger.server --help
 ```
 
-### Asynchronously log the summary of LOTs of training metrics
+## Asynchronously log the summary of LOTs of training metrics
 
 A common scenario is you only want to upload averaged statistics of your metrics. A pattern
 that @jachiam uses is the following: `store_metrics()`, `peak_stored_metrics()`, and `log_metrics_summary()`
@@ -141,15 +141,15 @@ make test-with-server
 
 Your PR should have both of these two tests working. ToDo: add CI to this repo.
 
-### To Publish
+## To Publish
 
 You need `twine`, `rst-lint` etc, which are included in the `requirements-dev.txt` file.
 
 ---
 
-### Logging Matplotlib pyplots
+## Logging Matplotlib pyplots
 
-### Configuring The Experiment Folder
+## Configuring The Experiment Folder
 
 ```python
 from ml_logger import logger, Color, percent
@@ -165,7 +165,7 @@ from ml_logger import ML_Logger
 logger = ML_Logger(log_directory="/tmp/ml-logger-demo", f"deep_Q_learning/{now:%Y%m%d-%H%M%S}")
 ```
 
-### Logging Text, and Metrics
+## Logging Text, and Metrics
 
 ```python
 logger.log({"some_var/smooth": 10}, some=Color(0.85, 'yellow', percent), step=3)
@@ -180,7 +180,7 @@ colored output: (where the values are yellow)
 ╘════════════════════╧════════════════════╛
 ```
 
-### Logging Matplotlib Figures
+## Logging Matplotlib Figures
 
 We have optimized ML-Logger, so it supports any format that `pyplot` supports. To save a figure locally or remotely, 
 ```python
@@ -193,7 +193,7 @@ plt.plot(xs, np.cos(xs), label='Cosine Func')
 logger.savefig('cosine_function.pdf')
 ```
 
-### Logging Videos
+## Logging Videos
 
 It is especially hard to visualize RL training sessions on a remote computer. With ML-Logger this is easy, and 
 super fast. We optimized the serialization and transport process, so that a large stack of video tensor gets
@@ -217,7 +217,7 @@ frames = [im(100 + i, 80) for i in range(20)]
 logger.log_video(frames, "test_video.mp4")
 ``` 
 
-### Saving PyTorch Modules
+## Saving PyTorch Modules
 
 PyTorch has a very nice module saving and loading API that has inspired the one in `Keras`. We make it easy to save
 this state dictionary (`state_dict`) to a server, and load it. This way you can load from 100+ of your previous 
@@ -231,7 +231,7 @@ logger.save_module(FastCNN=cnn)
 state_dict, = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
 ```
 
-### Saving Tensorflow Models
+## Saving Tensorflow Models
 
 The format tensorflow uses to save the models is opaque. I prefer to save model weights in `pickle` as a dictionary. 
 This way the weight files are transparent. ML_Logger offers easy helper functions to save and load from checkpoints 
@@ -264,7 +264,7 @@ An idea visualization dashboard would be
 3. **Answer Questions, from 100+ Experiments.** We make available Google's internal hyperparameter visualization tool, 
 on your own computer.
 
-### Searching for Hyper Parameters
+## Searching for Hyper Parameters
 
 Experiments are identified by the `metrics.pkl` file. You can log multiple times to the same `metrics.pkl` file, 
 and the later parameter values overwrites earlier ones with the same key. We enforce namespace in this file, so each
@@ -278,7 +278,7 @@ Args = dict(
 logger.log_parameters(Args=Args)
 ```
 
-### How to launch the Vis App
+## How to launch the Vis App
 
 **This requires node.js and yarn dev environment** at the moment. We will streamline this process without these 
 requirements soon.
@@ -452,7 +452,7 @@ In addition, ml-logger also comes with a powerful visualization dashboard that b
 
 ![ml visualization dashboard](./figures/ml_visualization_dashboard_preview.png)
 
-#### An Example Log from ML-Logger
+### An Example Log from ML-Logger
 <img alt="example_real_log_output" src="figures/example_log_output.png" align="right"></img>
 
 A common pain that comes after getting to launch ML training jobs on AWS
