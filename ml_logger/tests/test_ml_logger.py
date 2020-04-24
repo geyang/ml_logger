@@ -26,7 +26,9 @@ from time import sleep
 from os.path import join as pathJoin
 from ml_logger import logger, Color, metrify
 from ml_logger.helpers.color_helpers import percent
-from tests.conftest import LOCAL_TEST_DIR
+
+
+# from tests.conftest import LOCAL_TEST_DIR
 
 
 @pytest.fixture(scope='session')
@@ -229,8 +231,25 @@ def test_metrify():
     assert metrify(d) == [10.0, 2]
 
 
+def test_every():
+    acc = sum([i for i in range(100) if logger.every(10)])
+    assert acc == sum(list(range(100))[9::10])
+
+    i_sum, j_sum = 0, 0
+    for i in range(100):
+        for j in range(100):
+            if logger.every(5, "j"):
+                j_sum += j
+                print(j)
+            if logger.every(50, "i"):
+                i_sum += i
+    assert i_sum == 4950 * 2, "i should be summed twice each iteration"
+    assert j_sum == sum(list(range(4, 100, 5))) * 100, "j should be the sum ⨉ 100"
+
+
 if __name__ == "__main__":
-    setup(LOCAL_TEST_DIR)
+    # setup(LOCAL_TEST_DIR)
     # test(None)
-    test_video(None)
-    test_video_gif(None)
+    # test_video(None)
+    # test_video_gif(None)
+    test_every()
