@@ -240,7 +240,6 @@ def test_every():
         for j in range(100):
             if logger.every(5, "j"):
                 j_sum += j
-                print(j)
             if logger.every(50, "i"):
                 i_sum += i
     assert i_sum == 4950 * 2, "i should be summed twice each iteration"
