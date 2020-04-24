@@ -152,7 +152,7 @@ def test_experiment(log_dir):
             }
         }
     """
-    path = "/episodeyang/playground/mdp/experiment_04"
+    path = "/episodeyang/cpc-belief/mdp/experiment_01"
     r = client.execute(query, variables=dict(id=to_global_id("Experiment", path)))
     if 'errors' in r:
         raise RuntimeError(r['errors'])
@@ -257,7 +257,7 @@ def test_series_2(log_dir):
     }
     """
     variables = {"prefix": None, "xKey": "epoch", "yKey": "slow_sine", "yKeys": None,
-                 "metricsFiles": ["/episodeyang/cpc-belief/mdp/experiment_04/metrics.pkl"]}
+                 "metricsFiles": ["/episodeyang/cpc-belief/mdp/experiment_01/metrics.pkl"]}
 
     from ml_dash.config import Args
     Args.logdir = log_dir
@@ -287,7 +287,7 @@ def test_series_last(log_dir):
     """
     variables = {"yKey": "slow_sine",
                  "last": 100,
-                 "metricsFiles": ["/episodeyang/cpc-belief/mdp/experiment_04/metrics.pkl"]}
+                 "metricsFiles": ["/episodeyang/cpc-belief/mdp/experiment_01/metrics.pkl"]}
 
     from ml_dash.config import Args
     Args.logdir = log_dir

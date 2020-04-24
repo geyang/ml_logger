@@ -16,10 +16,10 @@ if __name__ == "__main__":
     for username in ["episodeyang", "amyzhang"]:
         for project in ['cpc-belief', 'playground']:
             for i in range(10):
-                prefix = f"{DEBUG_DIR}/{username}/{project}/{'mdp/' if i < 5 else '/'}experiment_{i:02d}"
+                prefix = f"{username}/{project}/{'mdp/' if i < 5 else '/'}experiment_{i:02d}"
                 logger.remove(prefix)
 
-                logger.configure(prefix=prefix)
+                logger.configure(log_directory=DEBUG_DIR, prefix=prefix)
 
                 logger.log_params(Args=dict(lr=10**(-2 - i),
                                             weight_decay=0.001,
