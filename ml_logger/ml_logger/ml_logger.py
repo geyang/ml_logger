@@ -6,7 +6,6 @@ from contextlib import contextmanager
 import numpy as np
 from collections.abc import Sequence
 from io import BytesIO
-from skimage import img_as_ubyte
 from numbers import Number
 from typing import Any
 
@@ -945,6 +944,7 @@ class ML_Logger:
         import tempfile, imageio  # , logging as py_logging
         # py_logging.getLogger("imageio").setLevel(py_logging.WARNING)
         with tempfile.NamedTemporaryFile(suffix=f'.{format}') as ntp:
+            from skimage import img_as_ubyte
             try:
                 imageio.mimsave(ntp.name, img_as_ubyte(frame_stack), format=format, fps=fps, **imageio_kwargs)
             except imageio.core.NeedDownloadError:
