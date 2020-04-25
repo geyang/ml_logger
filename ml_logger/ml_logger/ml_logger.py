@@ -1544,7 +1544,8 @@ class ML_Logger:
             return [parameters.get(k, kwargs['default']) if 'default' in kwargs else parameters[k] for k in keys]
         elif len(keys) == 1:
             return parameters.get(keys[0], kwargs['default']) if 'default' in kwargs else parameters[keys[0]]
-        return parameters
+        # info: cast to tuple, so that we can use this as a key in dict directly.
+        return tuple(parameters)
 
     def read_metrics(self, *keys, path="metrics.pkl", wd=None, silent=False, default=None, verbose=False):
         """
