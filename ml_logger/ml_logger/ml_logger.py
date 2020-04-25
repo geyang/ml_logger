@@ -318,6 +318,7 @@ class ML_Logger:
         return dict(hash=self.__head__, branch=self.__current_branch__)
 
     counter = None
+
     def every(self, n=1, key="default"):
         """
         returns True every n counts. Use the key to count different intervals.
@@ -1541,11 +1542,12 @@ class ML_Logger:
         from ml_logger.helpers.func_helpers import assign, dot_flatten
         parameters = dot_flatten(reduce(assign, _))
         if len(keys) > 1:
-            return [parameters.get(k, kwargs['default']) if 'default' in kwargs else parameters[k] for k in keys]
+            # info: cast to tuple, so that we can use this as a key in dict directly.
+            return tuple(parameters.get(k, kwargs['default']) if 'default' in kwargs else parameters[k] for k in keys)
         elif len(keys) == 1:
             return parameters.get(keys[0], kwargs['default']) if 'default' in kwargs else parameters[keys[0]]
-        # info: cast to tuple, so that we can use this as a key in dict directly.
-        return tuple(parameters)
+        else:
+            return parameters
 
     def read_metrics(self, *keys, path="metrics.pkl", wd=None, silent=False, default=None, verbose=False):
         """
