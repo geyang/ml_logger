@@ -67,7 +67,7 @@ def find_files(cwd, query, start=None, stop=None, no_stat=True, show_progress=Fa
             yield file_stat(file_path, no_stat=no_stat)
 
 
-def read_dataframe(path, k=200):
+def read_dataframe(path, k=None):
     from ml_logger.helpers import load_pickle_as_dataframe
     try:
         return load_pickle_as_dataframe(path, k)
