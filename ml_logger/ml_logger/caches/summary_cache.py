@@ -41,6 +41,9 @@ class SummaryCache:
                 s += f"  {k}: {v[:2]}[:{len(v)}]\n"
         return s
 
+    def __contains__(self, item):
+        return item in self.data
+
     def store(self, metrics=None, **key_values):
         """
         Store the metric data for making the summary later. This allows the logging/saving
@@ -107,7 +110,7 @@ class SummaryCache:
         """
         return self.data.get(key, default)
 
-    def pop(self, key, default=None):
+    def pop(self, key, default=None, stats=None):
         """
         Return the value or default, and remove the key from the dictionary.
 
@@ -115,6 +118,11 @@ class SummaryCache:
         :param default:
         :return:
         """
+        if stats is not None:
+            value = self.get_stats(key, stats=stats)
+            del self.data[key]
+            return value
+
         return self.data.pop(key, default=default)
 
     # note: is idempotent

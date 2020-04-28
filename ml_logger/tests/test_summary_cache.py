@@ -63,6 +63,17 @@ def test_single_key():
         assert isinstance(mean_reward, float)
 
 
+def test_pop():
+    print_helper = PrintHelper()
+    cache = SummaryCache(mode='tiled')
+    print()
+    for i in range(10):
+        save_mock_data(cache)
+        mean_reward = cache.pop("reward", stats="mean")
+        assert isinstance(mean_reward, float)
+        assert "reward" not in cache.data
+
+
 def test_repr():
     print_helper = PrintHelper()
     cache = SummaryCache(mode='tiled')
@@ -87,3 +98,4 @@ def test_repr():
 
 if __name__ == '__main__':
     test_single_key()
+    test_pop()
