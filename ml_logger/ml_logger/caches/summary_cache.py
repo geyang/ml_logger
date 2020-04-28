@@ -38,7 +38,7 @@ class SummaryCache:
             try:
                 s += f"  {k}: Shape{v[0].shape}[:{len(v)}]\n"
             except:
-                s +=  f"  {k}: {v[:2]}[:{len(v)}]\n"
+                s += f"  {k}: {v[:2]}[:{len(v)}]\n"
         return s
 
     def store(self, metrics=None, **key_values):
@@ -107,8 +107,18 @@ class SummaryCache:
         """
         return self.data.get(key, default)
 
+    def pop(self, key, default=None):
+        """
+        Return the value or default, and remove the key from the dictionary.
+
+        :param key:
+        :param default:
+        :return:
+        """
+        return self.data.pop(key, default=default)
+
     # note: is idempotent
-    def get_stats(self, *only_keys, key_stats=None, explicit=None, default_stats=None, **_key_stats):
+    def get_stats(self, *only_keys, key_stats=None, explicit=None, stats=None, **_key_stats):
         """
          Returns the metrics as a dictionary containing key / value pairs
          of the statistics of the metrics.
@@ -140,9 +150,10 @@ class SummaryCache:
         :param * only_keys: list of key strings to return explicitly
         :param key_stats: a dictionary for the key and the statistic modes to be returned.
         :param explicit: boolean flag, when true only keys explicitly specified would be returned
-        :param default_stats: the default stats mode for all metrics
+        :param stats: the default stats mode for all metrics
         :param ** _key_stats: key value pairs, as a short hand for the key_modes dictionary.
-        :return: dictionary of the keys and the statistics requested.
+        :return: dictionary of the keys and the statistics requested, or the value itself if only
+                one value is specified.
         """
         explicit = explicit or len(only_keys) > 0
         key_stats = key_stats or dict()
@@ -150,7 +161,7 @@ class SummaryCache:
         metrics = dict()
         keys = {*only_keys, *key_stats.keys()} if explicit else self.data.keys()
         for k in keys:
-            stats_type = key_stats.get(k, default_stats or self.default_stats)
+            stats_type = key_stats.get(k, stats or self.default_stats)
             if k not in self.data:
                 continue
             else:
@@ -181,6 +192,10 @@ class SummaryCache:
                 elif stats_type.startswith("histogram"):
                     # note: need make bin number configurable
                     metrics[k + "/hist"], metrics[k + "/divs"] = np.histogram(d, bins=10)
+
+        if len(metrics) == 1:
+            return list(metrics.values())[0]
+
         return metrics
 
 

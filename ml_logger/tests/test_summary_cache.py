@@ -53,6 +53,16 @@ def test_summary_cache():
         # s = print_helper.format_row_table(stats)
 
 
+def test_single_key():
+    print_helper = PrintHelper()
+    cache = SummaryCache(mode='tiled')
+    print()
+    for i in range(10):
+        save_mock_data(cache)
+        mean_reward = cache.get_stats("reward", stats="mean")
+        assert isinstance(mean_reward, float)
+
+
 def test_repr():
     print_helper = PrintHelper()
     cache = SummaryCache(mode='tiled')
@@ -76,4 +86,4 @@ def test_repr():
 
 
 if __name__ == '__main__':
-    test_repr()
+    test_single_key()
