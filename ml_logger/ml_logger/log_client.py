@@ -209,6 +209,12 @@ class LogClient:
     def read_np(self, key):
         return self._get(key, dtype="read_np")
 
+    def read_json(self, key):
+        return self._get(key, dtype="read_json")
+
+    def read_h5(self, key):
+        return self._get(key, dtype="read_h5")
+
     # appends data
     def log(self, key, data, **options):
         self._log(key, data, dtype="log", options=LogOptions(**options))

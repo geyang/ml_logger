@@ -183,6 +183,21 @@ class LoggingServer:
                 return numpy.load(abs_path)
             except FileNotFoundError as e:
                 return None
+        elif dtype == 'read_json':
+            import json
+            try:
+                with open(abs_path, 'r') as f:
+                    return json.load(f)
+            except Exception as e:
+                return None
+        elif dtype == 'read_h5':
+            import h5py
+            file_path, *object_keys = abs_path.split(":")
+            try:
+                with h5py.File(file_path, 'rb') as f:
+                    return tuple(f[key] for key in object_keys)
+            except FileNotFoundError as e:
+                return None
         elif dtype == 'read_image':
             raise NotImplementedError('reading images is not implemented.')
 

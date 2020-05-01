@@ -671,6 +671,24 @@ class ML_Logger:
             self.log_line(*table, sep="\n", silent=silent)
         self.log_data(path=path, data=_kwargs)
 
+    def save_pkl(self, data, path=None, append=False):
+        """
+        Save data in pkl format
+
+        :param data: python data object to be saved
+        :param path: path for the object, relative to the root logging directory.
+        :param append: default to False -- overwrite by default
+        :return: None
+        """
+        path = path or "data.pkl"
+        abs_path = pJoin(self.prefix, path)
+        kwargs = {"key": abs_path, "data": data}
+        overwrite = not append
+        if overwrite:
+            kwargs['overwrite'] = overwrite
+        self.client.log(**kwargs)
+        return path
+
     def log_data(self, data, path=None, overwrite=False):
         """
         Append data to the file located at the path specified.
@@ -680,13 +698,7 @@ class ML_Logger:
         :param overwrite: boolean flag to switch between 'appending' mode and 'overwrite' mode.
         :return: None
         """
-        path = path or "data.pkl"
-        abs_path = pJoin(self.prefix, path)
-        kwargs = {"key": abs_path, "data": data}
-        if overwrite:
-            kwargs['overwrite'] = overwrite
-        self.client.log(**kwargs)
-        return path
+        return self.save_pkl(data, path, append=not overwrite)
 
     def log_metrics(self, metrics=None, silent=None, cache: KeyValueCache = None, flush=None, **_key_values) -> None:
         """
@@ -849,7 +861,7 @@ class ML_Logger:
         """log a directory, or upload an entire directory."""
         raise NotImplementedError
 
-    def log_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None):
+    def save_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None):
         """Log images as a composite of a grid. Images input as a 4-D stack.
 
         :param stack: Size(n, w, h, c)
@@ -909,16 +921,16 @@ class ML_Logger:
 
         self.client.send_image(key=pJoin(self.prefix, key), data=composite)
 
-    def log_image(self, image, key: str, cmap=None, normalize=None):
+    def save_image(self, image, key: str, cmap=None, normalize=None):
         """Log a single image.
 
         :param image: numpy object Size(w, h, 3)
         :param key: example: "figures/some_fig_name.png", the file key to which the
             image is saved.
         """
-        self.log_images([image], key, n_rows=1, n_cols=1, cmap=cmap, normalize=normalize)
+        self.save_images([image], key, n_rows=1, n_cols=1, cmap=cmap, normalize=normalize)
 
-    def log_video(self, frame_stack, key, format=None, fps=20, **imageio_kwargs):
+    def save_video(self, frame_stack, key, format=None, fps=20, **imageio_kwargs):
         """
         Let's do the compression here. Video frames are first written to a temporary file
         and the file containing the compressed data is sent over as a file buffer.
@@ -957,7 +969,11 @@ class ML_Logger:
             ntp.seek(0)
             self.client.log_buffer(key=filename, buf=ntp.read())
 
-    def log_pyplot(self, path="plot.png", fig=None, format=None, **kwargs):
+    # todo: incremental save pyplot to video.
+    # def VideoContext(self, fig = None)
+    #     yield blah
+
+    def save_pyplot(self, path="plot.png", fig=None, format=None, **kwargs):
         """
         Saves matplotlib figure. The interface of this method emulates `matplotlib.pyplot.savefig`
             method.
@@ -1006,7 +1022,7 @@ class ML_Logger:
             _matplotlib.pyplot.savefig: https://matplotlib.org/api/_as_gen/matplotlib.pyplot.savefig.html
         :return: (str) path to which the figure is saved to.
         """
-        return self.log_pyplot(path=key, fig=fig, format=format, **kwargs)
+        return self.save_pyplot(path=key, fig=fig, format=format, **kwargs)
 
     def save_module(self, module, path="weights.pkl", chunk=100_000, show_progress=False):
         """
@@ -1135,6 +1151,7 @@ class ML_Logger:
         })
 
     def save_modules(self, path="modules.pkl", modules=None, **_modules):
+        raise DeprecationWarning("This method has gone out of use, and should be deprecated.")
         """
         Save torch modules in a dictionary, keyed by the keys.
 
@@ -1176,7 +1193,7 @@ class ML_Logger:
         sess = tf.get_default_session()
         vals = sess.run(variables)
         weight_dict = {k.split(":")[0]: v for k, v in zip(keys, vals)}
-        logger.log_data(weight_dict, path, overwrite=True)
+        logger.save_pkl(weight_dict, path)
 
     def load_variables(self, path, variables=None):
         """
@@ -1232,7 +1249,7 @@ class ML_Logger:
         """
         return self.client.read(pJoin(self.prefix, key))
 
-    def load_text(self, key):
+    def load_text(self, *keys):
         """ return the text content of the file (in a single chunk)
 
         todo: check handling of line-separated files
@@ -1247,12 +1264,12 @@ class ML_Logger:
 
         "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
 
-        :param key: a path string
+        :param *keys: path string fragments
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        return self.client.read_text(pJoin(self.prefix, key))
+        return self.client.read_text(pJoin(self.prefix, *keys))
 
-    def load_pkl(self, key, start=None, stop=None, tries=1, delay=1):
+    def load_pkl(self, *keys, start=None, stop=None, tries=1, delay=1):
         """
         load a pkl file *as a tuple*. By default, each file would contain 1 data item.
 
@@ -1287,7 +1304,7 @@ class ML_Logger:
 
         tries
 
-        :param key: a path string
+        :param *keys: path string fragments
         :param start: Starting index for the chunks None means from the beginning.
         :param stop: Stop index for the chunks. None means to the end of the file.
         :param tries: (int) The number of ties for the request. The last one does not catch error.
@@ -1295,7 +1312,7 @@ class ML_Logger:
             a random float in [1, 1.5).
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        path = pJoin(self.prefix, key)
+        path = pJoin(self.prefix, *keys)
         while tries > 1:
             try:
                 return self.client.read_pkl(path, start, stop)
@@ -1342,13 +1359,13 @@ class ML_Logger:
         """
         i = 0
         while True:
-            chunks = self.load_pkl(key, i, i + 1, **kwargs)
+            chunks = self.load_pkl(key, start=i, stop=i + 1, **kwargs)
             i += 1
             if not chunks:
                 break
             yield from chunks
 
-    def load_np(self, key):
+    def load_np(self, *keys):
         """ load a np file
 
         when key starts with a single slash as in "/debug/some-run", the leading slash is removed
@@ -1361,10 +1378,16 @@ class ML_Logger:
 
         "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
 
-        :param key: a path string
+        :param keys: path strings
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        return self.client.read_np(pJoin(self.prefix, key))
+        return self.client.read_np(pJoin(self.prefix, *keys))
+
+    def load_json(self, *keys):
+        return self.client.read_json(pJoin(self.prefix, *keys))
+
+    def load_h5(self, *keys):
+        return self.client.read_h5(pJoin(self.prefix, *keys))
 
     @staticmethod
     def plt2data(fig):
@@ -1387,9 +1410,14 @@ class ML_Logger:
         # buf = np.roll(buf, 4, axis=2)
         return buf
 
-    def log_json(self):
+    def save_json(self, data, key):
         raise NotImplementedError
 
+    def save_h5(self, data, key):
+        raise NotImplementedError
+
+    # todo: make buffer is keyed by file name
+    # todo: add option to save non-colored logs.
     def log_line(self, *args, sep=' ', end='\n', flush=True, file=None, color=None, **kwargs):
         """
         this is similar to the print function. It logs *args with a default EOL postfix in the end.

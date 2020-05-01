@@ -103,15 +103,15 @@ def test_image(setup):
     image_bw_2 = scipy.misc.face(gray=True)[::4, ::4]
     image_rgb = np.zeros((64, 64, 3), dtype=np.uint8)
     image_rgba = scipy.misc.face()[::4, ::4, :]
-    logger.log_image(image_bw, "black_white.png")
-    logger.log_image(image_bw_2, "bw_face.png")
-    logger.log_image(image_rgb, 'rgb.png')
-    logger.log_image(image_rgba, f'rgba_face_{100}.png')
-    logger.log_image(image_bw, f"bw_{100}.png")
-    logger.log_image(image_rgba, f"rbga_{100}.png")
+    logger.save_image(image_bw, "black_white.png")
+    logger.save_image(image_bw_2, "bw_face.png")
+    logger.save_image(image_rgb, 'rgb.png')
+    logger.save_image(image_rgba, f'rgba_face_{100}.png')
+    logger.save_image(image_bw, f"bw_{100}.png")
+    logger.save_image(image_rgba, f"rbga_{100}.png")
 
-    logger.log_image(image_bw[:, :, 0].astype(np.float32), "black_white_individual.png", normalize='individual')
-    logger.log_image(np.ones([64, 64]), "black_white_grid.png", normalize='grid')
+    logger.save_image(image_bw[:, :, 0].astype(np.float32), "black_white_individual.png", normalize='individual')
+    logger.save_image(np.ones([64, 64]), "black_white_grid.png", normalize='grid')
 
 
 def test_pyplot(setup):
@@ -122,7 +122,7 @@ def test_pyplot(setup):
     import numpy as np
 
     face = scipy.misc.face()
-    logger.log_image(face, "face.png")
+    logger.save_image(face, "face.png")
 
     fig = plt.figure(figsize=(4, 2))
     xs = np.linspace(0, 5, 1000)
@@ -149,7 +149,7 @@ def test_video(setup):
 
     frames = [im(100 + i, 80) for i in range(20)]
 
-    logger.log_video(frames, "test_video.mp4")
+    logger.save_video(frames, "test_video.mp4")
 
 
 def test_video_gif(setup):
@@ -165,7 +165,7 @@ def test_video_gif(setup):
 
     frames = [im(100 + i, 80) for i in range(20)]
 
-    logger.log_video(frames, "test_video.gif")
+    logger.save_video(frames, "test_video.gif")
 
 
 def test_load_params(setup):
