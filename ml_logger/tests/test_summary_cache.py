@@ -48,7 +48,7 @@ def test_summary_cache():
     print()
     for i in range(10):
         save_mock_data(cache)
-        stats = cache.get_stats(reward="mean", activations="quantile", actions="histogram")
+        stats = cache.summary_stats(reward="mean", activations="quantile", actions="histogram")
         s = print_helper.format_tabular(stats)
         # s = print_helper.format_row_table(stats)
 
@@ -59,7 +59,7 @@ def test_single_key():
     print()
     for i in range(10):
         save_mock_data(cache)
-        mean_reward = cache.get_stats("reward", stats="mean")
+        mean_reward = cache.get("reward").mean()
         assert isinstance(mean_reward, float)
 
 
@@ -69,7 +69,7 @@ def test_pop():
     print()
     for i in range(10):
         save_mock_data(cache)
-        mean_reward = cache.pop("reward", stats="mean")
+        mean_reward = cache.pop("reward").mean()
         assert isinstance(mean_reward, float)
         assert "reward" not in cache.data
 
@@ -80,7 +80,7 @@ def test_repr():
     print()
     for i in range(10):
         save_mock_data(cache)
-        stats = cache.get_stats(reward="mean", activations="quantile", actions="histogram")
+        stats = cache.summary_stats(reward="mean", activations="quantile", actions="histogram")
         # s = print_helper.format_tabular(stats)
         # s = print_helper.format_row_table(stats)
         # print(s)

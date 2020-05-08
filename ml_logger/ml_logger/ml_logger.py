@@ -317,7 +317,7 @@ class ML_Logger:
     def rev_info(self):
         return dict(hash=self.__head__, branch=self.__current_branch__)
 
-    counter = None
+    counter = defaultdict(lambda: 0)
 
     def every(self, n=1, key="default"):
         """
@@ -337,9 +337,7 @@ class ML_Logger:
         :param key:
         :return:
         """
-        if self.counter is None:
-            self.counter = dict()
-        self.counter[key] = self.counter.get(key, 0) + 1
+        self.counter[key] += 1
         return self.counter[key] % n == 0
 
     # timing functions
@@ -459,7 +457,7 @@ class ML_Logger:
         """
         return os.path.splitext(path)[0]
 
-    def diff(self, diff_directory=".", diff_filename="index.diff", ref="HEAD", silent=False):
+    def diff(self, diff_directory=".", diff_filename="index.diff", ref="HEAD", verbose=False):
         """
         example usage:
 
@@ -472,16 +470,17 @@ class ML_Logger:
         :param ref: the ref w.r.t which you want to diff against. Default to HEAD
         :param diff_directory: The root directory to call `git diff`, default to current directory.
         :param diff_filename: The file key for saving the diff file.
+        :param verbose: if True, print out the command.
 
         :return: string containing the content of the patch
         """
         import subprocess
         try:
             cmd = f'cd "{os.path.realpath(diff_directory)}" && git diff {ref} --binary'
-            if not silent: self.log_line(cmd)
+            if verbose: self.log_line(cmd)
             p = subprocess.check_output(cmd, shell=True)  # Save git diff to experiment directory
             patch = p.decode('utf-8').strip()
-            self.log_text(patch, diff_filename, silent=silent)
+            self.log_text(patch, diff_filename)
             return patch
         except subprocess.CalledProcessError as e:
             self.log_line("not storing the git diff due to {}".format(e))
@@ -668,7 +667,7 @@ class ML_Logger:
         # todo: add logging hook
         # todo: add yml support
         if table:
-            self.log_line(*table, sep="\n", silent=silent)
+            (self.log_line if silent else self.print)(*table, sep="\n")
         self.log_data(path=path, data=_kwargs)
 
     def save_pkl(self, data, path=None, append=False):
@@ -1418,7 +1417,7 @@ class ML_Logger:
 
     # todo: make buffer is keyed by file name
     # todo: add option to save non-colored logs.
-    def log_line(self, *args, sep=' ', end='\n', flush=True, file=None, color=None, **kwargs):
+    def log_line(self, *args, sep=' ', end='\n', flush=True, file=None, **kwargs):
         """
         this is similar to the print function. It logs *args with a default EOL postfix in the end.
 
@@ -1443,26 +1442,29 @@ class ML_Logger:
         :return: None
         """
         text = sep.join([str(a) for a in args]) + end
-        if color:
-            from termcolor import colored
-            text = colored(text, color)
         self.print_buffer += text
         # todo: print_buffer is not keyed by file. This is a bug.
         if flush or file or len(self.print_buffer) > self.print_buffer_size:
             self.flush_print_buffer(file=file, **kwargs)
 
-    print = log_line
+    def print(self, *args, sep=' ', end='\n', flush=True, file=None, color=None, **kwargs):
+        text = sep.join([str(a) for a in args]) + end
+        if color:
+            from termcolor import colored
+            text = colored(text, color)
+        print(text)
+        self.log_line(*args, sep=sep, end=end, flush=flush, file=file, **kwargs)
 
-    def pprint(self, *args, **kwargs):
+    def pprint(self, object=None, indent=None, width=None, depth=None, **kwargs):
         from pprint import pformat
-        return self.print(pformat(*args), **kwargs)
+        return self.print(pformat(object, indent, width, depth), **kwargs)
 
     def flush_print_buffer(self, file=None, **kwargs):
         if self.print_buffer:
             self.log_text(self.print_buffer, filename=file, **kwargs)
         self.print_buffer = ""
 
-    def log_text(self, text: str = None, filename=None, dedent=False, silent=False, overwrite=False):
+    def log_text(self, text: str = None, filename=None, dedent=False, overwrite=False):
         """
         logging and printing a string object.
 
@@ -1480,7 +1482,6 @@ class ML_Logger:
         :param text:
         :param filename: file name to which the string is logged.
         :param dedent: boolean flag for dedenting the multi-line string
-        :param silent:
         :return:
         """
         filename = filename or self.log_filename
@@ -1489,8 +1490,6 @@ class ML_Logger:
             text = dedent(text)
         if text is not None:
             self.client.log_text(key=pJoin(self.prefix, filename), text=text, overwrite=overwrite)
-            if not silent:
-                print(text, end="")
 
     def glob(self, query, wd=None, recursive=True, start=None, stop=None):
         """
@@ -1560,8 +1559,8 @@ class ML_Logger:
         _ = self.load_pkl(path)
         if _ is None:
             if keys and keys[-1] and "parameters.pkl" in keys[-1]:
-                self.log_line('Your last key looks like a `parameters.pkl` path. Make '
-                              'sure you use a keyword argument to specify the path!', color="yellow")
+                self.print('Your last key looks like a `parameters.pkl` path. Make '
+                           'sure you use a keyword argument to specify the path!', color="yellow")
             if silent:
                 return
             raise FileNotFoundError(f'the parameter file is not found at {path}')

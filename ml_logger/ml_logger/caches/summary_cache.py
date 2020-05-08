@@ -78,7 +78,7 @@ class SummaryCache:
         :param _key_stats: (**) key value pairs, as a short hand for the key_modes dictionary.
         :return: dictionary of the keys and the statistics requested.
         """
-        summary = self.get_stats(key_stats=key_stats, **_key_stats)
+        summary = self.summary_stats(key_stats=key_stats, **_key_stats)
         if force_clear or self.mode == "tiled":
             self.clear()
         return summary
@@ -102,66 +102,73 @@ class SummaryCache:
 
     def get(self, key, default=None):
         """
-        Returns a single stat
+        Return the summary statistics or default
 
         :param key: the key for the metric
         :param default: None
         :return:
         """
-        return self.data.get(key, default)
+        if key in self.data:
+            cached = self.data[key]
+            return np.array(cached)
+        else:
+            return default
 
-    def pop(self, key, default=None, stats=None):
+    def pop(self, key, default=None):
         """
-        Return the value or default, and remove the key from the dictionary.
+        Return the summary staatistics or default, and remove the key from the dictionary.
+
+        example:
+            avg_loss, = summary_cache.get('loss', stats='mean')
 
         :param key:
         :param default:
         :return:
         """
-        if stats is not None:
-            value = self.get_stats(key, stats=stats)
-            del self.data[key]
-            return value
-
-        return self.data.pop(key, default=default)
+        if key in self.data:
+            cached = self.data.pop(key)
+            return np.array(cached)
+        else:
+            return default
 
     # note: is idempotent
-    def get_stats(self, *only_keys, key_stats=None, explicit=None, stats=None, **_key_stats):
+    def summary_stats(self, *only_keys, key_stats=None, explicit=None, stats=None, **_key_stats):
         """
-         Returns the metrics as a dictionary containing key / value pairs
-         of the statistics of the metrics.
+        Returns the metrics as a dictionary containing key / value pairs
+        of the statistics of the metrics.
+
+        OR
+
+        Returns statistics that are queried.
+
+        Note that this method is idempotent. AKA you can call multiple times without
+        affecting what is stored in the data object.
         
-         OR
+        When a few key strings are passed in explicitly, ONLY those keys
+        plus those specified in the keyword arguments in **key_modes are
+        returned.
         
-         Returns statistics that are queried.
+        To enable explicit mode without specifying *only_keys, set
+        `get_only` to True
         
-         Note that this method is idempotent. AKA you can call multiple times without
-         affecting what is stored in the data object.
+        # Modes for the Statistics:
+        ===================
         
-         When a few key strings are passed in explicitly, ONLY those keys
-         plus those specified in the keyword arguments in **key_modes are
-         returned.
-        
-         To enable explicit mode without specifying *only_keys, set
-         `get_only` to True
-        
-         # Modes for the Statistics:
-         ===================
-        
-         key_mode would be one of:
-           - mean:
-           - min_max:
-           - std_dev:
-           - quantile:
-           - histogram(bins=10):
+        key_mode would be one of:
+          - mean:
+          - min_max:
+          - std_dev:
+          - quantile:
+          - histogram(bins=10):
         
         :param * only_keys: list of key strings to return explicitly
         :param key_stats: a dictionary for the key and the statistic modes to be returned.
         :param explicit: boolean flag, when true only keys explicitly specified would be returned
         :param stats: the default stats mode for all metrics
         :param ** _key_stats: key value pairs, as a short hand for the key_modes dictionary.
-        :return: dictionary of the keys and the statistics requested, or the value itself if only
-                one value is specified.
+        :return: dictionary of the keys and the statistics requested
+        # :return: dictionary of the keys and the statistics requested, or the value itself if only
+        #         one value is specified.
         """
         explicit = explicit or len(only_keys) > 0
         key_stats = key_stats or dict()
@@ -200,9 +207,6 @@ class SummaryCache:
                 elif stats_type.startswith("histogram"):
                     # note: need make bin number configurable
                     metrics[k + "/hist"], metrics[k + "/divs"] = np.histogram(d, bins=10)
-
-        if len(metrics) == 1:
-            return list(metrics.values())[0]
 
         return metrics
 
