@@ -832,8 +832,9 @@ class ML_Logger:
             key_values = (cache or self.key_value_cache).pop_all()
             filename = filename or self.metric_filename
             output = self.print_helper.format_tabular(key_values, self.do_not_print)
-            self.log_text(output, silent=False)  # not buffered
+            self.print(output, flush=True)  # not buffered
             self.client.log(key=pJoin(self.prefix, filename), data=key_values)
+        # note: this has caused trouble before.
         self.do_not_print.reset()
 
     def flush(self):
