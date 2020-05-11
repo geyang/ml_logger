@@ -32,7 +32,7 @@ class Duplex(object):
         runs the thunk per interval. Saves the output of the
         thunk in the signal buffer.
 
-        :type interval: int
+        :param interval: int
         :param interval: Check interval, in seconds
         """
         self.keep_alive_interval = keep_alive_interval

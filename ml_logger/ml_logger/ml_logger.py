@@ -363,7 +363,7 @@ class ML_Logger:
             print('iteration', it / 10)
             print('loop', logger.split('loop'))
 
-        :type *keys: position arguments are timed together.
+        :param *keys: position arguments are timed together.
         :return: float (in seconds)
         """
         keys = keys or ['default']
@@ -742,7 +742,8 @@ class ML_Logger:
         """
         self.store_metrics({key: value}, silent=silent, cache=cache)
 
-    def store_metrics(self, metrics=None, silent=None, cache: SummaryCache = None, **key_values):
+    def store_metrics(self, metrics=None, silent=None, cache: SummaryCache = None,
+                      prefix=None, **key_values):
         """
         Store the metric data (with the default summary cache) for making the summary later.
         This allows the logging/saving of training metrics asynchronously from the logging.
@@ -757,8 +758,10 @@ class ML_Logger:
         cache = cache or self.summary_cache
         if metrics:
             key_values.update(metrics)
-        if silent:
+        if silent:  # todo: deprecate this
             self.do_not_print.update(key_values.keys())
+        if prefix:
+            key_values = {prefix + k: v for k, v in key_values.items()}
         cache.store(metrics, **key_values)
 
     def peek_stored_metrics(self, *keys, len=5, print_only=True):
@@ -766,8 +769,10 @@ class ML_Logger:
         output = self.print_helper.format_row_table(_, max_rows=len, do_not_print_list=self.do_not_print)
         (print if print_only else self.log_line)(output)
 
-    def log_metrics_summary(self, key_values: dict = None, cache: SummaryCache = None, key_stats: dict = None,
-                            default_stats=None, silent=False, flush: bool = True, **_key_modes) -> None:
+    def log_metrics_summary(self, key_values: dict = None,
+                            cache: SummaryCache = None, key_stats: dict = None,
+                            default_stats=None, silent=False, flush: bool = True,
+                            prefix=None, **_key_modes) -> None:
         """
         logs the statistical properties of the stored metrics, and clears the `summary_cache` if under `tiled` mode,
         and keeps the data otherwise (under `rolling` mode).
@@ -798,6 +803,8 @@ class ML_Logger:
         summary = cache.summarize(key_stats=key_stats, default_stats=default_stats, **_key_modes)
         if key_values:
             summary.update(key_values)
+        if prefix:
+            summary = {prefix + k: v for k, v in summary.items()}
         self.log_metrics(metrics=summary, silent=silent, flush=flush)
 
     def log(self, *args, metrics=None, silent=False, sep=" ", end="\n", flush=None,
@@ -1448,8 +1455,12 @@ class ML_Logger:
         if flush or file or len(self.print_buffer) > self.print_buffer_size:
             self.flush_print_buffer(file=file, **kwargs)
 
-    def print(self, *args, sep=' ', end='\n', flush=True, file=None, color=None, **kwargs):
+    def print(self, *args, sep=' ', end='\n', flush=True, file=None, color=None, dedent=False, **kwargs):
         text = sep.join([str(a) for a in args]) + end
+        if dedent:
+            import textwrap
+            text = textwrap.dedent(text).lstrip()
+
         if color:
             from termcolor import colored
             text = colored(text, color)
@@ -1487,8 +1498,8 @@ class ML_Logger:
         """
         filename = filename or self.log_filename
         if dedent:
-            from textwrap import dedent
-            text = dedent(text)
+            import textwrap
+            text = textwrap.dedent(text)
         if text is not None:
             self.client.log_text(key=pJoin(self.prefix, filename), text=text, overwrite=overwrite)
 
