@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 import numpy as np
 import dill  # done: switch to dill instead
-from params_proto import cli_parse, Proto, BoolFlag
 from ml_logger.serdes import deserialize, serialize
 from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
 
@@ -235,7 +234,7 @@ class LoggingServer:
                 with open(abs_path, write_mode + 'b') as f:
                     dill.dump(data, f)
             except FileNotFoundError:
-                os.makedirs(os.path.dirname(abs_path))
+                os.makedirs(os.path.dirname(abs_path), exist_ok=True)
                 with open(abs_path, write_mode + 'b') as f:
                     dill.dump(data, f)
         if dtype == "byte":
@@ -244,7 +243,7 @@ class LoggingServer:
                 with open(abs_path, write_mode + 'b') as f:
                     f.write(data)
             except FileNotFoundError:
-                os.makedirs(os.path.dirname(abs_path))
+                os.makedirs(os.path.dirname(abs_path), exist_ok=True)
                 with open(abs_path, write_mode + 'b') as f:
                     f.write(data)
         elif dtype.startswith("text"):
@@ -253,7 +252,7 @@ class LoggingServer:
                 with open(abs_path, write_mode + "+") as f:
                     f.write(data)
             except FileNotFoundError:
-                os.makedirs(os.path.dirname(abs_path))
+                os.makedirs(os.path.dirname(abs_path), exist_ok=True)
                 with open(abs_path, write_mode + "+") as f:
                     f.write(data)
         elif dtype.startswith("yaml"):
@@ -281,7 +280,7 @@ class LoggingServer:
                             output = d
                     f.write(output)
             except FileNotFoundError:
-                os.makedirs(os.path.dirname(abs_path))
+                os.makedirs(os.path.dirname(abs_path), exist_ok=True)
                 with open(abs_path, write_mode + "+") as f:
                     if options.write_mode == 'key':
                         d = load_fn('\n'.join(f))
@@ -301,21 +300,24 @@ class LoggingServer:
             try:
                 im.save(abs_path)
             except FileNotFoundError:
-                os.makedirs(os.path.dirname(abs_path))
+                os.makedirs(os.path.dirname(abs_path), exist_ok=True)
                 im.save(abs_path)
 
 
-@cli_parse
-class Params:
-    data_dir = Proto("/tmp/logging-server", help="The directory for saving the logs")
-    port = Proto(8081, help="port for the logging server")
-    host = Proto("127.0.0.1", help="IP address for running the server. Default only allows localhost from making "
-                                   "requests. If you want to allow all ip, set this to '0.0.0.0'.")
-    workers = Proto(1, help="Number of workers to run in parallel")
-    debug = BoolFlag(False, help='boolean flag for printing out debug traces')
-
-
 if __name__ == '__main__':
+    from params_proto import cli_parse, Proto, BoolFlag
+
+
+    @cli_parse
+    class Params:
+        data_dir = Proto("/tmp/logging-server", help="The directory for saving the logs")
+        port = Proto(8081, help="port for the logging server")
+        host = Proto("127.0.0.1", help="IP address for running the server. Default only allows localhost from making "
+                                       "requests. If you want to allow all ip, set this to '0.0.0.0'.")
+        workers = Proto(1, help="Number of workers to run in parallel")
+        debug = BoolFlag(False, help='boolean flag for printing out debug traces')
+
+
     import pkg_resources
 
     v = pkg_resources.get_distribution("ml_logger").version

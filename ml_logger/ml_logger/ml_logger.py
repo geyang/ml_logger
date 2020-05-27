@@ -10,6 +10,7 @@ from numbers import Number
 from typing import Any
 
 from termcolor import cprint
+from waterbear import DefaultBear
 
 from .helpers.default_set import DefaultSet
 from .full_duplex import Duplex
@@ -317,7 +318,7 @@ class ML_Logger:
     def rev_info(self):
         return dict(hash=self.__head__, branch=self.__current_branch__)
 
-    counter = defaultdict(lambda: 0)
+    counter = DefaultBear(lambda: 0)
 
     def every(self, n=1, key="default"):
         """
@@ -338,7 +339,14 @@ class ML_Logger:
         :return:
         """
         self.counter[key] += 1
-        return self.counter[key] % n == 0
+        return n and self.counter[key] % n == 0
+
+    def count(self, key="default"):
+        self.counter[key] += 1
+        return self.counter[key]
+
+    def clear(self, key="default"):
+        del self.counter[key]
 
     # timing functions
     def split(self, *keys):
@@ -379,6 +387,12 @@ class ML_Logger:
 
         return results[keys[0]] \
             if len(keys) == 1 else [results[k] for k in keys]
+
+    @contextmanager
+    def time(self, key="default"):
+        self.split(key)
+        yield
+        print(f"time lapsed <key>: {key} {self.split(key):0.3E}")
 
     def now(self, fmt=None):
         """
@@ -1456,7 +1470,7 @@ class ML_Logger:
             self.flush_print_buffer(file=file, **kwargs)
 
     def print(self, *args, sep=' ', end='\n', flush=True, file=None, color=None, dedent=False, **kwargs):
-        text = sep.join([str(a) for a in args]) + end
+        text = sep.join([str(a) for a in args])
         if dedent:
             import textwrap
             text = textwrap.dedent(text).lstrip()
@@ -1464,7 +1478,7 @@ class ML_Logger:
         if color:
             from termcolor import colored
             text = colored(text, color)
-        print(text)
+        print(text, end=end)
         self.log_line(*args, sep=sep, end=end, flush=flush, file=file, **kwargs)
 
     def pprint(self, object=None, indent=None, width=None, depth=None, **kwargs):
@@ -1497,11 +1511,15 @@ class ML_Logger:
         :return:
         """
         filename = filename or self.log_filename
+        if text is None:
+            return
+
+        text = str(text)
         if dedent:
             import textwrap
-            text = textwrap.dedent(text)
-        if text is not None:
-            self.client.log_text(key=pJoin(self.prefix, filename), text=text, overwrite=overwrite)
+            text = textwrap.dedent(text).lstrip()
+
+        self.client.log_text(key=pJoin(self.prefix, filename), text=text, overwrite=overwrite)
 
     def glob(self, query, wd=None, recursive=True, start=None, stop=None):
         """
