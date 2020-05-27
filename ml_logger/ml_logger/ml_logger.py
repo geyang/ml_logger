@@ -1105,7 +1105,7 @@ class ML_Logger:
         # data = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
         # self.log_data(data=data, path=path, overwrite=True)
 
-    def load_module(self, module, path="weights.pkl", stream=True, tries=5, matcher=None):
+    def load_module(self, module, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None):
         """
         Load torch module from file.
 
@@ -1160,6 +1160,13 @@ class ML_Logger:
         :return: None
         """
         import torch
+
+        if "*" in path:
+            all_paths = self.glob(path, wd=wd or self.prefix)
+            if len(all_paths) == 0:
+                raise FileNotFoundError(f"Path matching {path} is not found")
+            path = pJoin(wd, sorted(all_paths)[-1])
+
         d = {}
         for chunk in (self.iload_pkl if stream else self.load_pkl)(path, tries=tries):
             d.update(chunk)
