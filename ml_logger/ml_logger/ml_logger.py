@@ -346,7 +346,10 @@ class ML_Logger:
         return self.counter[key]
 
     def clear(self, key="default"):
-        del self.counter[key]
+        try:
+            del self.counter[key]
+        except KeyError:
+            pass
 
     # timing functions
     def split(self, *keys):
@@ -859,7 +862,7 @@ class ML_Logger:
         self.do_not_print.reset()
 
     def flush(self):
-        self.log_metrics_summary(flush=False)
+        # self.log_metrics_summary(flush=False)
         self.flush_metrics()
         self.flush_print_buffer()
 
