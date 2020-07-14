@@ -3,7 +3,7 @@ from os.path import split, join, basename, realpath
 from graphene import ObjectType, relay, String, List
 from graphene.types.generic import GenericScalar
 from ml_dash.config import Args
-from ml_dash.schema.files.file_helpers import read_json, find_files
+from ml_dash.schema.files.file_helpers import read_pickle, find_files
 from ml_dash.schema.helpers import assign, dot_keys, dot_flatten
 
 
@@ -25,17 +25,17 @@ class Parameters(ObjectType):
         return self.id
 
     def resolve_keys(self, info):
-        value = reduce(assign, read_json(join(Args.logdir, self.id[1:])) or [{}])
+        value = reduce(assign, read_pickle(join(Args.logdir, self.id[1:])) or [{}])
         return dot_keys(value)
 
     def resolve_value(self, info, **kwargs):
-        return reduce(assign, read_json(join(Args.logdir, self.id[1:])) or [{}])
+        return reduce(assign, read_pickle(join(Args.logdir, self.id[1:])) or [{}])
 
     def resolve_raw(self, info, **kwargs):
-        return read_json(join(Args.logdir, self.id[1:]))
+        return read_pickle(join(Args.logdir, self.id[1:]))
 
     def resolve_flat(self, info, **kwargs):
-        value = reduce(assign, read_json(join(Args.logdir, self.id[1:])) or [{}])
+        value = reduce(assign, read_pickle(join(Args.logdir, self.id[1:])) or [{}])
         return dot_flatten(value)
 
     # description = String(description='string serialized data')
