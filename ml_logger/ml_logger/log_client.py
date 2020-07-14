@@ -196,8 +196,8 @@ class LogClient:
         self._log(channel, signal, dtype="log", options=options)
 
     # Reads binary data
-    def read(self, key):
-        return self._get(key, dtype="read")
+    def read(self, key, start=None, stop=None):
+        return self._get(key, dtype="read", start=start, stop=stop)
 
     def read_text(self, key):
         return self._get(key, dtype="read_text")
@@ -215,6 +215,9 @@ class LogClient:
     def read_h5(self, key):
         return self._get(key, dtype="read_h5")
 
+    # read_buffer is an alias of read, which returns the buffer.
+    read_buffer = read
+
     # appends data
     def log(self, key, data, **options):
         self._log(key, data, dtype="log", options=LogOptions(**options))
@@ -225,17 +228,18 @@ class LogClient:
 
     # appends yaml
     def log_yaml(self, key, data):
+        # does not support appending yet
         self._log(key, data, dtype="yaml")
 
     # sends out images
     def send_image(self, key, data):
         assert data.dtype in ALLOWED_TYPES, "image data must be one of {}".format(ALLOWED_TYPES)
-        self._log(key, data, dtype="image")
+        self._log(key, data, dtype="image", options=LogOptions(overwrite=True))
 
-    # appends text
-    def log_buffer(self, key, buf):
+    # writes data
+    def log_buffer(self, key, buf, **options):
         # defaults to overwrite for binary data.
-        self._log(key, buf, dtype="byte", options=LogOptions(overwrite=True))
+        self._log(key, buf, dtype="byte", options=LogOptions(**options))
 
     def glob(self, query, **kwargs):
         return self._glob(query, **kwargs)

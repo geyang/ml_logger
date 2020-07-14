@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 import numpy as np
 import dill  # done: switch to dill instead
+from ml_logger.helpers import load_from_file
 from ml_logger.serdes import deserialize, serialize
 from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
 
@@ -160,8 +161,7 @@ class LoggingServer:
         abs_path = os.path.join(self.data_dir, key)
         if dtype == 'read':
             try:
-                with open(abs_path, 'rb') as f:
-                    return f.read()
+                return list(load_from_file(abs_path))[start:stop]
             except FileNotFoundError as e:
                 return None
         elif dtype == 'read_text':
@@ -230,6 +230,7 @@ class LoggingServer:
         write_mode = "w" if options and options.overwrite else "a"
         if dtype == "log":
             abs_path = os.path.join(self.data_dir, key)
+            # fixme: There is a race condition with multiple requests
             try:
                 with open(abs_path, write_mode + 'b') as f:
                     dill.dump(data, f)
@@ -239,6 +240,7 @@ class LoggingServer:
                     dill.dump(data, f)
         if dtype == "byte":
             abs_path = os.path.join(self.data_dir, key)
+            # fixme: There is a race condition with multiple requests
             try:
                 with open(abs_path, write_mode + 'b') as f:
                     f.write(data)
@@ -248,6 +250,7 @@ class LoggingServer:
                     f.write(data)
         elif dtype.startswith("text"):
             abs_path = os.path.join(self.data_dir, key)
+            # fixme: There is a race condition with multiple requests
             try:
                 with open(abs_path, write_mode + "+") as f:
                     f.write(data)
