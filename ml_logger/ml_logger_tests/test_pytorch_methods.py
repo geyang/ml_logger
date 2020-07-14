@@ -3,8 +3,8 @@ In this file we test the tensorflow specific logging methods.
 """
 import pytest
 from ml_logger import logger
-from tests.test_ml_logger import setup, log_dir
-from tests.conftest import LOCAL_TEST_DIR
+from ml_logger_tests.test_ml_logger import setup, log_dir
+from ml_logger_tests.conftest import LOCAL_TEST_DIR
 import torch.nn as nn
 
 

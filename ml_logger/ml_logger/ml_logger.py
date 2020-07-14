@@ -10,6 +10,7 @@ from io import BytesIO
 from numbers import Number
 from typing import Any
 
+from ml_logger.helpers import Whatever, load_from_pickle, load_from_pickle_file
 from termcolor import cprint
 from waterbear import DefaultBear
 
@@ -689,21 +690,21 @@ class ML_Logger:
         self.log_data(path=path, data=_kwargs)
 
     def save_pkl(self, data, path=None, append=False):
-        """
-        Save data in pkl format
+        """Save data in pkl format
 
         :param data: python data object to be saved
         :param path: path for the object, relative to the root logging directory.
         :param append: default to False -- overwrite by default
         :return: None
         """
+        import pickle
         path = path or "data.pkl"
         abs_path = pJoin(self.prefix, path)
-        kwargs = {"key": abs_path, "data": data}
-        overwrite = not append
-        if overwrite:
-            kwargs['overwrite'] = overwrite
-        self.client.log(**kwargs)
+
+        buf = BytesIO()
+        pickle.dump(data, buf)
+        buf.seek(0)
+        self.client.log_buffer(abs_path, buf=buf.read(), overwrite=not append)
         return path
 
     def log_data(self, data, path=None, overwrite=False):
@@ -880,7 +881,7 @@ class ML_Logger:
         from pathlib import Path
         bytes = Path(file_path).read_bytes()
         basename = [os.path.basename(file_path)] if target_path.endswith('/') else []
-        self.client.log_buffer(key=pJoin(self.prefix, target_path, *basename), buf=bytes)
+        self.client.log_buffer(key=pJoin(self.prefix, target_path, *basename), buf=bytes, overwrite=True)
 
     def upload_dir(self, dir_path, target_folder='', excludes=tuple(), gzip=True, unzip=False):
         """log a directory, or upload an entire directory."""
@@ -992,7 +993,7 @@ class ML_Logger:
                 imageio.plugins.ffmpeg.download()
                 imageio.mimsave(ntp.name, img_as_ubyte(frame_stack), format=format, fps=fps, **imageio_kwargs)
             ntp.seek(0)
-            self.client.log_buffer(key=filename, buf=ntp.read())
+            self.client.log_buffer(key=filename, buf=ntp.read(), overwrite=True)
 
     # todo: incremental save pyplot to video.
     # def VideoContext(self, fig = None)
@@ -1031,7 +1032,7 @@ class ML_Logger:
         buf.seek(0)
 
         path = pJoin(self.prefix, path)
-        self.client.log_buffer(path, buf.read())
+        self.client.log_buffer(path, buf.read(), overwrite=True)
         return path
 
     def savefig(self, key, fig=None, format=None, **kwargs):
@@ -1347,14 +1348,24 @@ class ML_Logger:
         path = pJoin(self.prefix, *keys)
         while tries > 1:
             try:
-                return self.client.read_pkl(path, start, stop)
-            except:
+                with BytesIO() as buf:
+                    blobs = self.client.read(path, start, stop)
+                    for blob in blobs:
+                        buf.write(blob)
+                    buf.seek(0)
+                    return list(load_from_pickle_file(buf))
+            except Exception as e:
                 import time, random
                 # todo: use separate random generator to avoid mutating global random generator.
                 time.sleep((1 + random.random() * 0.5) * delay)
                 tries -= 1
         # last one does not catch.
-        return self.client.read_pkl(path, start, stop)
+        with BytesIO() as buf:
+            chunks = self.client.read(path, start, stop)
+            for chunk in chunks:
+                buf.write(chunk)
+            buf.seek(0)
+            return list(load_from_pickle_file(buf))
 
     def iload_pkl(self, key, **kwargs):
         """

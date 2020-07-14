@@ -35,11 +35,24 @@ class Whatever(pickle.Unpickler):
 
 def load_from_pickle(path='parameters.pkl'):
     with open(path, 'rb') as f:
+        yield from load_from_pickle_file(f)
+
+
+def load_from_pickle_file(file):
+    while True:
+        try:
+            yield Whatever(file).load()
+        except EOFError:
+            break
+
+
+def load_from_file(path):
+    with open(path, 'rb') as f:
         while True:
-            try:
-                yield Whatever(f).load()
-            except EOFError:
+            blob = f.read()
+            if blob == b'':
                 break
+            yield blob
 
 
 def sample(stream, k):
