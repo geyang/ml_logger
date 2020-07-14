@@ -1,4 +1,5 @@
 import os
+from math import ceil
 from os.path import join as pJoin
 from collections import defaultdict
 from contextlib import contextmanager
@@ -885,7 +886,7 @@ class ML_Logger:
         """log a directory, or upload an entire directory."""
         raise NotImplementedError
 
-    def save_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None):
+    def save_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None, background=1):
         """Log images as a composite of a grid. Images input as a 4-D stack.
 
         :param stack: Size(n, w, h, c)
@@ -900,7 +901,7 @@ class ML_Logger:
         stack = stack if hasattr(stack, 'dtype') else np.stack(stack)
 
         n_cols = n_cols or len(stack)
-        n_rows = n_rows or 1
+        n_rows = n_rows or ceil(len(stack) / n_cols)
 
         if np.issubdtype(stack.dtype, np.uint8):
             pass
@@ -934,7 +935,7 @@ class ML_Logger:
         assert np.issubdtype(stack.dtype, np.uint8), "the image type need to be unsigned 8-bit."
         n, h, w, *c = stack.shape
         # todo: add color background -- need to decide on which library to use.
-        composite = np.ones([h * n_rows, w * n_cols, *c], dtype='uint8')
+        composite = np.full([h * n_rows, w * n_cols, *c], background, dtype='uint8')
         for i in range(n_rows):
             for j in range(n_cols):
                 k = i * n_cols + j

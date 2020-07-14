@@ -1,12 +1,43 @@
 from random import randint
 
 
+def factory(module, name):
+    class Lie:
+        def __init__(self, *args, **kwargs):
+            print(args, kwargs)
+            self.__d = dict()
+
+        def __setitem__(self, key, value):
+            self.__d[key] = value
+
+        def __getitem__(self, item):
+            return self.__d[item]
+
+        def __call__(self, *args, **kwargs):
+            print(args, kwargs)
+
+        def __repr__(self):
+            return f"<class '{module}.{name}'>"
+
+    return Lie
+
+
+import pickle
+
+
+class Whatever(pickle.Unpickler):
+    def find_class(self, module, name):
+        try:
+            return super().find_class(module, name)
+        except:
+            return factory(module, name)
+
+
 def load_from_pickle(path='parameters.pkl'):
-    import dill
     with open(path, 'rb') as f:
         while True:
             try:
-                yield dill.load(f)
+                yield Whatever(f).load()
             except EOFError:
                 break
 
