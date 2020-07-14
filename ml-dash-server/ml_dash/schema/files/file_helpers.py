@@ -87,9 +87,16 @@ def read_log(path, k=200):
     return df.to_json(orient="records")
 
 
-def read_pickle(path):
+def read_pikle(path):
     from ml_logger.helpers import load_from_pickle
     data = [_ for _ in load_from_pickle(path)]
+    return data
+
+
+def read_pickle_for_json(path):
+    """convert non JSON serializable types to string"""
+    from ml_logger.helpers import load_from_pickle
+    data = [_ for _ in load_from_pickle(path, for_json=True)]
     return data
 
 

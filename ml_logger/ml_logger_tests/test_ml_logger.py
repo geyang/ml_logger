@@ -53,7 +53,7 @@ def test_glob(setup):
     print(f"globbed file paths: {[file_paths]}")
 
 
-def test_load_pkl(setup):
+def test_save_and_load_pkl(setup):
     import numpy
     d1 = numpy.random.randn(20, 10)
     logger.log_data(d1, 'test_file.pkl')
@@ -66,6 +66,19 @@ def test_load_pkl(setup):
     assert len(data) == 2, "data should contain two arrays"
     assert numpy.array_equal(data[0], d1), "first should be the same as d1"
     assert numpy.array_equal(data[1], d2), "first should be the same as d2"
+
+
+# def __save_unavailable_pkl():
+#     import pickle
+#     from uvpn.domains.sawyer import GoalImg
+#     config = dict(wrappers=[GoalImg, ])
+#     logger.log_data(config, 'demo_config.pkl', overwrite=True)
+#     return pickle.dumps(config)
+#
+#
+# # todo: check if this is actually testing correctly
+# def test_pkl_with_unavailable_modules():
+#     agent = logger.load_pkl('demo_config.pkl')
 
 
 def test_log_data(setup):

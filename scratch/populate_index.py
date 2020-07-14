@@ -8,7 +8,7 @@ from termcolor import cprint
 from tqdm import tqdm
 from more_itertools import chunked, interleave
 
-from ml_dash.schema.files.file_helpers import find_files, read_pickle
+from ml_dash.schema.files.file_helpers import find_files, read_pickle_for_json
 from ml_dash.config import Args
 from ml_dash.schema.helpers import assign, dot_flatten
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
     for chunk in tqdm(chunked(parameter_files, 1000), desc="Uploading..."):
         parameters = [reduce(assign, [
-            *(read_pickle(join(cwd, f['path'])) or []), {"dir": f['dir']}
+            *(read_pickle_for_json(join(cwd, f['path'])) or []), {"dir": f['dir']}
         ]) for f in chunk]
         actions = [{"index": dict(_id=p['dir'], )} for p in parameters]
         documents = [dict(index=[dict(key=k, **v) for k, v in typify(dot_flatten(p)).items()], **p)

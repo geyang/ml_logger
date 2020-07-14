@@ -1,47 +1,53 @@
 from random import randint
 
-
-def factory(module, name):
-    class Lie:
-        def __init__(self, *args, **kwargs):
-            print(args, kwargs)
-            self.__d = dict()
-
-        def __setitem__(self, key, value):
-            self.__d[key] = value
-
-        def __getitem__(self, item):
-            return self.__d[item]
-
-        def __call__(self, *args, **kwargs):
-            print(args, kwargs)
-
-        def __repr__(self):
-            return f"<class '{module}.{name}'>"
-
-    return Lie
-
-
 import pickle
 
 
 class Whatever(pickle.Unpickler):
+    def __init__(self, *_, for_json=False, **__):
+        self.for_json = for_json
+        super().__init__(*_, **__)
+
+    def factory(self, module, name):
+
+        if self.for_json:
+            return f"<class '{module}.{name}'>"
+
+        class Lie:
+            def __init__(self, *args, **kwargs):
+                print(args, kwargs)
+                self.__d = dict()
+
+            def __setitem__(self, key, value):
+                self.__d[key] = value
+
+            def __getitem__(self, item):
+                return self.__d[item]
+
+            def __call__(self, *args, **kwargs):
+                print(args, kwargs)
+
+            def __repr__(self):
+                return f"<class '{module}.{name}'>"
+
+        return Lie
+
     def find_class(self, module, name):
         try:
             return super().find_class(module, name)
         except:
-            return factory(module, name)
+            return self.factory(module, name)
 
 
-def load_from_pickle(path='parameters.pkl'):
+def load_from_pickle(path='parameters.pkl', **__):
     with open(path, 'rb') as f:
-        yield from load_from_pickle_file(f)
+        yield from load_from_pickle_file(f, **__)
 
 
-def load_from_pickle_file(file):
+def load_from_pickle_file(file, **__):
     while True:
         try:
-            yield Whatever(file).load()
+            yield Whatever(file, **__).load()
         except EOFError:
             break
 
