@@ -28,6 +28,16 @@ To **install** `ml_logger`, do:
 ```bash
 pip install ml-logger
 ```
+
+> Note: we need the following graphene version.
+> I am in the process of updating the version of
+> the dependencies.
+>
+>   1 yes | pip install graphene==2.1.3
+>   2 yes | pip install graphql-core==2.1
+>   3 yes | pip install graphql-relay==0.4.5
+>   4 yes | pip install graphql-server-core==1.1.1
+
 Now you can rock!
 ```python
 from ml_logger import logger
