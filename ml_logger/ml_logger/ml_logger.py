@@ -774,6 +774,7 @@ class ML_Logger:
         abs_path = pJoin(self.prefix, path)
 
         buf = BytesIO()
+        import cloudpickle
         cloudpickle.dump(data, buf)
         buf.seek(0)
         self.client.log_buffer(abs_path, buf=buf.read(), overwrite=not append)
