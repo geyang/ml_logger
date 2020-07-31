@@ -313,7 +313,10 @@ class ML_Logger:
                 break
 
         _ = dict(getmembers(fn))
-        info = dict(name=_['__name__'], doc=_['__doc__'], module=_['__module__'],
+        doc_string = _['__doc__']
+        if len(doc_string) > 46:
+            doc_string = doc_string[:46] + " ..."
+        info = dict(name=_['__name__'], doc=doc_string, module=_['__module__'],
                     file=_['__globals__']['__file__'])
         return info
 
@@ -352,6 +355,75 @@ class ML_Logger:
             del self.counter[key]
         except KeyError:
             pass
+
+    def start(self, *keys):
+        """
+        starts a timer, saved in float in seconds.
+
+        Automatically de-dupes the keys, but will return the same
+        number of intervals. duplicates will recieve the same
+        result.
+
+        .. code:: python
+
+            from ml_logger import logger
+
+            logger.start('loop', 'iter')
+            it = 0
+            for i in range(10):
+                it += logger.split('iter')
+            print('iteration', it / 10)
+            print('loop', logger.since('loop'))
+
+        :param *keys: position arguments are timed together.
+        :return: float (in seconds)
+        """
+        keys = keys or ['default']
+        results = {k: None for k in keys}
+        new_tic = self.now()
+        for key in set(keys):
+            self.timer_cache[key] = new_tic
+
+        return results[keys[0]] \
+            if len(keys) == 1 else [results[k] for k in keys]
+
+    def since(self, *keys):
+        """
+        returns a float in seconds when 1 key is passed, or
+        a list of floats when multiple keys are passsed in.
+
+        Automatically de-dupes the keys, but will return the same
+        number of intervals. duplicates will recieve the same
+        result.
+
+        Note: This *is* idempotent.
+
+        .. code:: python
+
+            from ml_logger import logger
+
+            logger.start('loop', 'iter')
+            it = 0
+            for i in range(10):
+                it += logger.split('iter')
+            print('iteration', it / 10)
+            print('loop', logger.since('loop'))
+
+        :param *keys: position arguments are timed together.
+        :return: float (in seconds)
+        """
+        keys = keys or ['default']
+        results = {k: None for k in keys}
+        tick = self.now()
+        for key in set(keys):
+            try:
+                dt = tick - self.timer_cache[key]
+                results[key] = dt.total_seconds()
+            except:
+                results[key] = None
+
+        return results[keys[0]] \
+            if len(keys) == 1 else [results[k] for k in keys]
 
     # timing functions
     def split(self, *keys):
@@ -702,7 +774,7 @@ class ML_Logger:
         abs_path = pJoin(self.prefix, path)
 
         buf = BytesIO()
-        pickle.dump(data, buf)
+        cloudpickle.dump(data, buf)
         buf.seek(0)
         self.client.log_buffer(abs_path, buf=buf.read(), overwrite=not append)
         return path
@@ -782,6 +854,8 @@ class ML_Logger:
         if prefix:
             key_values = {prefix + k: v for k, v in key_values.items()}
         cache.store(metrics, **key_values)
+
+    store = store_metrics
 
     def peek_stored_metrics(self, *keys, len=5, print_only=True):
         _ = self.summary_cache.peek(*keys, len=len)
