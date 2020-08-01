@@ -15,30 +15,30 @@ if __name__ == "__main__":
 
     for username in ["episodeyang", "amyzhang"]:
         for project in ['cpc-belief', 'playground']:
-            for i in range(10):
+            for i in range(2):
                 prefix = f"{username}/{project}/{'mdp/' if i < 5 else '/'}experiment_{i:02d}"
                 logger.remove(prefix)
 
                 logger.configure(log_directory=DEBUG_DIR, prefix=prefix)
 
-                logger.log_params(Args=dict(lr=10**(-2 - i),
+                logger.log_params(Args=dict(lr=10 ** (-2 - i),
                                             weight_decay=0.001,
                                             gradient_clip=0.9,
                                             env_id="GoalMassDiscreteIdLess-v0",
                                             seed=int(i * 100)))
-                for ep in range(500 + 1):
+                for ep in range(50 + 1):
                     logger.log_metrics(epoch=ep,
                                        sine=fn(ep),
                                        slow_sine=fn_1(ep))
                     logger.flush()
                     if ep % 10 == 0:
-                        logger.log_image(face('gray'),
-                                         f"figures/gray_{ep:04d}.png")
-                        logger.log_image(face('rgb'),
-                                         f"figures/rgb_{ep:04d}.png")
+                        logger.save_image(face('gray'),
+                                          f"figures/gray_{ep:04d}.png")
+                        logger.save_image(face('rgb'),
+                                          f"figures/rgb_{ep:04d}.png")
 
-                logger.log_image(face('gray'), "figures/face_gray.png")
-                logger.log_image(face('rgb'), "figures/face_rgb.png")
+                logger.save_image(face('gray'), "figures/face_gray.png")
+                logger.save_image(face('rgb'), "figures/face_rgb.png")
 
             with logger.PrefixContext(f"runs/{username}/{project}"):
                 logger.log_line("# Root Files\n", file="RAEDME.md")

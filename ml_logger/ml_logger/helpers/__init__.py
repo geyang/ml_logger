@@ -4,16 +4,15 @@ import pickle
 
 
 class Whatever(pickle.Unpickler):
-    def __init__(self, *_, for_json=False, **__):
-        self.for_json = for_json
+    def __init__(self, *_, **__):
         super().__init__(*_, **__)
 
-    def factory(self, module, name):
+    @staticmethod
+    def cls_factory(module, name):
 
-        if self.for_json:
-            return f"<class '{module}.{name}'>"
+        class Unavailable:
+            __dict__ = {}
 
-        class Lie:
             def __init__(self, *args, **kwargs):
                 print(args, kwargs)
                 self.__d = dict()
@@ -30,13 +29,13 @@ class Whatever(pickle.Unpickler):
             def __repr__(self):
                 return f"<class '{module}.{name}'>"
 
-        return Lie
+        return Unavailable
 
     def find_class(self, module, name):
         try:
             return super().find_class(module, name)
         except:
-            return self.factory(module, name)
+            return self.cls_factory(module, name)
 
 
 def load_from_pickle(path='parameters.pkl', **__):
@@ -50,6 +49,34 @@ def load_from_pickle_file(file, **__):
             yield Whatever(file, **__).load()
         except EOFError:
             break
+
+
+def regularize_for_json(obj):
+    from typing import Sequence
+    from types import FunctionType
+    import numpy as np
+    if isinstance(obj, dict):
+        return {k: regularize_for_json(v) for k, v in obj.items()}
+    # elif isinstance(obj, tuple):
+    #     return (regularize_for_json(i) for i in obj)
+    # elif isinstance(obj, list):
+    #     return [regularize_for_json(i) for i in obj]
+    elif isinstance(obj, str):
+        return obj
+    elif isinstance(obj, np.ndarray) or isinstance(obj, np.ma.MaskedArray):
+        return obj.tolist()
+    elif isinstance(obj, Sequence):
+        return [regularize_for_json(i) for i in obj]
+    elif isinstance(obj, FunctionType):
+        # todo: use $type syntax:
+        #   $type: lambda
+        #   $type: function
+        return repr(obj)
+    try:
+        # todo: use $type syntax: $type: class
+        return {k: regularize_for_json(v) for k, v in vars(obj).items()}
+    except:
+        return repr(obj)
 
 
 def load_from_file(path):

@@ -95,8 +95,8 @@ def read_pikle(path):
 
 def read_pickle_for_json(path):
     """convert non JSON serializable types to string"""
-    from ml_logger.helpers import load_from_pickle
-    data = [_ for _ in load_from_pickle(path, for_json=True)]
+    from ml_logger.helpers import load_from_pickle, regularize_for_json
+    data = [regularize_for_json(_) for _ in load_from_pickle(path)]
     return data
 
 

@@ -764,18 +764,21 @@ class ML_Logger:
     def save_pkl(self, data, path=None, append=False):
         """Save data in pkl format
 
+        Note: We use dill so that we can save lambda functions but we do not
+            use cloudpickle, because it is an overkill.
+
         :param data: python data object to be saved
         :param path: path for the object, relative to the root logging directory.
         :param append: default to False -- overwrite by default
         :return: None
         """
-        import pickle
+        import dill
+
         path = path or "data.pkl"
         abs_path = pJoin(self.prefix, path)
 
         buf = BytesIO()
-        import cloudpickle
-        cloudpickle.dump(data, buf)
+        dill.dump(data, buf)
         buf.seek(0)
         self.client.log_buffer(abs_path, buf=buf.read(), overwrite=not append)
         return path
