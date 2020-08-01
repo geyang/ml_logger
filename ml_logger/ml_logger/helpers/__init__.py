@@ -61,6 +61,10 @@ def regularize_for_json(obj):
     #     return (regularize_for_json(i) for i in obj)
     # elif isinstance(obj, list):
     #     return [regularize_for_json(i) for i in obj]
+    elif isinstance(obj, int):
+        return obj
+    elif isinstance(obj, float):
+        return obj
     elif isinstance(obj, str):
         return obj
     elif isinstance(obj, np.ndarray) or isinstance(obj, np.ma.MaskedArray):
