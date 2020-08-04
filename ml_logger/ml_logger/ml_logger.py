@@ -908,7 +908,7 @@ class ML_Logger:
         self.log_metrics(metrics=summary, silent=silent, flush=flush)
 
     def log(self, *args, metrics=None, silent=False, sep=" ", end="\n", flush=None,
-            **_key_values) -> None:
+            cache=None, **_key_values) -> None:
         """
         log dictionaries of data, key=value pairs at step == step.
 
@@ -920,6 +920,7 @@ class ML_Logger:
         :param end: (str) string to use for the end of line. Default to "\n"
         :param silent: (boolean) whether to also print to stdout or just log to file
         :param flush: (boolean) whether to flush the text logs
+        :param cache: optional (str) a specific cache key, useful for scoped reporting
         :param kwargs: key/value arguments
         :return:
         """
@@ -927,7 +928,7 @@ class ML_Logger:
             self.log_line(*args, sep=sep, end=end, flush=False)
         if metrics:
             _key_values.update(metrics)
-        self.log_metrics(metrics=_key_values, silent=silent)
+        self.log_metrics(metrics=_key_values, silent=silent, cache=cache)
         if flush:
             self.flush()
 
