@@ -256,6 +256,7 @@ class ML_Logger:
         if summary_cache_opts is not None:
             self.key_value_caches.clear()
             self.summary_caches.clear()
+            self.summary_caches = defaultdict(partial(SummaryCache, **(summary_cache_opts or {})))
 
         if asynchronous is not None or max_workers is not None or log_directory != self.log_directory:
             # note: logger.configure shouldn't be called too often, so it is okay to assume
@@ -949,10 +950,10 @@ class ML_Logger:
         # note: this has caused trouble before.
         self.do_not_print.reset()
 
-    def flush(self):
+    def flush(self, cache=None):
         """Flushes the key_value cache and the print buffer"""
         # self.log_metrics_summary(flush=False)
-        self.flush_metrics()
+        self.flush_metrics(cache)
         self.flush_print_buffer()
 
     def upload_file(self, file_path: str = None, target_path: str = "files/") -> None:
