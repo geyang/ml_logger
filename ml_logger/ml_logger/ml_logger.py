@@ -312,7 +312,7 @@ class ML_Logger:
 
         _ = dict(getmembers(fn))
         doc_string = _['__doc__']
-        if len(doc_string) > 46:
+        if doc_string and len(doc_string) > 46:
             doc_string = doc_string[:46] + " ..."
         info = dict(name=_['__name__'], doc=doc_string, module=_['__module__'],
                     file=_['__globals__']['__file__'])
@@ -874,8 +874,9 @@ class ML_Logger:
                             default_stats=None, silent=False, flush: bool = True,
                             prefix=None, **_key_modes) -> None:
         """
-        logs the statistical properties of the stored metrics, and clears the `summary_cache` if under `tiled` mode,
-        and keeps the data otherwise (under `rolling` mode).
+        logs the statistical properties of the stored metrics, and clears the
+        `summary_cache` if under `tiled` mode, and keeps the data otherwise
+        (under `rolling` mode).
 
         To enable explicit mode without specifying *only_keys, set
         `get_only` to True
@@ -905,6 +906,8 @@ class ML_Logger:
             summary.update(key_values)
         if prefix:
             summary = {prefix + k: v for k, v in summary.items()}
+        # todo: use `summary` key to avoid interference with keyvalue metrics.
+        #  self.log_metrics(metrics=summary, silent=silent, flush=flush, cache="summary")
         self.log_metrics(metrics=summary, silent=silent, flush=flush)
 
     def log(self, *args, metrics=None, silent=False, sep=" ", end="\n", flush=None,
@@ -937,15 +940,17 @@ class ML_Logger:
 
     def flush_metrics(self, cache=None, filename=None):
         cache = self.key_value_caches[cache]
-        key_values = (cache or self.key_value_cache).pop_all()
+        key_values = cache.pop_all()
         filename = filename or self.metric_filename
         output = self.print_helper.format_tabular(key_values, self.do_not_print)
-        self.print(output, flush=True)  # not buffered
+        if output is not None:
+            self.print(output, flush=True)  # not buffered
         self.client.log(key=pJoin(self.prefix, filename), data=key_values)
         # note: this has caused trouble before.
         self.do_not_print.reset()
 
     def flush(self):
+        """Flushes the key_value cache and the print buffer"""
         # self.log_metrics_summary(flush=False)
         self.flush_metrics()
         self.flush_print_buffer()
