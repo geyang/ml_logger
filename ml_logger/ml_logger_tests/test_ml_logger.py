@@ -43,7 +43,7 @@ def setup(log_dir):
     logger.log_line('hey')
     logger.log_data(dict(test=True), "test-data/dict.pkl")
 
-    print(f"logging to {pathJoin(logger.log_directory, logger.prefix)}")
+    print(f"logging to {pathJoin(logger.root_dir, logger.prefix)}")
 
 
 def test_glob(setup):

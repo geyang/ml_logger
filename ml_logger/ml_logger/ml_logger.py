@@ -73,6 +73,14 @@ def _PrefixContext(logger, new_prefix):
 #     finally:
 #         logger.prefix = old_prefix
 
+def interpolate(path=None):
+    if path is None:
+        return None
+    path = str(path)
+    if path.startswith("$"):
+        return os.environ.get(path[1:], None)
+    return path
+
 
 # noinspection PyPep8Naming
 class ML_Logger:
@@ -84,7 +92,7 @@ class ML_Logger:
 
     """
     client = None
-    log_directory = None
+    root_dir = None
 
     prefix = ""  # is okay b/c strings are immutable in python
     print_buffer = None  # move initialization to init.
@@ -134,11 +142,13 @@ class ML_Logger:
         return self.client.AsyncContext(clean=clean, **kwargs)
 
     def __repr__(self):
-        return f'Logger(log_directory="{self.log_directory}",' + "\n" + \
+        return f'Logger(log_directory="{self.root_dir}",' + "\n" + \
                f'       prefix="{self.prefix}")'
 
     # noinspection PyInitNewSignature
-    def __init__(self, log_directory: str = None, prefix=None, buffer_size=2048, max_workers=None,
+    # todo: use prefixes as opposed to prefix. (add *prefixae after prefix=None)
+    # todo: resolve path segment with $env variables.
+    def __init__(self, root_dir: str = None, prefix=None, *prefixae, buffer_size=2048, max_workers=None,
                  asynchronous=None, summary_cache_opts: dict = None):
         """ logger constructor.
 
@@ -153,7 +163,7 @@ class ML_Logger:
         | 1. prefix="causal_infogan" => logs to "/tmp/some_dir/causal_infogan"
         | 2. prefix="" => logs to "/tmp/some_dir"
 
-        :param log_directory: the server host and port number
+        :param root_dir: the server host and port number
         :param prefix: the prefix path
         :param asynchronous: When this is not None, we create a http thread pool.
         :param buffer_size: The string buffer size for the print buffer.
@@ -176,17 +186,17 @@ class ML_Logger:
         self.summary_caches = defaultdict(partial(SummaryCache, **(summary_cache_opts or {})))
 
         # todo: add https support
-        self.log_directory = log_directory or os.getcwd()
+        self.root_dir = interpolate(root_dir) or os.getcwd()
         if prefix is not None:
-            assert not os.path.isabs(prefix), "prefix can not start with `/` because it is relative to `log_directory`."
-            self.prefix = prefix
+            self.prefix = os.path.join(*[interpolate(p) for p in (prefix, *prefixae) if p is not None])
 
         # logger client contains thread pools, should not be re-created lightly.
-        self.client = LogClient(url=self.log_directory, asynchronous=asynchronous, max_workers=max_workers)
+        self.client = LogClient(url=self.root_dir, asynchronous=asynchronous, max_workers=max_workers)
 
     def configure(self,
-                  log_directory: str = None,
+                  root_dir: str = None,
                   prefix=None,
+                  *prefixae,
                   asynchronous=None,
                   max_workers=None,
                   buffer_size=None,
@@ -201,7 +211,7 @@ class ML_Logger:
 
         The logger.client would be re-constructed if
 
-            - log_directory is changed
+            - root_dir is changed
             - max_workers is not None
             - asynchronous is not None
 
@@ -244,10 +254,9 @@ class ML_Logger:
         """
 
         # path logic
-        log_directory = log_directory or os.getcwd()
+        self.root_dir = interpolate(root_dir) or os.getcwd()
         if prefix is not None:
-            assert not os.path.isabs(prefix), "prefix can not start with `/` because it is relative to `log_directory`."
-            self.prefix = prefix
+            self.prefix = os.path.join(*[interpolate(p) for p in (prefix, *prefixae) if p is not None])
 
         if buffer_size is not None:
             self.print_buffer_size = buffer_size
@@ -258,22 +267,22 @@ class ML_Logger:
             self.summary_caches.clear()
             self.summary_caches = defaultdict(partial(SummaryCache, **(summary_cache_opts or {})))
 
-        if asynchronous is not None or max_workers is not None or log_directory != self.log_directory:
+        if asynchronous is not None or max_workers is not None or root_dir != self.root_dir:
             # note: logger.configure shouldn't be called too often, so it is okay to assume
             #   that we can discard the old logClient.
             #       To quickly switch back and forth between synchronous and asynchronous calls,
             #   use the `SyncContext` and `AsyncContext` instead.
             if not silent:
                 cprint('creating new logging client...', color='yellow', end=' ')
-            self.log_directory = log_directory
-            self.client.__init__(url=self.log_directory, asynchronous=asynchronous, max_workers=max_workers)
+            self.root_dir = root_dir
+            self.client.__init__(url=self.root_dir, asynchronous=asynchronous, max_workers=max_workers)
             if not silent:
                 cprint('✓ done', color="green")
 
         if not silent:
             from urllib.parse import quote
             print(f"Dashboard: {ML_DASH.format(prefix=quote(self.prefix))}")
-            print(f"Log_directory: {self.log_directory}")
+            print(f"Log_directory: {self.root_dir}")
 
         # now register the experiment
         if register_experiment:
@@ -912,7 +921,7 @@ class ML_Logger:
         self.log_metrics(metrics=summary, silent=silent, flush=flush)
 
     def log(self, *args, metrics=None, silent=False, sep=" ", end="\n", flush=None,
-            cache=None, **_key_values) -> None:
+            cache=None, file=None, **_key_values) -> None:
         """
         log dictionaries of data, key=value pairs at step == step.
 
@@ -934,26 +943,26 @@ class ML_Logger:
             _key_values.update(metrics)
         self.log_metrics(metrics=_key_values, silent=silent, cache=cache)
         if flush:
-            self.flush()
+            self.flush(cache, file)
 
     metric_filename = "metrics.pkl"
     log_filename = "outputs.log"
 
-    def flush_metrics(self, cache=None, filename=None):
+    def flush_metrics(self, cache=None, file=None):
         cache = self.key_value_caches[cache]
         key_values = cache.pop_all()
-        filename = filename or self.metric_filename
+        file = file or self.metric_file
         output = self.print_helper.format_tabular(key_values, self.do_not_print)
         if output is not None:
             self.print(output, flush=True)  # not buffered
-        self.client.log(key=pJoin(self.prefix, filename), data=key_values)
+        self.client.log(key=pJoin(self.prefix, file), data=key_values)
         # note: this has caused trouble before.
         self.do_not_print.reset()
 
-    def flush(self, cache=None):
+    def flush(self, cache=None, file=None):
         """Flushes the key_value cache and the print buffer"""
         # self.log_metrics_summary(flush=False)
-        self.flush_metrics(cache)
+        self.flush_metrics(cache, file)
         self.flush_print_buffer()
 
     def upload_file(self, file_path: str = None, target_path: str = "files/") -> None:

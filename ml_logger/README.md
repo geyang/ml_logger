@@ -162,7 +162,7 @@ This is a singleton pattern similar to `matplotlib.pyplot`. However, you could a
 ```python
 from ml_logger import ML_Logger
 
-logger = ML_Logger(log_directory="/tmp/ml-logger-demo", f"deep_Q_learning/{now:%Y%m%d-%H%M%S}")
+logger = ML_Logger(root_dir="/tmp/ml-logger-demo", f"deep_Q_learning/{now:%Y%m%d-%H%M%S}")
 ```
 
 ## Logging Text, and Metrics
@@ -378,7 +378,7 @@ A typical print out of this logger look like the following:
 ```python
 from ml_logger import ML_Logger
 
-logger = ML_Logger(log_directory=f"/mnt/bucket/deep_Q_learning/{datetime.now(%Y%m%d-%H%M%S.%f):}")
+logger = ML_Logger(root_dir=f"/mnt/bucket/deep_Q_learning/{datetime.now(%Y%m%d-%H%M%S.%f):}")
 
 logger.log_params(G=vars(G), RUN=vars(RUN), Reporting=vars(Reporting))
 ```

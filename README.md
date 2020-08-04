@@ -155,17 +155,15 @@ You need `twine`, `rst-lint` etc, which are included in the `requirements-dev.tx
 ### Configuring The Experiment Folder
 
 ```python
-from ml_logger import logger, Color, percent
+from ml_logger import logger, ML_Logger
 from datetime import datetime
 
 now = datetime.now()
-logger.configure(log_directory="/tmp/ml-logger-demo", f"deep_Q_learning/{now:%Y%m%d-%H%M%S}")
+logger.configure("/tmp/ml-logger-demo", "deep_Q_learning", f"{now:%Y%m%d-%H%M%S}")
 ```
 This is a singleton pattern similar to `matplotlib.pyplot`. However, you could also use the logger constructor
 ```python
-from ml_logger import ML_Logger
-
-logger = ML_Logger(log_directory="/tmp/ml-logger-demo", f"deep_Q_learning/{now:%Y%m%d-%H%M%S}")
+logger = ML_Logger(root_dir="/tmp/ml-logger-demo", prefix=f"deep_Q_learning/{now:%Y%m%d-%H%M%S}")
 ```
 
 ### Logging Text, and Metrics
@@ -228,10 +226,10 @@ experiments, without having to download those weights to your code repository.
 
 ```python
 # save a module
-logger.save_module(FastCNN=cnn)
+logger.save_module(cnn, "FastCNN.pkl")
 
 # load a module
-state_dict, = logger.load_pkl(f"modules/{0:04d}_Test.pkl")
+logger.load_module(cnn, f"FastCNN.pkl")
 ```
 
 ### Saving Tensorflow Models
@@ -381,7 +379,7 @@ A typical print out of this logger look like the following:
 ```python
 from ml_logger import ML_Logger
 
-logger = ML_Logger(log_directory=f"/mnt/bucket/deep_Q_learning/{datetime.now(%Y%m%d-%H%M%S.%f):}")
+logger = ML_Logger(root_dir=f"/mnt/bucket/deep_Q_learning/{datetime.now(%Y%m%d-%H%M%S.%f):}")
 
 logger.log_params(G=vars(G), RUN=vars(RUN), Reporting=vars(Reporting))
 ```
