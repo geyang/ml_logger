@@ -1,4 +1,5 @@
 import os
+from functools import partial
 from math import ceil
 from os.path import join as pJoin
 from collections import defaultdict
@@ -8,7 +9,7 @@ import numpy as np
 from collections.abc import Sequence
 from io import BytesIO
 from numbers import Number
-from typing import Any
+from typing import Any, Union
 
 from ml_logger.helpers import Whatever, load_from_pickle, load_from_pickle_file
 from termcolor import cprint
@@ -89,8 +90,6 @@ class ML_Logger:
     print_buffer = None  # move initialization to init.
     print_buffer_size = 2048
 
-    summary_cache: SummaryCache
-
     ### Context Helpers
     def PrefixContext(self, *praefixa):
         """
@@ -165,7 +164,6 @@ class ML_Logger:
         self.duplex = None
         self.timestamp = None
 
-        self.timer_cache = defaultdict(None)
         self.do_not_print = DefaultSet("__timestamp")
         self.print_helper = PrintHelper()
 
@@ -173,9 +171,9 @@ class ML_Logger:
         self.print_buffer_size = buffer_size
         self.print_buffer = ""
 
-        # initialize caches
-        self.key_value_cache = KeyValueCache()
-        self.summary_cache = SummaryCache(**(summary_cache_opts or {}))
+        self.timer_cache = defaultdict(None)
+        self.key_value_caches = defaultdict(KeyValueCache)
+        self.summary_caches = defaultdict(partial(SummaryCache, **(summary_cache_opts or {})))
 
         # todo: add https support
         self.log_directory = log_directory or os.getcwd()
@@ -256,8 +254,8 @@ class ML_Logger:
             self.print_buffer = ""
 
         if summary_cache_opts is not None:
-            self.key_value_cache.clear()
-            self.summary_cache = SummaryCache(**(summary_cache_opts or {}))
+            self.key_value_caches.clear()
+            self.summary_caches.clear()
 
         if asynchronous is not None or max_workers is not None or log_directory != self.log_directory:
             # note: logger.configure shouldn't be called too often, so it is okay to assume
@@ -794,7 +792,8 @@ class ML_Logger:
         """
         return self.save_pkl(data, path, append=not overwrite)
 
-    def log_metrics(self, metrics=None, silent=None, cache: KeyValueCache = None, flush=None, **_key_values) -> None:
+    def log_metrics(self, metrics=None, silent=None, cache: Union[str, None] = None, flush=None,
+                    **_key_values) -> None:
         """
 
         :param metrics: (mapping) key/values of metrics to be logged. Overwrites previous value if exist.
@@ -804,7 +803,7 @@ class ML_Logger:
         :param _key_values:
         :return:
         """
-        cache = cache or self.key_value_cache
+        cache = self.key_value_caches[cache]
         timestamp = np.datetime64(self.now())
         metrics = metrics.copy() if metrics else {}
         if _key_values:
@@ -818,14 +817,18 @@ class ML_Logger:
             self.flush_metrics(cache=cache)
 
     def log_key_value(self, key: str, value: Any, silent=False, cache=None) -> None:
-        cache = cache or self.key_value_cache
+        cache = self.key_value_caches[cache]
         timestamp = np.datetime64(self.now())
         if silent:
             # note: this causes subtle unexpected behaviors
             self.do_not_print.add(key)
         cache.update({key: value, "__timestamp": timestamp})
 
-    def store_key_value(self, key: str, value: Any, silent=None, cache: SummaryCache = None) -> None:
+    @property  # get default cache
+    def summary_cache(self):
+        return self.summary_caches[None]
+
+    def store_key_value(self, key: str, value: Any, silent=None, cache: Union[str, None] = None) -> None:
         """
         store the key: value awaiting future summary.
 
@@ -837,7 +840,7 @@ class ML_Logger:
         """
         self.store_metrics({key: value}, silent=silent, cache=cache)
 
-    def store_metrics(self, metrics=None, silent=None, cache: SummaryCache = None,
+    def store_metrics(self, metrics=None, silent=None, cache: Union[str, None] = None,
                       prefix=None, **key_values):
         """
         Store the metric data (with the default summary cache) for making the summary later.
@@ -850,7 +853,7 @@ class ML_Logger:
         :param ** key_values: key/value arguments, each being a metric key / metric value pair.
         :return: None
         """
-        cache = cache or self.summary_cache
+        cache = self.summary_caches[cache]
         if metrics:
             key_values.update(metrics)
         if silent:  # todo: deprecate this
@@ -861,13 +864,13 @@ class ML_Logger:
 
     store = store_metrics
 
-    def peek_stored_metrics(self, *keys, len=5, print_only=True):
-        _ = self.summary_cache.peek(*keys, len=len)
+    def peek_stored_metrics(self, *keys, len=5, print_only=True, cache=None):
+        _ = self.summary_caches[cache].peek(*keys, len=len)
         output = self.print_helper.format_row_table(_, max_rows=len, do_not_print_list=self.do_not_print)
         (print if print_only else self.log_line)(output)
 
     def log_metrics_summary(self, key_values: dict = None,
-                            cache: SummaryCache = None, key_stats: dict = None,
+                            cache: str = None, key_stats: dict = None,
                             default_stats=None, silent=False, flush: bool = True,
                             prefix=None, **_key_modes) -> None:
         """
@@ -896,7 +899,7 @@ class ML_Logger:
         :param _key_modes: (**) key value pairs, as a short hand for the key_modes dictionary.
         :return: None
         """
-        cache = cache or self.summary_cache
+        cache = self.summary_caches[cache]
         summary = cache.summarize(key_stats=key_stats, default_stats=default_stats, **_key_modes)
         if key_values:
             summary.update(key_values)
@@ -932,12 +935,12 @@ class ML_Logger:
     log_filename = "outputs.log"
 
     def flush_metrics(self, cache=None, filename=None):
-        if cache or self.key_value_cache:
-            key_values = (cache or self.key_value_cache).pop_all()
-            filename = filename or self.metric_filename
-            output = self.print_helper.format_tabular(key_values, self.do_not_print)
-            self.print(output, flush=True)  # not buffered
-            self.client.log(key=pJoin(self.prefix, filename), data=key_values)
+        cache = self.key_value_caches[cache]
+        key_values = (cache or self.key_value_cache).pop_all()
+        filename = filename or self.metric_filename
+        output = self.print_helper.format_tabular(key_values, self.do_not_print)
+        self.print(output, flush=True)  # not buffered
+        self.client.log(key=pJoin(self.prefix, filename), data=key_values)
         # note: this has caused trouble before.
         self.do_not_print.reset()
 
@@ -1705,6 +1708,8 @@ class ML_Logger:
             return parameters.get(keys[0], kwargs['default']) if 'default' in kwargs else parameters[keys[0]]
         else:
             return parameters
+
+    read_params = get_parameters
 
     def read_metrics(self, *keys, path="metrics.pkl", wd=None, silent=False, default=None, verbose=False):
         """
