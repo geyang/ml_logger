@@ -254,7 +254,7 @@ class ML_Logger:
         """
 
         # path logic
-        self.root_dir = interpolate(root_dir) or os.getcwd()
+        root_dir = interpolate(root_dir) or os.getcwd()
         if prefix is not None:
             self.prefix = os.path.join(*[interpolate(p) for p in (prefix, *prefixae) if p is not None])
 
@@ -267,7 +267,7 @@ class ML_Logger:
             self.summary_caches.clear()
             self.summary_caches = defaultdict(partial(SummaryCache, **(summary_cache_opts or {})))
 
-        if asynchronous is not None or max_workers is not None or root_dir != self.root_dir:
+        if root_dir != self.root_dir or asynchronous is not None or max_workers is not None:
             # note: logger.configure shouldn't be called too often, so it is okay to assume
             #   that we can discard the old logClient.
             #       To quickly switch back and forth between synchronous and asynchronous calls,
