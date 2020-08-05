@@ -823,12 +823,12 @@ class ML_Logger:
         metrics = metrics.copy() if metrics else {}
         if _key_values:
             metrics.update(_key_values)
+        metrics.update({"__timestamp": timestamp})
+        cache.update(metrics)
         if silent:
             # fixme: need to remove this causes subtle unexpected behaviors
             self.do_not_print.update(metrics.keys())
 
-        metrics.update({"__timestamp": timestamp})
-        cache.update(metrics)
         if flush:
             self.flush_metrics(cache=cache_key, file=file)
 
