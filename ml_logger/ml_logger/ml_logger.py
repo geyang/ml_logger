@@ -1664,7 +1664,7 @@ class ML_Logger:
         :param recursive:
         :param start:
         :param stop:
-        :return:
+        :return: None if the director does not exist (internal FileNotFoundError)
         """
         wd = pJoin(self.prefix, wd or "")
         return self.client.glob(query, wd=wd, recursive=recursive, start=start, stop=stop)
@@ -1751,7 +1751,7 @@ class ML_Logger:
         paths = self.glob(path, wd=wd) if "*" in path else [path]
         all_metrics = []
 
-        for path in paths:
+        for path in paths or []:
             with self.PrefixContext(wd) if wd else ExitStack():
                 metrics = self.load_pkl(path)
             if metrics is None:
