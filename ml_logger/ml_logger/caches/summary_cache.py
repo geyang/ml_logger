@@ -188,9 +188,9 @@ class SummaryCache:
                 if stats_type == "sum":
                     metrics[k + "/sum"] = d.sum()
                 elif stats_type.startswith("max"):
-                    metrics[k + "/mean"] = d.max()
+                    metrics[k + "/max"] = d.max()
                 elif stats_type.startswith("min"):
-                    metrics[k + "/mean"] = d.min()
+                    metrics[k + "/min"] = d.min()
                 elif stats_type.startswith("mean"):
                     metrics[k + "/mean"] = d.mean()
                 elif stats_type.startswith("min_max"):
