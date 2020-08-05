@@ -18,12 +18,27 @@ class DefaultSet(set):
         self.clear()
         self.update(self._default_set)
 
+    # def __repr__(self):
+    #     return f"{self._default_set}"
+
 
 if __name__ == "__main__":
     s = DefaultSet('this', '0')
-    s.clear()
-    assert not s, "s should be empty"
 
     s.reset()
     assert "this" in s, "should contain original elements"
+
+    s.add('yo')
+    assert 'yo' in s, "new key"
+
+    s.add('__yo')
+    assert '__yo' in s, "new key"
+
+    s.add('__timestamp')
+    assert '__timestamp' in s, "timestamp"
+
+    assert 'not' not in s, "not in s"
+
+    s.clear()
+    assert not s, "s should be empty after clear()"
     print('all tests pass!')

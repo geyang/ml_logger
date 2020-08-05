@@ -29,7 +29,8 @@ class PrintHelper:
         else:
             return str(v)
 
-    def format_tabular(self, data, do_not_print_list=tuple(), min_key_width=20, min_value_width=20):
+    def format_tabular(self, data, do_not_print_list=tuple(), min_key_width=20,
+                       min_value_width=20):
         keys = [k for k in data.keys() if k not in do_not_print_list]
         if len(keys) > 0:
             max_key_len = max([min_key_width] + [len(k) for k in keys])

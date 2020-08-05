@@ -819,12 +819,14 @@ class ML_Logger:
         cache_key = cache
         cache = self.key_value_caches[cache]
         timestamp = np.datetime64(self.now())
+
         metrics = metrics.copy() if metrics else {}
         if _key_values:
             metrics.update(_key_values)
         if silent:
-            # note: this causes subtle unexpected behaviors
+            # fixme: need to remove this causes subtle unexpected behaviors
             self.do_not_print.update(metrics.keys())
+
         metrics.update({"__timestamp": timestamp})
         cache.update(metrics)
         if flush:
@@ -958,7 +960,7 @@ class ML_Logger:
         if output is not None:
             self.print(output, flush=True)  # not buffered
         self.client.log(key=pJoin(self.prefix, file), data=key_values)
-        # note: this has caused trouble before.
+        # fixme: this has caused trouble before.
         self.do_not_print.reset()
 
     def flush(self, cache=None, file=None):
