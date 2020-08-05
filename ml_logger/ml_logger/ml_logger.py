@@ -709,8 +709,10 @@ class ML_Logger:
         :param path:
         :return:
         """
-        abs_path = pJoin(self.prefix, path)
-        self.client._delete(abs_path)
+        paths = self.glob(path, wd=None) if "*" in path else [path]
+        for p in paths or []:
+            abs_path = pJoin(self.prefix, p)
+            self.client._delete(abs_path)
 
     def log_params(self, path="parameters.pkl", silent=False, **kwargs):
         """
@@ -802,8 +804,9 @@ class ML_Logger:
         """
         return self.save_pkl(data, path, append=not overwrite)
 
-    def log_metrics(self, metrics=None, silent=None, cache: Union[str, None] = None, flush=None,
-                    **_key_values) -> None:
+    def log_metrics(self, metrics=None, silent=None,
+                    cache: Union[str, None] = None, file: Union[str, None] = None,
+                    flush=None, **_key_values) -> None:
         """
 
         :param metrics: (mapping) key/values of metrics to be logged. Overwrites previous value if exist.
@@ -813,6 +816,7 @@ class ML_Logger:
         :param _key_values:
         :return:
         """
+        cache_key = cache
         cache = self.key_value_caches[cache]
         timestamp = np.datetime64(self.now())
         metrics = metrics.copy() if metrics else {}
@@ -824,7 +828,7 @@ class ML_Logger:
         metrics.update({"__timestamp": timestamp})
         cache.update(metrics)
         if flush:
-            self.flush_metrics(cache=cache)
+            self.flush_metrics(cache=cache_key, file=file)
 
     def log_key_value(self, key: str, value: Any, silent=False, cache=None) -> None:
         cache = self.key_value_caches[cache]
@@ -941,17 +945,15 @@ class ML_Logger:
             self.log_line(*args, sep=sep, end=end, flush=False)
         if metrics:
             _key_values.update(metrics)
-        self.log_metrics(metrics=_key_values, silent=silent, cache=cache)
-        if flush:
-            self.flush(cache, file)
+        self.log_metrics(metrics=_key_values, silent=silent, cache=cache, file=file, flush=flush)
 
     metric_filename = "metrics.pkl"
     log_filename = "outputs.log"
 
-    def flush_metrics(self, cache=None, file=None):
+    def flush_metrics(self, cache=Union[None, str], file=Union[str, None]):
         cache = self.key_value_caches[cache]
         key_values = cache.pop_all()
-        file = file or self.metric_file
+        file = file or self.metric_filename
         output = self.print_helper.format_tabular(key_values, self.do_not_print)
         if output is not None:
             self.print(output, flush=True)  # not buffered
@@ -1742,16 +1744,19 @@ class ML_Logger:
         :param silent:
         :param default: Default value for columns. Not widely used.
         :param kwargs: Not used besides the default argument.
-        :return:
+        :return: pandas.DataFrame or None when no metric file is found.
         """
         import pandas as pd
         from contextlib import ExitStack
 
         # todo: remove default from this.
         paths = self.glob(path, wd=wd) if "*" in path else [path]
-        all_metrics = []
 
-        for path in paths or []:
+        if not paths:
+            return None
+
+        all_metrics = []
+        for path in paths:
             with self.PrefixContext(wd) if wd else ExitStack():
                 metrics = self.load_pkl(path)
             if metrics is None:
