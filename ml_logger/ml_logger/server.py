@@ -126,9 +126,12 @@ class LoggingServer:
         from ml_logger.helpers.file_helpers import CwdContext
         wd = wd[1:] if wd and wd.startswith("/") else wd
         query = query[1:] if query and query.startswith("/") else query
-        with CwdContext(os.path.join(self.data_dir, wd or "")):
-            file_paths = list(islice(iglob(query, recursive=recursive), start, stop))
-            return file_paths
+        try:
+            with CwdContext(os.path.join(self.data_dir, wd or "")):
+                file_paths = list(islice(iglob(query, recursive=recursive), start, stop))
+                return file_paths
+        except FileNotFoundError:
+            return None
 
     def load(self, key, dtype, start=None, stop=None):
         """
