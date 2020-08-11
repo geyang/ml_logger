@@ -474,10 +474,20 @@ class ML_Logger:
             if len(keys) == 1 else [results[k] for k in keys]
 
     @contextmanager
-    def time(self, key="default"):
+    def time(self, key="default", interval=1):
+        key, original = f"time.{key}", key
         self.split(key)
         yield
-        print(f"time lapsed <key>: {key} {self.split(key):0.3E}")
+        delta = self.split(key)
+        self.store(delta=delta, cache=key)
+        if self.every(interval, key=key):
+            logger.print(f"timing <{original}>:", end=" ")
+            data = self.summary_caches[key]['delta']
+            if interval > 1:
+                logger.print(f"{data.mean():0.3E}s", color="green", end=" ")
+                logger.print(f"±{data.std():0.1E}")
+            else:
+                logger.print(f"{data.mean():0.3E}s", color="green")
 
     def now(self, fmt=None):
         """
@@ -1804,6 +1814,16 @@ class ML_Logger:
         if self.prefix.startswith("/"):
             return pJoin(self.prefix, *paths)
         return "/" + pJoin(self.prefix, *paths)
+
+    @contextmanager
+    def capture_error(self, file="error.log"):
+        try:
+            yield
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            with logger.SyncContext():  # Make sure uploaded finished before termination.
+                logger.print("Exception occurred", e, tb, file=file, flush=True)
 
 
 logger = ML_Logger()

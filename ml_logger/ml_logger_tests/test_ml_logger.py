@@ -259,6 +259,24 @@ def test_every():
     assert j_sum == sum(list(range(4, 100, 5))) * 100, "j should be the sum ⨉ 100"
 
 
+def test_timing():
+    with logger.time("upload files"):
+        import time
+        time.sleep(0.1)
+
+    for i in range(100):
+        with logger.time("upload files", interval=50):
+            import time
+            time.sleep(0.001)
+
+
+def test_capture_error():
+    with logger.capture_error():
+        raise RuntimeError("this should not fail")
+
+    logger.print("works!", color="green")
+
+
 if __name__ == "__main__":
     # setup(LOCAL_TEST_DIR)
     # test(None)
