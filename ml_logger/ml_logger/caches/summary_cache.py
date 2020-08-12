@@ -185,30 +185,28 @@ class SummaryCache:
                 d = d[~np.isnan(d)]
                 if len(d) == 0:
                     continue
-                if stats_type == "sum":
+                if "sum" in stats_type:
                     metrics[k + "/sum"] = d.sum()
-                elif stats_type.startswith("max"):
+                if "max" in stats_type:
                     metrics[k + "/max"] = d.max()
-                elif stats_type.startswith("min"):
+                if "min" in stats_type:
                     metrics[k + "/min"] = d.min()
-                elif stats_type.startswith("mean"):
+                if "mean" in stats_type:
                     metrics[k + "/mean"] = d.mean()
-                elif stats_type.startswith("min_max"):
-                    metrics[k + "/min"] = d.min()
-                    metrics[k + "/max"] = d.max()
+                if "min_max" == stats_type:
                     metrics[k + "/mean"] = d.mean()
-                elif stats_type.startswith("std_dev"):
+                if "std" in stats_type:
                     metrics[k + "/stddev"] = d.std()
                     metrics[k + "/mean"] = d.mean()
                     mode = mit.first(stats.mode(d, axis=None)[0], np.nan)
                     metrics[k + "/mode"] = mode
-                elif stats_type.startswith("quantile"):
+                if "quantile" in stats_type:
                     metrics[k + "/0"] = np.percentile(d, 0)
                     metrics[k + "/25"] = np.percentile(d, 25)
                     metrics[k + "/mean"] = np.percentile(d, 50)
                     metrics[k + "/75"] = np.percentile(d, 75)
                     metrics[k + "/100"] = np.percentile(d, 100)
-                elif stats_type.startswith("histogram"):
+                if "histograph" in stats_type:
                     # note: need make bin number configurable
                     metrics[k + "/hist"], metrics[k + "/divs"] = np.histogram(d, bins=10)
 

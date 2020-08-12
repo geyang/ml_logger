@@ -1816,7 +1816,7 @@ class ML_Logger:
         return "/" + pJoin(self.prefix, *paths)
 
     @contextmanager
-    def capture_error(self, file="error.log"):
+    def capture_error(self, file="error.log", reraise=False):
         try:
             yield
         except Exception as e:
@@ -1824,6 +1824,8 @@ class ML_Logger:
             tb = traceback.format_exc()
             with logger.SyncContext():  # Make sure uploaded finished before termination.
                 logger.print("Exception occurred", e, tb, file=file, flush=True)
+            if reraise:
+                raise e
 
 
 logger = ML_Logger()
