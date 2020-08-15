@@ -1540,6 +1540,11 @@ class ML_Logger:
     def load_json(self, *keys):
         return self.client.read_json(pJoin(self.prefix, *keys))
 
+    def load_yaml(self, *keys):
+        import yaml
+        text = self.client.read_text(pJoin(self.prefix, *keys))
+        return yaml.load(text)
+
     def load_h5(self, *keys):
         return self.client.read_h5(pJoin(self.prefix, *keys))
 
@@ -1564,8 +1569,13 @@ class ML_Logger:
         # buf = np.roll(buf, 4, axis=2)
         return buf
 
-    def save_json(self, data, key):
-        raise NotImplementedError
+    def save_json(self, data, file):
+        import json
+        self.log_text(json.dumps(data), file, overwrite=True)
+
+    def save_yaml(self, data, file):
+        import yaml
+        self.log_text(yaml.dump(data), file, overwrite=True)
 
     def save_h5(self, data, key):
         raise NotImplementedError

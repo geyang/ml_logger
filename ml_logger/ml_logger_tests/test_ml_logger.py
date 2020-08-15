@@ -98,7 +98,6 @@ def test_log_data(setup):
 def test(setup):
     d = Color(3.1415926, 'red')
     s = "{:.1}".format(d)
-    print(s)
 
     logger.log_params(G=dict(some_config="hey"))
     logger.log(step=0, some=Color(0.1, 'yellow'))
@@ -106,6 +105,20 @@ def test(setup):
     logger.log(step=2, some=Color(0.85, 'yellow', percent))
     logger.log({"some_var/smooth": 10}, some=Color(0.85, 'yellow', percent), step=3)
     logger.log(step=4, some=Color(10, 'yellow'))
+
+
+def test_json(setup):
+    a = dict(a=0)
+    logger.save_json(dict(a=0), "data/d.json")
+    b = logger.load_json("data/d.json")
+    assert a == b, "a and b should be the same"
+
+
+def test_yaml(setup):
+    a = dict(a=0)
+    logger.save_yaml(a, "data/d.yaml")
+    b = logger.load_yaml("data/d.yaml")
+    assert a == b, "a and b should be identical"
 
 
 def test_image(setup):
