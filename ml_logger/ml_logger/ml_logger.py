@@ -428,6 +428,8 @@ class ML_Logger:
                 dt = tick - self.timer_cache[key]
                 results[key] = dt.total_seconds()
             except:
+                # not sure if setting an empty cache is good
+                self.timer_cache[key] = tick
                 results[key] = None
 
         return results[keys[0]] \
@@ -1210,13 +1212,16 @@ class ML_Logger:
             if hasattr(v, "detach"):
                 v = v.detach().cpu().numpy()
 
-            assert v.size < chunk, "individual weight tensors need to be smaller than the chunk size"
-            if size + v.size > chunk:
-                self.log_data(data=data_chunk, path=path, overwrite=False if size else True)
-                size = v.size
-                data_chunk = {k: v}
+            if hasattr(v, "size"):
+                assert v.size < chunk, "individual weight tensors need to be smaller than the chunk size"
+                if size + v.size > chunk:
+                    self.log_data(data=data_chunk, path=path, overwrite=False if size else True)
+                    size = v.size
+                    data_chunk = {k: v}
+                else:
+                    size += v.size
+                    data_chunk[k] = v
             else:
-                size += v.size
                 data_chunk[k] = v
 
         return self.log_data(data=data_chunk, path=path, overwrite=False)
