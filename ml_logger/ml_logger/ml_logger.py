@@ -1206,8 +1206,10 @@ class ML_Logger:
             _ = tqdm(_, desc=show_progress if isinstance(show_progress, str) else path[-24:])
 
         size, data_chunk = 0, {}
-        for k, _v in _:
-            v = _v.detach().cpu().numpy()
+        for k, v in _:
+            if hasattr(v, "detach"):
+                v = v.detach().cpu().numpy()
+
             assert v.size < chunk, "individual weight tensors need to be smaller than the chunk size"
             if size + v.size > chunk:
                 self.log_data(data=data_chunk, path=path, overwrite=False if size else True)
