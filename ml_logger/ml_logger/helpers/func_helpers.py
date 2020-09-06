@@ -61,6 +61,24 @@ def dot_flatten(d):
     return dict(idot_flatten(d))
 
 
+def dot_unflatten(d):
+    root = {}
+    for k, v in d.items():
+        current = root
+        *parents, key = k.split(".")
+        for parent in parents:
+            if parent not in current:
+                current[parent] = {}
+            current = current[parent]
+        current[key] = v
+    return root
+
+
 if __name__ == "__main__":
     object = {"a": 1, "b": 2, "c": 3, "child": {"a": 3, "grandchild": {'d': 8}}}
-    assert list(dot_flatten(object).keys()) == ['a', 'b', 'c', 'child.a', 'child.grandchild.d']
+    flattened = dot_flatten(object)
+    assert list(flattened.keys()) == ['a', 'b', 'c', 'child.a', 'child.grandchild.d']
+    recovered = dot_unflatten(flattened)
+    print(recovered)
+
+    assert dot_unflatten(flattened) == object

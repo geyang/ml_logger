@@ -19,6 +19,7 @@ from .helpers.default_set import DefaultSet
 from .full_duplex import Duplex
 from .log_client import LogClient
 from .helpers.print_utils import PrintHelper
+from .helpers.func_helpers import dot_flatten, dot_unflatten
 from .caches.key_value_cache import KeyValueCache
 from .caches.summary_cache import SummaryCache
 from .helpers.color_helpers import Color
@@ -1197,21 +1198,22 @@ class ML_Logger:
         # todo: raise error if particular weight file is too big
         # to support data parallel modules.
         if hasattr(module, "state_dict"):
-            _ = module.state_dict().items()
+            state_dict = module.state_dict()
         elif hasattr(module, "module"):
-            _ = module.module.state_dict().items()
+            state_dict = module.module.state_dict()
         else:
             raise AttributeError('module does not have `.state_dict` attribute or a valid `.module`.')
 
+        dot_dict = dot_flatten(state_dict)
+
         if show_progress:
             from tqdm import tqdm
-            _ = tqdm(_, desc=show_progress if isinstance(show_progress, str) else path[-24:])
+            _ = tqdm(dot_dict.items(), desc=show_progress if isinstance(show_progress, str) else path[-24:])
 
         size, data_chunk = 0, {}
         for k, v in _:
             if hasattr(v, "detach"):
                 v = v.detach().cpu().numpy()
-
             if hasattr(v, "size"):
                 assert v.size < chunk, "individual weight tensors need to be smaller than the chunk size"
                 if size + v.size > chunk:
@@ -1225,8 +1227,6 @@ class ML_Logger:
                 data_chunk[k] = v
 
         return self.log_data(data=data_chunk, path=path, overwrite=False)
-        # data = {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
-        # self.log_data(data=data, path=path, overwrite=True)
 
     def load_module(self, module, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None):
         """
@@ -1290,9 +1290,10 @@ class ML_Logger:
                 raise FileNotFoundError(f"Path matching {path} is not found")
             path = pJoin(wd, sorted(all_paths)[-1])
 
-        d = {}
+        dot_dict = {}
         for chunk in (self.iload_pkl if stream else self.load_pkl)(path, tries=tries):
-            d.update(chunk)
+            dot_dict.update(chunk)
+        d = dot_unflatten(dot_dict)
 
         assert d, f"the datafile can not be empty: [d == {{{d.keys()}...}}]"
 
