@@ -1,5 +1,5 @@
 import base64
-from cloudpickle import cloudpickle
+import cloudpickle
 
 # todo: cloudpickle, just like regular pickle, require the availability
 #  of the relevant python modules for the hydrated python object. For
@@ -13,4 +13,4 @@ def deserialize(code):
 
 def serialize(data):
     code = cloudpickle.dumps(data)
-    return base64.b64encode(code).decode("utf-8")
+    return base64.b64encode(code).decode("ascii")
