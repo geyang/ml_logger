@@ -982,7 +982,9 @@ class ML_Logger:
         self.flush_metrics(cache, file)
         self.flush_print_buffer()
 
-    def upload_file(self, file_path: str = None, target_path: str = "files/") -> None:
+    uploaded_files = {}
+
+    def upload_file(self, file_path: str = None, target_path: str = "files/", once=True) -> None:
         """
         uploads a file (through a binary byte string) to a target_folder. Default
         target is "files"
@@ -992,6 +994,10 @@ class ML_Logger:
             if end of `/`, uses the original file name.
         :return: None
         """
+        if file_path in self.uploaded_files and once:
+            return
+        self.uploaded_files[file_path] = target_path
+
         from pathlib import Path
         bytes = Path(file_path).read_bytes()
         basename = [os.path.basename(file_path)] if target_path.endswith('/') else []
@@ -1195,8 +1201,7 @@ class ML_Logger:
 
         :return: None
         """
-        # todo: raise error if particular weight file is too big
-        # to support data parallel modules.
+        # todo: why did pytorch moved to a zip-based format?
         if hasattr(module, "state_dict"):
             state_dict = module.state_dict()
         elif hasattr(module, "module"):
@@ -1204,14 +1209,13 @@ class ML_Logger:
         else:
             raise AttributeError('module does not have `.state_dict` attribute or a valid `.module`.')
 
-        dot_dict = dot_flatten(state_dict)
-
+        items = state_dict.items()
         if show_progress:
             from tqdm import tqdm
-            _ = tqdm(dot_dict.items(), desc=show_progress if isinstance(show_progress, str) else path[-24:])
+            items = tqdm(items, desc=show_progress if isinstance(show_progress, str) else path[-24:])
 
         size, data_chunk = 0, {}
-        for k, v in _:
+        for k, v in items:
             if hasattr(v, "detach"):
                 v = v.detach().cpu().numpy()
             if hasattr(v, "size"):
@@ -1227,6 +1231,18 @@ class ML_Logger:
                 data_chunk[k] = v
 
         return self.log_data(data=data_chunk, path=path, overwrite=False)
+
+    def read_state_dict(self, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None):
+        if "*" in path:
+            all_paths = self.glob(path, wd=wd or self.prefix)
+            if len(all_paths) == 0:
+                raise FileNotFoundError(f"Path matching {path} is not found")
+            path = pJoin(wd, sorted(all_paths)[-1])
+
+        state_dict = {}
+        for chunk in (self.iload_pkl if stream else self.load_pkl)(path, tries=tries):
+            state_dict.update(chunk)
+        return state_dict
 
     def load_module(self, module, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None):
         """
@@ -1284,21 +1300,11 @@ class ML_Logger:
         """
         import torch
 
-        if "*" in path:
-            all_paths = self.glob(path, wd=wd or self.prefix)
-            if len(all_paths) == 0:
-                raise FileNotFoundError(f"Path matching {path} is not found")
-            path = pJoin(wd, sorted(all_paths)[-1])
-
-        dot_dict = {}
-        for chunk in (self.iload_pkl if stream else self.load_pkl)(path, tries=tries):
-            dot_dict.update(chunk)
-        d = dot_unflatten(dot_dict)
-
-        assert d, f"the datafile can not be empty: [d == {{{d.keys()}...}}]"
+        state_dict = self.read_state_dict(path=path, wd=wd, stream=stream, tries=tries, matcher=matcher)
+        assert state_dict, f"the datafile can not be empty: [state_dict == {{{state_dict.keys()}...}}]"
 
         module.load_state_dict({
-            k: torch.tensor(matcher(d, k, p) if matcher else d[k], dtype=p.dtype).to(p.device)
+            k: torch.tensor(matcher(state_dict, k, p) if matcher else state_dict[k], dtype=p.dtype).to(p.device)
             for k, p in module.state_dict().items()
         })
 
