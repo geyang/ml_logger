@@ -14,7 +14,7 @@ def test_pkl_lambda():
                   local_cls=SomeClass,
                   local_obj=SomeClass())
     logger.remove('test_data.pkl')
-    logger.save_pkl(config, "test_data.pkl")
+    logger.save_pkl(config, "test_data.pkl", use_dill=True)
 
 
 def test_read_lambda():

@@ -1,4 +1,5 @@
 import os
+from time import perf_counter, sleep
 from functools import partial
 from math import ceil
 from os.path import join as pJoin
@@ -464,17 +465,15 @@ class ML_Logger:
         """
         keys = keys or ['default']
         results = {k: None for k in keys}
-        new_tic = self.now()
+        new_tic = perf_counter()
         for key in set(keys):
             try:
-                dt = new_tic - self.timer_cache[key]
-                results[key] = dt.total_seconds()
+                results[key] = new_tic - self.timer_cache[key]
             except:
-                results[key] = None
+                pass
             self.timer_cache[key] = new_tic
 
-        return results[keys[0]] \
-            if len(keys) == 1 else [results[k] for k in keys]
+        return results[keys[0]] if len(keys) == 1 else [results[k] for k in keys]
 
     @contextmanager
     def time(self, key="default", interval=1):
@@ -784,24 +783,28 @@ class ML_Logger:
             (self.log_line if silent else self.print)(*table, sep="\n")
         self.log_data(path=path, data=_kwargs)
 
-    def save_pkl(self, data, path=None, append=False):
+    def save_pkl(self, data, path=None, append=False, use_dill=False):
         """Save data in pkl format
 
-        Note: We use dill so that we can save lambda functions but we do not
-            use cloudpickle, because it is an overkill.
+        Note: We use dill so that we can save lambda functions but, but we use pure
+            pickle when saving nn.Modules
 
         :param data: python data object to be saved
         :param path: path for the object, relative to the root logging directory.
         :param append: default to False -- overwrite by default
         :return: None
         """
-        import dill
+        if use_dill:
+            import dill as pickle
+        else:
+            import pickle
 
         path = path or "data.pkl"
         abs_path = pJoin(self.prefix, path)
 
         buf = BytesIO()
-        dill.dump(data, buf)
+
+        pickle.dump(data, buf)
         buf.seek(0)
         self.client.log_buffer(abs_path, buf=buf.read(), overwrite=not append)
         return path
@@ -818,6 +821,7 @@ class ML_Logger:
         return self.save_pkl(data, path, append=not overwrite)
 
     def log_metrics(self, metrics=None, silent=None,
+                    _prefix=None,
                     cache: Union[str, None] = None, file: Union[str, None] = None,
                     flush=None, **_key_values) -> None:
         """
@@ -836,6 +840,8 @@ class ML_Logger:
         metrics = metrics.copy() if metrics else {}
         if _key_values:
             metrics.update(_key_values)
+        if _prefix:
+            metrics = {_prefix + k: v for k, v in metrics.items()}
         metrics.update({"__timestamp": timestamp})
         cache.update(metrics)
         if silent:
@@ -940,7 +946,7 @@ class ML_Logger:
         self.log_metrics(metrics=summary, silent=silent, flush=flush)
 
     def log(self, *args, metrics=None, silent=False, sep=" ", end="\n", flush=None,
-            cache=None, file=None, **_key_values) -> None:
+            cache=None, file=None, _prefix=None, **_key_values) -> None:
         """
         log dictionaries of data, key=value pairs at step == step.
 
@@ -960,7 +966,7 @@ class ML_Logger:
             self.log_line(*args, sep=sep, end=end, flush=False)
         if metrics:
             _key_values.update(metrics)
-        self.log_metrics(metrics=_key_values, silent=silent, cache=cache, file=file, flush=flush)
+        self.log_metrics(metrics=_key_values, silent=silent, _prefix=_prefix, cache=cache, file=file, flush=flush)
 
     metric_filename = "metrics.pkl"
     log_filename = "outputs.log"
@@ -1480,9 +1486,9 @@ class ML_Logger:
                     buf.seek(0)
                     return list(load_from_pickle_file(buf))
             except Exception as e:
-                import time, random
+                import random
                 # todo: use separate random generator to avoid mutating global random generator.
-                time.sleep((1 + random.random() * 0.5) * delay)
+                sleep((1 + random.random() * 0.5) * delay)
                 tries -= 1
         # last one does not catch.
         with BytesIO() as buf:
