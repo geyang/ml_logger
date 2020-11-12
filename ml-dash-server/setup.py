@@ -39,7 +39,7 @@ setup(name="ml-dash",
           'dill',
           'graphene',
           # lock these to because 3.0 breaks things
-          "graphql-core==2.2.1"
+          "graphql-core"
           "multidict==4.6.1",
           "graphql-relay",
           "numpy",

@@ -35,6 +35,7 @@ class Parameters(ObjectType):
         return read_pickle_for_json(pJoin(Args.logdir, self.id[1:]))
 
     def resolve_flat(self, info, **kwargs):
+        # note: this always gives truncated some-folder/arameter.pkl path.
         value = reduce(assign, read_pickle_for_json(pJoin(Args.logdir, self.id[1:])) or [{}])
         return dot_flatten(value)
 

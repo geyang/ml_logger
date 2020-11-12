@@ -1,3 +1,4 @@
+import pathlib
 from glob import iglob
 from os import stat
 from os.path import basename, join, realpath, dirname
@@ -58,13 +59,18 @@ def find_files(cwd, query, start=None, stop=None, no_stat=True, show_progress=Fa
     """
     from itertools import islice
 
+    # https://stackoverflow.com/a/58126417/1560241
+    if query.endswith('**'):
+        query += "/*"
+
     with cwdContext(cwd):
-        _ = islice(iglob(query, recursive=True), start, stop)
+        _ = islice(pathlib.Path(".").glob(query), start, stop)
         if show_progress:
             from tqdm import tqdm
             _ = tqdm(_, desc="@find_files")
-        for i, file_path in enumerate(_):
-            yield file_stat(file_path, no_stat=no_stat)
+        for i, file in enumerate(_):
+            print(str(file))
+            yield file_stat(str(file), no_stat=no_stat)
 
 
 def read_dataframe(path, k=None):

@@ -74,6 +74,8 @@ export const extTypes = [
   [".webp", "WEBP image", "image/webp"],
   [".woff", "Web Open Font Format (WOFF)", "font/woff"],
   [".woff2", "Web Open Font Format (WOFF)", "font/woff2"],
+  [".yaml", "YAML", "application/x-yaml"],
+  [".yml", "YAML", "application/x-yaml"],
   [".xhtml", "XHTML", "application/xhtml+xml"],
   [".xls", "Microsoft Excel", "application/vnd.ms-excel"],
   [".xlsx", "Microsoft Excel (OpenXML)", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
@@ -99,6 +101,8 @@ extTypes.forEach(function ({ext, name, mime}) {
     displayTypes[ext] = 'text';
   else if (mime.match('pickle'))
     displayTypes[ext] = 'pickle';
+  else if (mime.match('yaml'))
+    displayTypes[ext] = 'yaml';
   else //todo: what about binary?
     displayTypes[ext] = 'text';
 });

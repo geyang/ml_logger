@@ -14,17 +14,15 @@ CORS(app, resources={r"/*": {"origins": "*"}}, automatic_options=True)
 #     app.add_route(GraphQLView.as_view(schema=schema, executor=AsyncioExecutor(loop=loop)), '/graphql')
 
 # new graphQL endpoints
-app.add_route(GraphQLView.as_view(schema=schema, graphiql=True),
-              '/graphql',
+app.add_route(GraphQLView.as_view(schema=schema, graphiql=True), '/graphql',
               methods=['GET', 'POST', 'FETCH', 'OPTIONS'])
-app.add_route(GraphQLView.as_view(schema=schema, batch=True),
-              '/graphql/batch',
+app.add_route(GraphQLView.as_view(schema=schema, batch=True), '/graphql/batch',
               methods=['GET', 'POST', 'FETCH', 'OPTIONS'])
 
 
 @app.listener('before_server_start')
 def setup_static(app, loop):
-    from . import config
+    from ml_dash import config
     from os.path import expanduser
     app.static('/files', expanduser(config.Args.logdir),
                use_modified_since=True, use_content_range=True, stream_large_files=True)
@@ -38,7 +36,7 @@ def setup_static(app, loop):
 
 
 def run(logdir=None, **kwargs):
-    from . import config
+    from ml_dash import config
     from termcolor import cprint
 
     if logdir:

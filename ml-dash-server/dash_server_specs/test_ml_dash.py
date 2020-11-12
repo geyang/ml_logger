@@ -2,7 +2,7 @@ import pytest
 from graphene.test import Client
 from graphql_relay import to_global_id
 from ml_dash.schema import schema
-from tests import show, shows
+from dash_server_specs import show, shows
 
 
 @pytest.fixture(scope='session')
@@ -170,6 +170,7 @@ def test_directory(log_dir):
             directory ( id:  $id ) { 
                 id
                 name 
+                path
                 readme {
                     id name path 
                     text(stop:11)
@@ -177,12 +178,26 @@ def test_directory(log_dir):
                 dashConfigs(first:10) {
                     edges {
                         node {
-                            id name path 
+                            id name 
+                            path 
                             yaml
                             text(stop:11)
                         }
                     }
                 }
+                
+                charts(first:10) {
+                    edges {
+                        node {
+                            id name 
+                            dir 
+                            path 
+                            yaml
+                            text(stop:11)
+                        }
+                    }
+                }
+                
                 directories (first:10) {
                     edges {
                         node {
@@ -269,6 +284,53 @@ def test_series_2(log_dir):
         print(">>")
         show(r['data'])
 
+    assert r['data']['series']['xData'].__len__() == 10
+
+
+def test_series_x_limit(log_dir):
+    query = """
+    query LineChartsQuery(
+      $prefix: String
+      $xKey: String
+      $yKey: String
+      $yKeys: [String]
+      $metricsFiles: [String]!
+    ) {
+      series(
+        metricsFiles: $metricsFiles, 
+        prefix: $prefix, 
+        k: 10, 
+        xLow: 100,
+        xKey: $xKey, 
+        yKey: $yKey, 
+        yKeys: $yKeys
+        ) {
+            id
+            xKey
+            yKey
+            xData
+            yMean
+            yCount
+          }
+    }
+    """
+
+    from ml_dash.config import Args
+    Args.logdir = log_dir
+    client = Client(schema)
+
+    variables = {"prefix": None, "xKey": "epoch", "yKey": "slow_sine", "yKeys": None,
+                 "metricsFiles": ["/episodeyang/cpc-belief/mdp/experiment_01/metrics.pkl"]}
+    r = client.execute(query, variables=variables)
+    print(r['data']['series']['xData'])
+    assert r['data']['series']['xData'].__len__() == 10
+
+    variables = {"prefix": None, "yKey": "slow_sine", "yKeys": None,
+                 "metricsFiles": ["/episodeyang/cpc-belief/mdp/experiment_01/metrics.pkl"]}
+    r = client.execute(query, variables=variables)
+    print(r['data']['series']['xData'])
+    assert r['data']['series']['xData'].__len__() == 10
+
 
 def test_series_last(log_dir):
     query = """
@@ -302,7 +364,8 @@ def test_series_last(log_dir):
         assert not not r['data']['series']['yCount'] == [100.0]
 
 
-def test_series(log_dir):
+# can we do the average first?
+def test_series_group(log_dir):
     from ml_dash.config import Args
     Args.logdir = log_dir
     client = Client(schema)
@@ -311,6 +374,7 @@ def test_series(log_dir):
             series (
                 k:30
                 tail: 100
+                xLow: 25
                 prefix:"/episodeyang/cpc-belief/mdp"
                 metricsFiles:["experiment_00/metrics.pkl", "experiment_01/metrics.pkl", "experiment_02/metrics.pkl"]
                 # xKey: "__timestamp"
@@ -326,10 +390,10 @@ def test_series(log_dir):
                 xData
                 yMean
                 yMedian
-                y25
-                y75
-                y05
-                y95
+                y25pc
+                y75pc
+                y05pc
+                y95pc
                 yMedian
                 yCount
             }

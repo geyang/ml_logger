@@ -4,6 +4,7 @@ from graphene.types.generic import GenericScalar
 from ml_dash.config import Args
 from ml_dash.schema.files.file_helpers import find_files, read_records, read_dataframe
 import numpy as np
+import pandas as pd
 
 
 class Series(ObjectType):
@@ -33,11 +34,15 @@ class Series(ObjectType):
     y_median = GenericScalar(description="y data as from mode of the window")
     y_min = GenericScalar(description="min in each bin")
     y_max = GenericScalar(description="max in each bin")
-    y_25 = GenericScalar(description="quarter quantile")
-    y_75 = GenericScalar(description="3/4th quantile")
-    y_95 = GenericScalar(description="95th quantile")
-    y_05 = GenericScalar(description="5th quantile")
+    y_25pc = GenericScalar(description="quarter quantile")
+    y_75pc = GenericScalar(description="3/4th quantile")
+    y_95pc = GenericScalar(description="95th quantile")
+    y_05pc = GenericScalar(description="5th quantile")
+    # Note: confidence level only applies to mean. So only group has it.
+    # y_c95 = GenericScalar(description="95th confidence")
     y_count = GenericScalar(description="the number of datapoints used to compute each tick")
+
+    warning = String(description="Warning Message")
 
     # todo: start time
 
@@ -78,22 +83,22 @@ class Series(ObjectType):
             return self._df[self.y_key]['50%'].to_numpy().tolist()
         return {k: self._df[k]['50%'].to_numpy().tolist() for k in self.y_keys}
 
-    def resolve_y_25(self, info):
+    def resolve_y_25pc(self, info):
         if self.y_key is not None:
             return self._df[self.y_key]['25%'].to_numpy().tolist()
         return {k: self._df[k]['25%'].to_numpy().tolist() for k in self.y_keys}
 
-    def resolve_y_75(self, info):
+    def resolve_y_75pc(self, info):
         if self.y_key is not None:
             return self._df[self.y_key]['75%'].to_numpy().tolist()
         return {k: self._df[k]['75%'].to_numpy().tolist() for k in self.y_keys}
 
-    def resolve_y_95(self, info):
+    def resolve_y_95pc(self, info):
         if self.y_key is not None:
             return self._df[self.y_key]['95%'].to_numpy().tolist()
         return {k: self._df[k]['95%'].to_numpy().tolist() for k in self.y_keys}
 
-    def resolve_y_05(self, info):
+    def resolve_y_05pc(self, info):
         if self.y_key is not None:
             return self._df[self.y_key]['5%'].to_numpy().tolist()
         return {k: self._df[k]['5%'].to_numpy().tolist() for k in self.y_keys}
@@ -121,6 +126,7 @@ def get_series(metrics_files=tuple(),
                y_key=None,
                y_keys=None,
                label=None):
+    warning = None
     assert not y_key or not y_keys, "yKey and yKeys can not be trueful at the same time"
     assert y_key or y_keys, "yKey and yKeys can not be both falseful."
     assert head is None or tail is None, "head and tail can not be trueful at the same time"
@@ -134,7 +140,7 @@ def get_series(metrics_files=tuple(),
     y_keys = y_keys or [y_key]
     join_keys = [k for k in {x_key, *y_keys} if k is not None]
 
-    joined = []
+    dataframes = []
     for df in dfs:
         if df is None:
             continue
@@ -150,6 +156,8 @@ def get_series(metrics_files=tuple(),
                 df[x_key] -= x_align
         else:
             df = df[y_keys]
+            df['index'] = df.index
+            df.set_index('index')
 
         # todo: maybe apply tail and head *after* dropna??
         if tail is not None:
@@ -158,28 +166,28 @@ def get_series(metrics_files=tuple(),
             df = df.head(head)
         inds = True
         if x_low is not None:
-            inds &= df.index >= x_low
+            inds &= df[x_key or "index"] >= x_low
+            print("x_low >>>", inds)
         if x_high is not None:
-            inds &= df.index <= x_high
+            inds &= df[x_key or "index"] <= x_high
+            print("x_high >>>", inds)
         if inds is not True:
             df = df.loc[inds]
 
         # todo: only dropna if we are not using ranges. <need to test>
         try:
             if head is None and tail is None:
-                joined.append(df[join_keys].dropna())
+                dataframes.append(df[join_keys].dropna())
             else:
-                joined.append(df[join_keys])
+                dataframes.append(df[join_keys])
         except KeyError as e:
-            raise KeyError(
-                f"{join_keys} contain keys that is not in the dataframe. "
-                f"Keys available include {df.keys()}") from e
+            raise KeyError(f"{join_keys} contain keys that is not in the dataframe. "
+                           f"Keys available include {df.keys()}") from e
 
-    if not joined:  # No dataframe, return `null`.
+    if not dataframes:  # No dataframe, return `null`.
         return None
 
-    import pandas as pd
-    all = pd.concat(joined)
+    all = pd.concat(dataframes)
 
     if x_key:
         all = all.set_index(x_key)
@@ -189,9 +197,11 @@ def get_series(metrics_files=tuple(),
     if k is not None:
         bins = pd.qcut(all.index, k, duplicates='drop')
         grouped = all.groupby(bins)
+        # df
     else:
         grouped = all.groupby(level=0)
 
+    # treat all numbers in bin as equal. For raw (not averaged, or averaged)
     grouped[y_keys].agg(['count', 'mean', 'min', 'max'])
     df = grouped[y_keys].describe(percentiles=[0.25, 0.75, 0.5, 0.05, 0.95]).reset_index()
 
@@ -212,10 +222,11 @@ def get_series(metrics_files=tuple(),
                   _df=df.sort_values(by="__x"),
                   metrics_files=metrics_files,
                   prefix=prefix,
-                  x_key=x_key,
+                  x_key=x_key or "index",
                   y_key=y_key,
                   y_keys=y_keys,
-                  label=label, )
+                  label=label,
+                  warning=warning)
 
 
 SeriesArguments = dict(
@@ -231,6 +242,7 @@ SeriesArguments = dict(
     y_key=String(description="You can leave the xKey, but the yKey is required."),
     y_keys=List(String, description="Alternatively you can pass a list of keys to yKey*s*."),
     label=String(),
+    warning=String(),
 )
 
 # if __name__ == "__main__":

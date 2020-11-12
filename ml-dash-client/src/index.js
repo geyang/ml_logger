@@ -11,7 +11,6 @@ import Dash from "./pages/Dash";
 import Theme from "./Theme";
 import Settings from "./pages/Settings";
 import Profiles from "./pages/Profiles";
-import './App.css';
 import store from "./local-storage";
 
 const Router = createFarceRouter({
@@ -21,8 +20,8 @@ const Router = createFarceRouter({
       <Route path="/">
         <Route Component={FrontPage}/>
         <Route path="profiles" Component={Profiles}/>
-        <Route path="sink" Component={KitchenSink}/>
-        <Route path="settings" Component={Settings}/>
+        {/*<Route path="sink" Component={KitchenSink}/>*/}
+        {/*<Route path="settings" Component={Settings}/>*/}
         <Route path=":username" Component={Profile}
                prepareVariables={(params) => params} query={ProfileQuery}
                render={ProfileRender}/>
@@ -39,8 +38,8 @@ if (!store.value.profile)
 
 ReactDOM.render(
     <Theme full={true}>
-      <Router resolver={new Resolver(modernEnvironment)}/>
+        <Router resolver={new Resolver(modernEnvironment)}/>
     </Theme>,
-    document.getElementById('root'),
+    document.getElementById('ml-dash'),
 );
 

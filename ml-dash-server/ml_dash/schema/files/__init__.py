@@ -12,9 +12,13 @@ class File(ObjectType):
     class Meta:
         interfaces = relay.Node,
 
-    name = String(description='name of the directory')
+    dir = String(description="the parent directory")
+    name = String(description='name of the file')
     stem = String(description="stem of the file name")
     path = String(description='path to the file')
+
+    def resolve_dir(self, info):
+        return os.path.dirname(self.id)
 
     def resolve_stem(self, info, ):
         return self.name.split('.')[0]

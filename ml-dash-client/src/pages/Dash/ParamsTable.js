@@ -124,7 +124,7 @@ const metricsQuery = graphql`
             yKey: $yKey
             k: 1
             tail: $tail
-        ) {id yKey yMean y25 y75}
+        ) {id yKey yMean y25pc y75pc}
     }
 `;
 
@@ -177,7 +177,7 @@ function MetricsCell({metricKey, precision = 2, metricsFiles, prefix, last = 10,
     return <TableCell title={"loading..."} {...rest}>N/A<RefreshButton onClick={ask}/></TableCell>;
   try {
     let x = state.value.yMean[0].toFixed(precision);
-    let range = (state.value.y75[0] / 2 - state.value.y25[0] / 2).toFixed(precision);
+    let range = (state.value.y75pc[0] / 2 - state.value.y25pc[0] / 2).toFixed(precision);
     return <TableCell title={`Metric.${metricKey}: ${x}±${range}`} {...rest}>{x}±{range}<RefreshButton
         onClick={ask}/></TableCell>;
   } catch (err) {
@@ -488,7 +488,7 @@ export default function ParamsTable({
                           case "image":
                             return <InlineFile key={i}
                                                type={type}
-                                               cwd={exp.expDirectory}
+                                               prefix={exp.expDirectory}
                                                glob={chart.glob}
                                                src={chart.src}
                                                {...chart}/>;

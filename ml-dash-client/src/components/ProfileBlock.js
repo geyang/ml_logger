@@ -11,6 +11,7 @@ const Styled = styled(StyledBase)`
   line-height: 24px;
   color: white;
   height: 48px;
+  white-space: pre;
   cursor: pointer;
   box-sizing: border-box;
   z-index: 1;

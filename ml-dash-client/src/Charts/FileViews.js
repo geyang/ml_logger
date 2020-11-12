@@ -16,6 +16,9 @@ import MonacoEditor from "react-monaco-editor";
 import {toGlobalId} from "../lib/relay-helpers";
 import Ellipsis from "../components/Form/Ellipsis";
 import {RowContainer} from "../components/layouts";
+import JSON5 from "json5";
+import CompoundChart, {numOfFacets} from "./CompoundChart";
+import {RefreshCw, X} from "react-feather";
 
 const globQuery = graphql`
     query FileViewsQuery ($cwd: String!, $glob: String) {
@@ -41,13 +44,33 @@ export function fetchTextFile(path) {
       }`, {id})
 }
 
+export function fetchAllCharts(path) {
+  let id = toGlobalId("Directory", path);
+  return fetchQuery(modernEnvironment, graphql`
+      query FileViewsChartsQuery ($id: ID!) {
+          node (id: $id) {
+              id
+              ... on Directory  {
+                  path
+                  charts {
+                      edges {
+                          cursor
+                          node {id dir name path text yaml}
+                      }
+                  }
+              }
+          }
+      }`, {id})
+
+}
+
 export function fetchYamlFile(path) {
   let id = toGlobalId("File", path);
   return fetchQuery(modernEnvironment, graphql`
       query FileViewsYamlFileQuery ($id: ID!) {
           node (id: $id) {
               id
-              ... on File { text yaml }
+              ... on File {id dir name path text yaml}
           }
       }`, {id})
 }
@@ -109,20 +132,19 @@ export function TextView({path, ansi = false}) {
   return <StyledText>{ansi ? <Ansi>{text}</Ansi> : text}</StyledText>;
 }
 
-export function TextEditor({path, ..._props}) {
+export function TextEditor({path, content = null, onChange = true, ..._props}) {
   //todo: add scroll bar
+  if (onChange === true) onChange = (value) => updateText(path, value);
+  else if (!onChange) onChange = undefined;
+
   const [text, setText] = useState("");
   useEffect(() => {
-    let running = true;
-    const abort = () => running = false;
+    if (content !== null) return setText(content);
     fetchTextFile(path).then(({node, errors}) => {
-      if (running) {
-        if (node) setText(node.text || "");
-        else setText("");
-      }
+      if (node) setText(node.text || "");
+      else setText("");
     });
-    return abort;
-  }, [path, setText, ...Object.values(_props)]);
+  }, [path, content, setText, ...Object.values(_props)]);
   return <MonacoEditor width="100%"
                        height="100%"
                        language="yaml"
@@ -133,7 +155,7 @@ export function TextEditor({path, ..._props}) {
                          folding: true,
                          automaticLayout: true
                        }}
-                       onChange={(value) => updateText(path, value)}
+                       onChange={onChange}
                        editorDidMount={() => null}/>
 }
 
@@ -196,6 +218,13 @@ export const StyledTitle = styled(RowContainer)`
   > .spacer {
     flex: 1 1 auto;
   }
+  > .input {
+    border: solid 1px #23aaff;
+    margin: -1px;
+    color: #23aaff;
+    font-weight: 700;
+    background: white;
+  }
   > .control {
     flex: 0 0 auto;
     display: inline-block;
@@ -236,23 +265,23 @@ const MainContainer = styled.div`
   justify-content: center;
 `;
 
-export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
+export default function InlineFile({type, prefix, glob, title, src, ...chart}) {
   const [files, setFiles] = useState([]);
   const [index, setIndex] = useState(-1);
   const [showConfig, toggleShowConfig] = useToggle();
 
   //does not allow multiple directories
-  if (typeof cwd === 'object') return null;
+  // if (typeof cwd === 'object') return null;
 
   useEffect(() => {
     let running = true;
     const abort = () => running = false;
-    globFiles({cwd, glob}).then(({glob, errors}) => {
+    globFiles({cwd: prefix, glob}).then(({glob, errors}) => {
       if (running && glob)
         setFiles([...glob].sort(by(strOrder, "path")));
     });
     return abort;
-  }, [cwd, glob, setFiles]);
+  }, [prefix, glob, setFiles]);
 
   const selected = files[index >= 0 ? index : (files.length + index)];
   const pathPrefix = commonPrefix(files.map(({path}) => path));
@@ -297,9 +326,9 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
                    value={index}
                    onChange={e => setIndex(parseInt(e.target.value))}/>
           </Box>
+          {/*make multiple col span wide*/}
           {selected
-              ?
-              <>
+              ? <>
                 <p direction={"row"} gap={'none'} height={30}>
                   <strong>glob</strong>: <span style={{display: "inline-block"}}>{glob}</span>
                 </p>
@@ -315,16 +344,59 @@ export default function InlineFile({type, cwd, glob, title, src, ...chart}) {
   </>
 }
 
-export function InlineChart({yKey, ...chart}) {
-  return <Box>
-    <StyledTitle onClick={() => null}>
-      <span className="spacer"/>
-      <span className="title" title={yKey || "N/A"}
-            padding="2em">{yKey || "N/A"}</span>
-      <span className="spacer"/>
-    </StyledTitle>
-    <MainContainer>
-      <LineChart yKey={yKey} {...chart}/>
-    </MainContainer>
-  </Box>
+export function InlineChart({configPath = null, onRefresh = null, ...chart}) {
+  //path is the link to the chart file
+  const [showEditor, toggleEditor] = useToggle();
+
+  const style = {gridColumn: `span ${chart.metricsGroups ? numOfFacets(chart) : 1}`};
+  return <>
+    <Box style={style}>
+      <StyledTitle>
+        {!!onRefresh
+            ? <span className="control" onClick={onRefresh}><RefreshCw color={"#afafaf"} height={12} width={12}/></span>
+            : null}
+        <span className="spacer"/>
+        <span className="title" onClick={toggleEditor}
+              title={chart.title || chart.yKey || chart.yKeys.join(', ') || "N/A"}>{chart.title || chart.yKey || chart.yKeys.join(', ') || "N/A"}</span>
+        <span className="spacer"/>
+      </StyledTitle>
+      <MainContainer>{
+        (!!chart.metricsGroups)
+            ? <CompoundChart key={chart.yKey} {...chart} />
+            : <LineChart  {...chart}/>
+      } </MainContainer>
+    </Box>
+    {(showEditor && configPath)
+        ? <Box style={{gridColumn: "span 2"}}>
+          <StyledTitle>
+            <span className="spacer"/>
+            <span className="title" title={configPath}>{configPath}</span>
+            <span className="control" onClick={() => toggleEditor(false)}><X height={12} width={12}/></span>
+            <span className="spacer"/>
+          </StyledTitle>
+          <MainContainer>
+            <TextEditor path={configPath}/>
+          </MainContainer>
+        </Box>
+        : null}
+  </>
+}
+
+//id, dir, name, path, text, yaml: {}
+export function AnyChart({type, ...chart}) {
+
+  switch (type) {
+    case "series":
+      return <InlineChart key={JSON5.stringify(chart)} color="#23aaff" {...chart} />;
+    case "file":
+    case "video":
+    case "mov":
+    case "movie":
+    case "img":
+    case "image":
+      // cwd={path} glob={chart.glob} src={chart.src}
+      return <InlineFile type={type} {...chart}/>;
+    default:
+      return null;
+  }
 }

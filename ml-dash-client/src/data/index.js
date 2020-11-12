@@ -1,14 +1,13 @@
-import {Environment, Network, RecordSource, Store} from 'relay-runtime';
+import {Environment, Network, QueryResponseCache, RecordSource, Store} from 'relay-runtime';
 import JSON5 from 'json5';
 import store from "../local-storage";
 import {pathJoin} from "../lib/path-join";
-import RelayQueryResponseCache from 'relay-runtime/lib/RelayQueryResponseCache';
 
 export let tempID = 0;
 export const inc = () => tempID++;
 
 const oneMinute = 60 * 1000;
-const cache = new RelayQueryResponseCache({size: 250, ttl: oneMinute});
+const cache = new QueryResponseCache({size: 250, ttl: oneMinute});
 
 function fetchQuery(
     operation,

@@ -40,12 +40,12 @@ const RootCol = styled(RootContainer)`
     flex-direction: column; 
 `;
 export const RowContainer = styled(StyledBase)`
-    ${p => p.overflow === false ? "" : "overflow-x: auto;"};
+    ${props => props.overflow === false ? "" : "overflow-x: auto;"};
     flex-direction: row;
     align-items: stretch;
 `;
 export const ColContainer = styled(StyledBase)`
-    ${p => p.overflow === false ? "" : "overflow-y: auto;"};
+    ${props => props.overflow === false ? "" : "overflow-y: auto;"};
     flex-direction: column;
     align-items: stretch;
 `;

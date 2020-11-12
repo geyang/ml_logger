@@ -5,15 +5,16 @@ import store from "../../local-storage";
 import ExperimentList from "./ExperimentList";
 import styled from "styled-components";
 import {FixedHeroBackDrop, GradientBackDrop, StyledHero} from "./header";
-import Link from "found/lib/Link";
+import {Link} from "found";
 import {basename, pathJoin, relPath} from "../../lib/path-join";
 import {Resizable} from "re-resizable";
 import ProfileBlock from "../../components/ProfileBlock";
-import {fetchTextFile, fetchYamlFile, TextEditor, TextView} from "../../Charts/FileViews";
-import ChartGridView from "./chart-grid-view";
+import {fetchAllCharts, fetchTextFile, fetchYamlFile, TextEditor, TextView} from "../../Charts/FileViews";
+import SelectedGridView from "./selected-grid-view";
 import {intersect, minus, union} from "../../lib/sigma-algebra";
 import ParameterRow from "../../Charts/ParameterRow";
 import Ellipsis from "../../components/Ellipsis-2";
+import ChartGridView from "./chart-grid-view";
 
 const SquareBadge = styled.div`
   width: 42px;
@@ -44,7 +45,7 @@ const PaddedRowContainer = styled(RowContainer)`
   color: #23A6D5;
   padding: 0 0;
   z-index: 1001;
-  background: rgb(247, 250, 251);
+  background: #fafafa;
 `;
 const Button = styled(StyledBase)`
   cursor: pointer;
@@ -72,6 +73,8 @@ const GroupHeader = styled(GradientBackDrop)`
   font-weight: 400;
   overflow-x: hidden;
   white-space: nowrap;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
   > .item {
     height: 100%;
     position: relative;
@@ -112,9 +115,20 @@ const GroupHeader = styled(GradientBackDrop)`
     align-self: center;
   }
 `;
+const StyledColContainer = styled(ColContainer)`
+background: transparent;
+>:first-child {
+  border-top-left-radius:10px;
+  border-top-right-radius:10px;
+}
+>:last-child {
+  border-bottom-left-radius:10px;
+  border-bottom-right-radius:10px;
+}
+`;
 const GroupBody = styled(StyledBase)`
-  padding: 0 0.7em;
-  background: #fafafa;
+  padding: 0 0;
+  background: white;
 `;
 
 export default function Dash({match, router, ..._props}) {
@@ -136,7 +150,7 @@ export default function Dash({match, router, ..._props}) {
 
   //main pane
   const [pane, setPane] = useState("path");
-  //dash config, move to the editor.
+  // Remove dashConfig support from server and client
   const [dashConfig, setDashConfig] = useState({keys: [], charts: []});
   useEffect(() => {
     let running = true;
@@ -149,29 +163,33 @@ export default function Dash({match, router, ..._props}) {
     return abort;
   }, [breadCrumb.slice(-1)[0], setDashConfig]);
 
+
   //side car
   const [sideCar, setSideCar] = useState("readme");
+
   const [selected, select] = useState([]);
+
 
   const onSelect = (e, ...experiments) => {
     if (e.ctrlKey || e.metaKey) {
       e.stopPropagation();
-      if (!selected) {
-      } else if (selected.indexOf(experiments[0].path) === -1) {
+      if (selected.indexOf(experiments[0].path) === -1) {
         select([...selected, experiments[0].path]);
         setSideCar('all');
       } else {
-        select(selected.filter(_ => _ !== experiments[0].path));
+        let new_selected = selected.filter(_ => _ !== experiments[0].path)
+        //set the sideCar to default if the selection is empty.
+        if (new_selected.length === 0) setSideCar('readme')
+        select(new_selected);
       }
     } else if (e.shiftKey) {
       let newPaths = experiments.map(_ => _.path);
       let newSelection = minus(union(selected, newPaths), intersect(selected, newPaths));
       select(newSelection);
-      if (newSelection.length > 1) setSideCar('all');
-      else if (newSelection.length == 1) setSideCar('details');
+      setSideCar('charts');
     } else {
       select([experiments[0].path]);
-      if (sideCar !== 'charts') setSideCar('details');
+      setSideCar('all');
     }
   };
 
@@ -202,7 +220,7 @@ export default function Dash({match, router, ..._props}) {
         </RowContainer>
       </StyledHero>
       {/*experiment list container*/}
-      <ColContainer fill={true} overflow={false}>
+      <ColContainer fill={true}>
         <PaddedRowContainer1 height="56px"
                              background="white" zIndex={10}
                              boxShadow="0 0 20px rgba(1,1,1,0.1)">
@@ -238,29 +256,26 @@ export default function Dash({match, router, ..._props}) {
     </ColContainer>
 
     <ColContainer fill={true} shrink={true}
-                  overflow={"visible"}
                   background="transparent"
                   style={{marginLeft: "-20px"}}
     ><ColContainer height="auto"
-                   background="white"
                    style={{marginLeft: "20px", marginTop: "50px", zIndex: 100}}
-                   overflow={false}
                    boxShadow="0 0 20px rgba(0, 0, 0, 0.3)">
-      <ColContainer overflow={false}>
+      <StyledColContainer>
         <PaddedRowContainer height="56px" background="white">
           <Button className={sideCar === "readme" ? "selected" : null}
                   onClick={() => setSideCar('readme')}>README</Button>
-          <Button className={sideCar === "all" ? "selected" : null}
-                  onClick={() => setSideCar('all')}>ALL</Button>
-          <Button
-              className={`${sideCar === "details" ? "selected" : null} ${(selected && selected.length) ? null : "disabled"}`}
-              onClick={selected && selected.length ? () => setSideCar('details') : () => null}>DETAILS</Button>
           <Button className={sideCar === "charts" ? "selected" : null}
                   onClick={() => setSideCar('charts')}>CHARTS</Button>
+          {selected.length
+              ? <Button className={sideCar === "all" ? "selected" : null}
+                        onClick={() => setSideCar('all')}>SELECTED</Button>
+              : null}
+          <Button className={sideCar === "diff" ? "selected" : null}
+                  onClick={() => setSideCar('diff')}>DIFF</Button>
         </PaddedRowContainer>
-        <div>{
+        {
           (() => {
-
             let firstSelection = selected[0];
 
             switch (sideCar) {
@@ -269,59 +284,47 @@ export default function Dash({match, router, ..._props}) {
                                   enable={{"bottom": true}}
                                   defaultSize={{width: "auto", height: 800}}><TextEditor
                     path={pathJoin(breadCrumb.slice(-1)[0], "README.md")}/></Resizable>;
+              case "charts":
+                // 1. look for ".charts" in the current folder
+                // 2. add chart view to markdown
+                return <StyledColContainer overflow={false}>
+                  <GroupHeader>
+                    PATH: <Ellipsis className="badge long"
+                                    title={firstSelection}>{breadCrumb.slice(-1)[0]}</Ellipsis>
+                    {/* start with keys */}
+                    <ParameterRow path={firstSelection}/>
+                  </GroupHeader>
+                  <GroupBody minHeight="250px"><ChartGridView path={breadCrumb.slice(-1)[0]}/></GroupBody>
+                </StyledColContainer>;
+              case "details":
               case "all":
-                return <>{
-                  selected.map((expPath, i) =>
-                      <ColContainer key={expPath} overflow={false}>
+              default:
+                return <>
+                  {(selected && selected.length > 1) ?
+                      <Resizable key={"details-readme"}
+                                 enable={{"bottom": true}}
+                                 defaultSize={{width: "auto", height: 200}}>
+                        <TextEditor content={selected.join(',\n')} onChange={false}/>
+                      </Resizable>
+                      : null}
+                  {selected.map((expPath, i) =>
+                      <StyledColContainer key={expPath} overflow={false}>
                         <GroupHeader>
-                          RUN: <Ellipsis className="badge long" title={expPath}>{expPath}</Ellipsis>
+                          RUN: <Ellipsis className="badge long"
+                                         title={expPath}>{expPath}</Ellipsis>
                           {/* start with keys */}
                           <ParameterRow path={expPath} paramKeys={dashConfig.keys}/>
                         </GroupHeader>
-                        <GroupBody minHeight="250px"><ChartGridView expPath={expPath} chartsConfig={dashConfig.charts}/></GroupBody>
-                      </ColContainer>
+                        <GroupBody minHeight="250px"><SelectedGridView expPath={expPath}
+                                                                       chartsConfig={dashConfig.charts}
+                        /></GroupBody>
+                      </StyledColContainer>
                   )}</>;
-              case "charts":
-                return <>
-                  <Resizable key={"charts-editor"}
-                             enable={{"bottom": true}}
-                             defaultSize={{width: "auto", height: 200}}>
-                    <TextEditor path={pathJoin(firstSelection, ".charts.yml")}/>
-                  </Resizable>
-                  {firstSelection
-                      ? <ColContainer overflow={false}>
-                        <GroupHeader>
-                          RUN: <Ellipsis className="badge long" title={firstSelection}>{firstSelection}</Ellipsis>
-                          {/* start with keys */}
-                          <ParameterRow path={firstSelection}/>
-                        </GroupHeader>
-                        <GroupBody minHeight="250px">{firstSelection ?
-                            <ChartGridView expPath={firstSelection}/> : null}</GroupBody>
-                      </ColContainer> : null}
-                </>;
-              case "details":
-              default:
-                return <>
-                  <Resizable key={"details-readme"}
-                             enable={{"bottom": true}}
-                             defaultSize={{width: "auto", height: 200}}>
-                    <TextEditor path={pathJoin(firstSelection, "README.md")}/>
-                  </Resizable>
-                  {firstSelection
-                      ? <ColContainer overflow={false}>
-                        <GroupHeader>
-                          RUN: <Ellipsis className="badge long" title={firstSelection}>{firstSelection}</Ellipsis>
-                          <ParameterRow path={firstSelection}/>
-                        </GroupHeader>
-                        <GroupBody minHeight="250px">
-                          <ChartGridView expPath={firstSelection}/></GroupBody>
-                      </ColContainer> : null}
-                </>;
             }
           })()
-        }</div>
+        }
         {/*<ParameterTable path={path} selections={}/>;*/}
-      </ColContainer>
+      </StyledColContainer>
       {/*list group: */}
       {/*<ColContainer overflow={false}>*/}
       {/*  <GroupHeader>FILES</GroupHeader>*/}

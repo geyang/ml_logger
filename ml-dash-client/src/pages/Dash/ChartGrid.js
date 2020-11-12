@@ -18,8 +18,6 @@ function chartRegular(chartString) {
 }
 
 function ChartGrid({experiments, charts, relay, ..._props}) {
-  console.log(experiments);
-  console.log(charts);
   return <div>
     <Box justify="left" pad='small' height="36px" direction='row' align="start" fill='horizontal' gap='medium'
          height={56}>

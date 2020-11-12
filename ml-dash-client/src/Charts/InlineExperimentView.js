@@ -5,20 +5,22 @@ import {fetchQuery} from 'relay-runtime';
 import {modernEnvironment} from "../data";
 import {by, strOrder} from "../lib/string-sort";
 import {fromGlobalId, toGlobalId} from "../lib/relay-helpers";
-import {ImageView, StyledTitle, TextView, VideoView} from "./FileViews";
+import {ImageView, StyledTitle, TextEditor, TextView, VideoView} from "./FileViews";
 import store from "../local-storage";
 import {pathJoin} from "../lib/path-join";
 import {Box} from "grommet";
 import {displayType} from "./file-types";
 import JSON5 from "json5";
-import {Download, Close, XCircle, X} from "react-feather";
+import {Download, Close, XCircle, X, RefreshCw} from "react-feather";
 import {ColContainer} from "../components/layouts";
+import {Resizable} from "re-resizable";
+import useToggle from "react-use";
 
 const {commitMutation} = require("react-relay");
 
 //todo: change to node() {... on Experimen}
 const StyledContainer = styled.div`
-  padding: 10px;
+  padding: 0px;
   overflow-y: auto;
   white-space: normal;
 `;
@@ -78,6 +80,7 @@ function fetchDirectory(path) {
       }`, {id});
 }
 
+//todo: add file rename interface
 function InlineFile({path, name, style = {}, onClose}) {
   const src = pathJoin(store.value.profile.url, "files", path.slice(1));
   let view, type = displayType(name);
@@ -89,16 +92,19 @@ function InlineFile({path, name, style = {}, onClose}) {
       view = <VideoView src={encodeURI(src)}/>;
       break;
     case "ansi":
-      view = <TextView path={path} key={path} ansi={true}/>;
+      view = <TextView path={path} ansi={true}/>;
       style['gridColumn'] = "span 3";
       style['gridRow'] = "span 3";
       break;
+      // ues different view for markdown
     case "markdown":
     case "text":
+    case "yaml":
     default: // note: if no type is detected, show as text file.
-      view = <TextView path={path} key={path}/>;
-      style['gridColumn'] = "span 3";
-      style['gridRow'] = "span 3";
+      view = <TextEditor path={path}/>
+      // view = <TextView path={path} key={path}/>;
+      style['gridColumn'] = "span 2";
+      style['gridRow'] = "span 1";
   }
   return <Box style={style}>
     <StyledTitle>
@@ -208,7 +214,7 @@ function InlineParameters({path, name, flat, addKey, onClose, ..._metrics}) {
   </>;
 }
 
-function InlineDirView({name, path, showHidden, onClose, onSubmit}) {
+function InlineDirView({name, path, onRefresh, showHidden, onClose, onSubmit}) {
   const [{directories, files}, setState] = useState({directories: [], files: []});
   const [queryError, setError] = useState();
   const [selected, select] = useState({});
@@ -237,6 +243,7 @@ function InlineDirView({name, path, showHidden, onClose, onSubmit}) {
     <ColContainer>
       <StyledTitle>
         <span className="spacer"/>
+        {onRefresh ? <span className="control" onClick={onRefresh}><RefreshCw height={12} width={12}/></span> : null}
         <span className="title" title={name || "N/A"}>{name || "N/A"}</span>
         {onClose ? <span className="control" onClick={onClose}><X height={12} width={12}/></span> : null}
         <span className="spacer"/>
@@ -254,7 +261,7 @@ function InlineDirView({name, path, showHidden, onClose, onSubmit}) {
   </>
 }
 
-export default function InlineExperimentView({path, showHidden, onSubmit, addMetricCell, addChart}) {
+export default function InlineExperimentView({path, addTextFile = false, showHidden, onSubmit, addMetricCell, addChart}) {
   const [{parameters, metrics, directories, files}, setState] =
       useState({parameters: {}, metrics: {}, directories: [], files: []});
   const [queryError, setError] = useState();
@@ -301,6 +308,8 @@ export default function InlineExperimentView({path, showHidden, onSubmit, addMet
                          onClick={() => select({type: "File", ...f})} {...f}/>;
         }
       })}
+      {addTextFile ?
+          <StyledItem onClick={() => select({type: "File", path: path + "/.chart.yml"})}>+ file</StyledItem> : null}
     </StyledContainer>
     {selected.type === "Metrics" //hack: the name for metrics need to be added to the file.
         ?

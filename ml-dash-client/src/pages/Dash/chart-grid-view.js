@@ -1,9 +1,10 @@
 import React, {useEffect, useState} from "react";
 import {Grid} from "../../components/layouts";
-import InlineFile, {fetchTextFile, fetchYamlFile, InlineChart} from "../../Charts/FileViews";
+import InlineFile, {AnyChart, fetchAllCharts, fetchTextFile, fetchYamlFile, InlineChart} from "../../Charts/FileViews";
 import {pathJoin} from "../../lib/path-join";
 import InlineExperimentView from "../../Charts/InlineExperimentView";
 import JSON5 from "json5";
+import {colorMap} from "../../Charts/chart-theme";
 
 function preproc(charts) {
   return (charts || [])
@@ -13,56 +14,54 @@ function preproc(charts) {
       .map(c => ({...c, type: c.type || "series"}));
 }
 
+// function ChartView({
+//                      id, dir, name, path,
+//                      text,
+//                      yaml: {metricsFile = null, metricsFiles = [], ...chart}
+//                    }) {
+//
+//   const [showEdit, toggleEdit] = useToggle(false);
+//
+//   if (!metricsFile && !metricsFiles) {
+//     metrics = path + "/metrics.pkl"
+//   }
+//
+//   return <InlineChart key={JSON5.stringify(chart)}
+//                       color={"#23aaff"}
+//                       metricsFiles={metricsFile ? [metricsFile] : metricsFiles}
+//                       {...chart} />;
+// }
 
 //highlevel interface:
-export default function ChartGridView({expPath, chartsConfig}) {
-  const chartPath = pathJoin(expPath, ".charts.yml");
-  const metricsPath = pathJoin(expPath, "metrics.pkl");
+export default function ChartGridView({path}) {
+  const [charts, setCharts] = useState([])
 
-  let [charts, setCharts] = useState([]);
+  function _loadChart(path, i) {
+    fetchYamlFile(path)
+        .then(({node, errors}) => {
+          if (!errors)
+            setCharts((oldCharts) => [...oldCharts.slice(0, i), node, ...oldCharts.slice(i + 1)])
+        });
+  }
 
   useEffect(() => {
-    if (chartsConfig && chartsConfig.length) {
-      setCharts(preproc(chartsConfig || []));
-      return;
-    }
     let running = true;
     const abort = () => running = false;
-    fetchYamlFile(chartPath).then(({node, errors}) => {
-      if (!!errors || !node || !node.yaml || typeof node.yaml.charts === 'function') return null;
-      if (running) setCharts(preproc(node.yaml.charts || []))
-    });
+    if (!path) return abort;
+    fetchAllCharts(path)
+        .then(({node, errors}) => {
+          if (running && node && node.charts && node.charts.edges)
+            setCharts(node.charts.edges.map(({node: chart}) => chart))
+        });
     return abort;
-  }, [expPath, setCharts]);
+  }, [path]);
 
   return <Grid>
-    {charts.map(({type, ...chart}, i) => {
-      switch (type) {
-        case "series":
-          //todo: add title
-          return <InlineChart key={JSON5.stringify(chart)}
-                              metricsFiles={
-                                typeof metricsPath === 'string' ? [metricsPath]
-                                    : (metricsPath || [])}
-                              color="red" // color={colorMap(expIndex)}
-                              {...chart} />;
-        case "file":
-        case "video":
-        case "mov":
-        case "movie":
-        case "img":
-        case "image":
-          return <InlineFile key={i}
-                             type={type}
-                             cwd={expPath}
-                             glob={chart.glob}
-                             src={chart.src}
-                             {...chart}/>;
-        default:
-          return null;
-      }
-    })}
-    <InlineExperimentView path={expPath}
+    {charts.map(({id, dir, path: configPath, yaml: chart}, i) =>
+        <AnyChart key={i} configPath={configPath} onRefresh={() => _loadChart(configPath, i)}
+                  prefix={dir} {...chart}/>)}
+    <InlineExperimentView path={path}
+                          addTextFile={true}
                           showHidden={true}
                           onClick={() => null}
         // addMetricCell={addMetricCell}

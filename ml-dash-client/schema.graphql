@@ -31,6 +31,7 @@ type Directory implements Node {
   path: String
   readme: File
   dashConfigs(before: String, after: String, first: Int, last: Int): FileConnection
+  charts(before: String, after: String, first: Int, last: Int): FileConnection
   experiments(before: String, after: String, first: Int, last: Int): ExperimentConnection
   directories(before: String, after: String, first: Int, last: Int): DirectoryConnection
   files(before: String, after: String, first: Int, last: Int): FileConnection
@@ -69,6 +70,7 @@ type ExperimentEdge {
 
 type File implements Node {
   id: ID!
+  dir: String
   name: String
   stem: String
   path: String
@@ -182,7 +184,7 @@ type Query {
   node(id: ID!): Node
   users: [User]
   user(username: String): User
-  series(metricsFiles: [String]!, prefix: String, head: Int, tail: Int, xLow: Float, xHigh: Float, k: Int, xAlign: String, xKey: String, yKey: String, yKeys: [String], label: String): Series
+  series(metricsFiles: [String]!, prefix: String, head: Int, tail: Int, xLow: Float, xHigh: Float, k: Int, xAlign: String, xKey: String, yKey: String, yKeys: [String], label: String, warning: String): Series
   project(id: ID!): Project
   experiment(id: ID!): Experiment
   metrics(id: ID!): Metrics
@@ -207,11 +209,12 @@ type Series implements Node {
   yMedian: GenericScalar
   yMin: GenericScalar
   yMax: GenericScalar
-  y25: GenericScalar
-  y75: GenericScalar
-  y95: GenericScalar
-  y05: GenericScalar
+  y25pc: GenericScalar
+  y75pc: GenericScalar
+  y95pc: GenericScalar
+  y05pc: GenericScalar
   yCount: GenericScalar
+  warning: String
 }
 
 type User implements Node {

@@ -18,10 +18,16 @@ class Directory(ObjectType):
         readmes = schema.files.find_files_by_query(cwd=self.id, query="README.md")
         return readmes[0] if readmes else None
 
+    # deprecate this
     dash_configs = relay.ConnectionField(lambda: schema.files.FileConnection)
 
     def resolve_dash_configs(self, info, *args, **kwargs):
         return schema.files.find_files_by_query(cwd=self.id, query="*.dashcfg")
+
+    charts = relay.ConnectionField(lambda: schema.files.FileConnection)
+
+    def resolve_charts(self, info, *args, **kwargs):
+        return schema.files.find_files_by_query(cwd=self.id, query="**/*.chart.yml")
 
     experiments = relay.ConnectionField(lambda: schema.experiments.ExperimentConnection)
 

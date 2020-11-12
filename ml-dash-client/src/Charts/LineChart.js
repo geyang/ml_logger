@@ -18,6 +18,7 @@ import DataFrame from "dataframe-js";
 import {modernEnvironment} from "../data";
 import Color from 'color';
 import {chartColors} from "./chart-theme";
+import {pathJoin} from "../lib/path-join";
 
 const seriesQuery = graphql`
     query LineChartsQuery(
@@ -37,8 +38,7 @@ const seriesQuery = graphql`
             yKey: $yKey
             yKeys: $yKeys
             xAlign: $xAlign
-            # k: 10                    
-        ) {id xKey yKey xData yMean y25 y75}
+        ) {id xKey yKey xData yMean y25pc y75pc}
     }
 `;
 
@@ -55,7 +55,7 @@ let yLabelStyles = {
   transform: 'rotate(-90 0 0) translate(0 -38)'
 };
 
-function fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k,}) {
+export function fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k,}) {
   // const controller = new AbortController();
   // const signal = controller.signal;
   return fetchQuery(modernEnvironment, seriesQuery, {
@@ -64,25 +64,27 @@ function fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k,}) {
   });
 }
 
-function seriesToRecords(series) {
+function seriesToRecords(series, yKey = null) {
   if (!series || !series.yMean)
     return [];
+  let yData = yKey ? series.yMean[yKey] : series.yMean;
   const df = new DataFrame({
-    y: series.yMean,
-    x: series.xData ? series.xData : series.yMean.map((_, i) => i)
+    y: yData,
+    x: series.xData ? series.xData : yData.map((_, i) => i)
   });
   return df
       .filter(row => row.get('y') === row.get('y'))
       .toCollection();
 }
 
-function seriesToAreaRecords(series) {
-  if (!series || !series.y75 || !series.y25)
+function seriesToAreaRecords(series, yKey = null) {
+  if (!series || !series.y75pc || !series.y25pc)
     return [];
+  let yData = yKey ? series.y75pc[yKey] : series.y75pc;
   const df = new DataFrame({
-    y0: series.y75,
-    y: series.y25,
-    x: series.xData ? series.xData : series.y25.map((_, i) => i)
+    y0: yData,
+    y: yKey ? series.y25pc[yKey] : series.y25pc,
+    x: series.xData ? series.xData : yData.map((_, i) => i)
   });
   return df
       .filter(row => row.get('y') === row.get('y') && row.get('y0') === row.get('y0'))
@@ -98,22 +100,8 @@ function timeDelta() {
   //todo: add timeDelta formatter
 }
 
-function LineChart({
-                     title,
-                     metricsFiles,
-                     prefix,
-                     xKey, yKey, yKeys,
-                     xFormat, yFormat,
-                     xTitle, yTitle,
-                     xAlign,
-                     k = 20,
-                     color = chartColors.red,
-                     ..._props
-                   }) {
-
+export function LinePlot({xLabels, yLabels, xTitle, yTitle, xFormat, yFormat, colors, lines, ..._props}) {
   const [crosshairValues, setCrosshairValues] = useState([]);
-
-  const [lines, setLines] = useState([]);
 
   function _onMouseLeave() {
     setCrosshairValues([]);
@@ -128,33 +116,22 @@ function LineChart({
     })));
   }
 
-  useEffect(() => {
-    // if (!lines.length)
-    let running = true;
-    const abort = () => running = false;
-    fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k})
-        .then((data) => {
-          if (running && data) setLines([{
-            mean: seriesToRecords(data.series),
-            quarter: seriesToAreaRecords(data.series)
-          }])
-        });
-    return abort;
-  }, [...metricsFiles, prefix, xKey, yKey, yKeys, k]);
-
   return <FlexibleXYPlot onMouseLeave={_onMouseLeave} {..._props}>
     {lines.map((line, i) =>
         [(line.quarter.length > 100)
             ? null // do not show area if there are a lot of points. As an optimization.
-            : <AreaSeries data={line.quarter}
+            : <AreaSeries key={`area-${i}`}
+                          data={line.quarter}
                           style={{
-                            stroke: Color(color).alpha(0.4).rgb().string(),
+                            stroke: Color(colors[i % colors.length]).alpha(0.4).rgb().string(),
                             strokeWidth: 0.5,
-                            fill: Color(color).alpha(0.2).rgb().string()
+                            fill: Color(colors[i % colors.length]).alpha(0.2).rgb().string()
                           }}/>,
-          (line.mean.length < 50)
-              ? <LineSeries data={line.mean} stroke={color} strokeWidth={2} onNearestX={_onNearestX}/>
-              : <LineSeriesCanvas data={line.mean} stroke={color} strokeWidth={2} onNearestX={_onNearestX}/>
+          (line.mean.length <= 100)
+              ? <LineSeries key={`line-${i}`} data={line.mean} stroke={colors[i % colors.length]}
+                            strokeWidth={2} onNearestX={_onNearestX}/>
+              : <LineSeriesCanvas key={i} data={line.mean} stroke={colors[i % colors.length]}
+                                  strokeWidth={2} onNearestX={_onNearestX}/>
         ]
     )}
     <YAxis tickFormat={yFormat === 'time' ? time : null} tickPadding={0}
@@ -162,13 +139,13 @@ function LineChart({
     <XAxis tickLabelAngle={-35}
            tickFormat={xFormat === 'time' ? time : null}
            style={{text: {background: "white", fontWeight: 800}}}/>
-    <ChartLabel text={yTitle || yKey}
+    <ChartLabel text={yTitle || yLabels.join(', ')}
                 className="alt-y-label"
                 includeMargin={false}
                 xPercent={0.05}
                 yPercent={0.16}
                 style={yLabelStyles}/>
-    <ChartLabel text={xTitle || xKey}
+    <ChartLabel text={xTitle || xLabels}
                 className="alt-x-label"
                 includeMargin={false}
                 xPercent={0.95}
@@ -176,28 +153,79 @@ function LineChart({
                 style={labelStyles}/>
     {crosshairValues.length
         ? <Crosshair values={crosshairValues.map(_ => _.value)}>
-          <div style={{
-            background: "#333538",
+          <table style={{
+            // background: "#333538",
+            background: "rgba(255,255,255,0.8)",
             display: "block",
-            color: 'white',
+            color: 'black',
             padding: "7px",
             whiteSpace: "nowrap",
             lineHeight: "14px",
             borderRadius: "10px",
-            textAlign: "right"
           }}>
-            <strong>{
-              (xFormat === "time")
-                  ? time(crosshairValues[0].value.x)
-                  : crosshairValues[0].value.x
-            }</strong>
-            <br/>
-            {yKey}: {crosshairValues[0].value.y.toFixed(3)
-          }</div>
-        </Crosshair>
-        : null}
+            <tbody>
+            <tr>
+              <td style={{textAlign: "right"}}><strong>{xLabels}</strong>:</td>
+              <td>{
+                (xFormat === "time")
+                    ? time(crosshairValues[0].value.x)
+                    : crosshairValues[0].value.x
+              }</td>
+            </tr>
+            {
+              crosshairValues.map((ch, i) => <tr key={i} style={{color: colors[i % colors.length]}}>
+                <td style={{textAlign: "right"}}><strong>{yLabels[i]}</strong>:</td>
+                <td>{ch.value.y.toFixed(3)}±{(0.5 * (ch['75%'] - ch['25%'])).toFixed(3)}</td>
+              </tr>)
+            }
+            </tbody>
+          </table>
+        </Crosshair> : null}
   </FlexibleXYPlot>
+}
+
+export default function LineChart({
+                                    prefix,
+                                    metricsFile = null,
+                                    metricsFiles = [],
+                                    xKey,
+                                    yKey, yKeys,
+                                    xFormat, yFormat,
+                                    xTitle, yTitle,
+                                    xAlign,
+                                    color,
+                                    k = 20,
+                                    colors = [chartColors.blue, chartColors.red, chartColors.grey],
+                                    ..._props
+                                  }) {
+  if (!!yKey) yKeys = [yKey];
+  if (!!metricsFile) metricsFiles = [metricsFile];
+
+  const [lines, setLines] = useState([]);
+
+  useEffect(() => {
+    // if (!lines.length)
+    let running = true;
+    const abort = () => running = false;
+    if (!metricsFiles) return abort;
+    fetchSeries({metricsFiles, prefix, xKey, xAlign, yKeys, k})
+        .then((data) => {
+          if (!running || !data) return;
+          if (!!yKeys) setLines(yKeys.map((k) => ({
+            // yKey: k, // label the series
+            mean: seriesToRecords(data.series, k),
+            quarter: seriesToAreaRecords(data.series, k)
+          })));
+          else setLines([{
+            mean: seriesToRecords(data.series),
+            quarter: seriesToAreaRecords(data.series)
+          }])
+        });
+    return abort;
+  }, [prefix, ...metricsFiles, xKey, ...yKeys, k]);
+
+  return <LinePlot xLabels={xKey} yLabels={yKeys} xTitle={xTitle} yTitle={yTitle}
+                   xFormat={xFormat} yFormat={yFormat} colors={colors} lines={lines} {..._props}/>
 
 }
 
-export default LineChart;
