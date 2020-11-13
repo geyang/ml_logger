@@ -38,10 +38,11 @@ setup(name="ml-dash",
           "cloudpickle",
           'dill',
           'graphene',
-          # lock these to because 3.0 breaks things
-          "graphql-core"
-          "multidict==4.6.1",
+          "graphql-core",
           "graphql-relay",
+          "graphql-sanic",
+          "graphql-server-core",
+          "multidict==4.6.1",
           "numpy",
           'pandas',
           "params_proto",
@@ -50,7 +51,7 @@ setup(name="ml-dash",
           'ruamel.yaml',
           'sanic',
           'sanic-cors',
-          'sanic-graphql',
+          'Sanic-GraphQL',
           "termcolor",
           "typing"
       ])
