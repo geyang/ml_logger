@@ -45,8 +45,4 @@ setup(name="ml_logger",
           "termcolor",
           "typing",
           "urllib3",
-          "graphene",
-          "graphql-core",
-          "graphql-relay",
-          "graphql-server-core"
       ])
