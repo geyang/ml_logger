@@ -37,4 +37,4 @@ publish: convert-rst
 start: # dev start: use sanic to bootstrap.
 	source activate playground && python -m ml_dash.main --host=0.0.0.0 --port=8081 --workers=4 --logdir="tests/runs"
 test:
-	python -m pytest tests --capture=no
+	python -m pytest dash_server_specs/test_ml_dash.py --capture=no
