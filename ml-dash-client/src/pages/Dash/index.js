@@ -226,15 +226,11 @@ export default function Dash({match, router, ..._props}) {
                              boxShadow="0 0 20px rgba(1,1,1,0.1)">
           <Button1 onClick={() => setPane("path")}
                    className={pane === "path" ? "selected" : null}>PATH</Button1>
-          <Button1 onClick={() => setPane("chart")}
-                   className={pane === "chart" ? "selected" : null}>CHART</Button1>
           <Button1 onClick={() => setPane(null)}>HyperParameters</Button1>
         </PaddedRowContainer1>
         <Resizable enable={{"bottom": true}}
                    defaultSize={{width: "auto", height: 250}}>{(() => {
           switch (pane) {
-            case "chart":
-              return <TextEditor path={pathJoin(breadCrumb.slice(-1)[0], ".dash.yml")}/>;
             case "path":
             default:
               return <RowContainer height="calc(100% - 10px)" background={"#f5f5f5"} ref={el}>{
@@ -263,14 +259,14 @@ export default function Dash({match, router, ..._props}) {
                    boxShadow="0 0 20px rgba(0, 0, 0, 0.3)">
       <StyledColContainer>
         <PaddedRowContainer height="56px" background="white">
-          <Button className={sideCar === "readme" ? "selected" : null}
-                  onClick={() => setSideCar('readme')}>README</Button>
-          <Button className={sideCar === "charts" ? "selected" : null}
-                  onClick={() => setSideCar('charts')}>CHARTS</Button>
           {selected.length
               ? <Button className={sideCar === "all" ? "selected" : null}
                         onClick={() => setSideCar('all')}>SELECTED</Button>
               : null}
+          <Button className={sideCar === "readme" ? "selected" : null}
+                  onClick={() => setSideCar('readme')}>README</Button>
+          <Button className={sideCar === "charts" ? "selected" : null}
+                  onClick={() => setSideCar('charts')}>CHARTS</Button>
           <Button className={sideCar === "diff" ? "selected" : null}
                   onClick={() => setSideCar('diff')}>DIFF</Button>
         </PaddedRowContainer>

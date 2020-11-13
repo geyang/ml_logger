@@ -172,7 +172,6 @@ export function ImageView({width = "100%", height = "100%", src}) {
 
 export function VideoView({width = "100%", height = "100%", src}) {
   //todo: add scroll bar
-  console.log(src);
   if (!src) return <span>still loading</span>;
   return <Video style={{
     maxWidth: width, maxHeight: height,
@@ -348,7 +347,11 @@ export function InlineChart({configPath = null, onRefresh = null, ...chart}) {
   //path is the link to the chart file
   const [showEditor, toggleEditor] = useToggle();
 
+  const title = chart.title || chart.yKey || chart.yKeys;
   const style = {gridColumn: `span ${chart.metricsGroups ? numOfFacets(chart) : 1}`};
+
+  const charts = (!!chart.metricsGroups) ? <CompoundChart {...chart}/> : <LineChart  {...chart}/>
+
   return <>
     <Box style={style}>
       <StyledTitle>
@@ -357,14 +360,10 @@ export function InlineChart({configPath = null, onRefresh = null, ...chart}) {
             : null}
         <span className="spacer"/>
         <span className="title" onClick={toggleEditor}
-              title={chart.title || chart.yKey || chart.yKeys.join(', ') || "N/A"}>{chart.title || chart.yKey || chart.yKeys.join(', ') || "N/A"}</span>
+              title={title || "N/A"}>{title || "N/A"}</span>
         <span className="spacer"/>
       </StyledTitle>
-      <MainContainer>{
-        (!!chart.metricsGroups)
-            ? <CompoundChart key={chart.yKey} {...chart} />
-            : <LineChart  {...chart}/>
-      } </MainContainer>
+      <MainContainer>{charts}</MainContainer>
     </Box>
     {(showEditor && configPath)
         ? <Box style={{gridColumn: "span 2"}}>

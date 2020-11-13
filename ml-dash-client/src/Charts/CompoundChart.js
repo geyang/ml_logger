@@ -6,9 +6,9 @@ import {detect} from "detect-browser";
 import DataFrame from "dataframe-js";
 import {modernEnvironment} from "../data";
 import Color from 'color';
-import {chartColors} from "./chart-theme";
+import {chartColors, colorPalette} from "./chart-theme";
 import {pathJoin} from "../lib/path-join";
-import {fetchSeries, LinePlot} from "./LineChart";
+import {fetchSeries, LinePlot, seriesToAreaRecords, seriesToRecords} from "./LineChart";
 
 const browser = detect();
 
@@ -23,32 +23,6 @@ let yLabelStyles = {
   transform: 'rotate(-90 0 0) translate(0 -38)'
 };
 
-function seriesToRecords(series, yKey = null) {
-  if (!series || !series.yMean)
-    return [];
-  let yData = yKey ? series.yMean[yKey] : series.yMean;
-  const df = new DataFrame({
-    y: yData,
-    x: series.xData ? series.xData : yData.map((_, i) => i)
-  });
-  return df
-      .filter(row => row.get('y') === row.get('y'))
-      .toCollection();
-}
-
-function seriesToAreaRecords(series, yKey = null) {
-  if (!series || !series.y75pc || !series.y25pc)
-    return [];
-  let yData = yKey ? series.y75pc[yKey] : series.y75pc;
-  const df = new DataFrame({
-    y0: yData,
-    y: yKey ? series.y25pc[yKey] : series.y25pc,
-    x: series.xData ? series.xData : yData.map((_, i) => i)
-  });
-  return df
-      .filter(row => row.get('y') === row.get('y') && row.get('y0') === row.get('y0'))
-      .toCollection();
-}
 
 function time(v) {
   let s = new Date(v / 1000).toLocaleTimeString();
@@ -81,10 +55,11 @@ export default function CompoundChart({
                                         xAlign,
                                         color,
                                         k = 20,
-                                        colors = [chartColors.blue, chartColors.red, chartColors.grey],
+                                        colors = colorPalette,
                                         ..._props
                                       }) {
   if (!!yKey) yKeys = [yKey];
+  if (!groupLabels) groupLabels = [...Array(metricsGroups.length).keys()].map((i) => `group-${i}`);
   // if (!!metricsFile) metricsFiles = [metricsFile];
   // if (!!metricsFiles) metricsGroups = [metricsFiles];
 
@@ -97,6 +72,7 @@ export default function CompoundChart({
     // if (!metricsGroups) return abort;
     if (!metricsGroups) return;
     metricsGroups.forEach((metricsFiles, gKey) => {
+      setCharts((charts) => ({...charts, [gKey]: []}));
       fetchSeries({metricsFiles, prefix, xKey, xAlign, yKeys, k})
           .then((data) => {
             // if (!running || !data) return;
@@ -111,28 +87,22 @@ export default function CompoundChart({
     })
     // return abort;
   }, [prefix, ...yKeys, k]);
-  // console.log(charts)
 
   if (facet === "group") {
-    return <>{
-      Object.keys(charts).map((k, i) => {
-        let lines = charts[k];
-        // console.log("facet by group", Object.keys(charts), yKeys, k, i, lines)
-        return <LinePlot key={i} xLabels={xKey} yLabels={yKeys} xTitle={xTitle} yTitle={yTitle}
-                         xFormat={xFormat} yFormat={yFormat} colors={colors} lines={lines} {..._props}/>
-      })
-    }</>
+    return Object.keys(charts).map((gKey, i) => {
+      let lines = charts[gKey];
+      return <LinePlot key={gKey} title={groupLabels[i]} xLabels={xKey} yLabels={yKeys} xTitle={xTitle} yTitle={yTitle}
+                       xFormat={xFormat} yFormat={yFormat} colors={colors} lines={lines} {..._props}/>
+    })
+
   } else {
     //facet by yKey
-    if (!!groupLabels) groupLabels = [...Array(metricsGroups.length).keys()].map((i) => `group-${i}`);
-    return <>{
-      yKeys.map((yKey, i) => {
-        const lines = Object.keys(charts).map((k, gKey) => charts[k][i])
-        // console.log("facet by key", Object.keys(charts), yKeys, lines, groupLabels)
-        return <LinePlot key={i} xLabels={xKey} yLabels={groupLabels} xTitle={xTitle} yTitle={yKey}
-                         xFormat={xFormat} yFormat={yFormat} colors={colors} lines={lines} {..._props}/>
-      })
-    }</>
+    return yKeys.map((yKey, i) => {
+      const lines = Object.keys(charts).map((k, gKey) => charts[k][i])
+      // console.log("facet by key", Object.keys(charts), yKeys, lines, groupLabels)
+      return <LinePlot key={i} xLabels={xKey} yLabels={groupLabels} xTitle={xTitle} yTitle={yKey}
+                       xFormat={xFormat} yFormat={yFormat} colors={colors} lines={lines} {..._props}/>
+    })
   }
 }
 

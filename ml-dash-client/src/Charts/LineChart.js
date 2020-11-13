@@ -13,11 +13,12 @@ import {
   ChartLabel
 } from "react-vis";
 import 'react-vis/dist/style.css';
+import styled from 'styled-components';
 import {detect} from "detect-browser";
 import DataFrame from "dataframe-js";
 import {modernEnvironment} from "../data";
 import Color from 'color';
-import {chartColors} from "./chart-theme";
+import {chartColors, colorPalette} from "./chart-theme";
 import {pathJoin} from "../lib/path-join";
 
 const seriesQuery = graphql`
@@ -49,11 +50,35 @@ let labelStyles = {
   textAnchor: "end"
 };
 if (browser && browser.name !== "safari")
-  labelStyles = {...labelStyles, fill: "black", stroke: "white", strokeWidth: "2px", paintOrder: "stroke",};
+  labelStyles = {
+    ...labelStyles,
+    fill: "black",
+    stroke: "white",
+    strokeWidth: "2px",
+    paintOrder: "stroke"
+  };
 let yLabelStyles = {
   ...labelStyles,
   transform: 'rotate(-90 0 0) translate(0 -38)'
 };
+
+const StyledTitle = styled(ChartLabel)`
+> text { 
+  font-weight: 900;
+  text-anchor: middle;
+  font-size: 14px !important;
+  fill: black;
+  stroke: white;
+  stroke-width: 2px;
+  paint-order: stroke
+}`;
+const StyledLabelH = styled(ChartLabel)`
+> text { 
+  font-weight: 900;
+  text-anchor: start;
+  font-size: 12px;
+  fill: ${props => props.fill} !important;
+}`
 
 export function fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k,}) {
   // const controller = new AbortController();
@@ -64,7 +89,7 @@ export function fetchSeries({metricsFiles, prefix, xKey, xAlign, yKey, yKeys, k,
   });
 }
 
-function seriesToRecords(series, yKey = null) {
+export function seriesToRecords(series, yKey = null) {
   if (!series || !series.yMean)
     return [];
   let yData = yKey ? series.yMean[yKey] : series.yMean;
@@ -77,7 +102,7 @@ function seriesToRecords(series, yKey = null) {
       .toCollection();
 }
 
-function seriesToAreaRecords(series, yKey = null) {
+export function seriesToAreaRecords(series, yKey = null) {
   if (!series || !series.y75pc || !series.y25pc)
     return [];
   let yData = yKey ? series.y75pc[yKey] : series.y75pc;
@@ -100,37 +125,45 @@ function timeDelta() {
   //todo: add timeDelta formatter
 }
 
-export function LinePlot({xLabels, yLabels, xTitle, yTitle, xFormat, yFormat, colors, lines, ..._props}) {
+export function LinePlot({title, xLabels: xLabel, yLabels, xTitle, yTitle, xFormat, yFormat, colors, lines, ..._props}) {
   const [crosshairValues, setCrosshairValues] = useState([]);
 
   function _onMouseLeave() {
     setCrosshairValues([]);
   }
 
+  console.log(title);
+
   function _onNearestX(value, {object, index}) {
-    setCrosshairValues(lines.map(d => ({
-      "value": d.mean[index],
-      "mean": d.mean[index].y,
-      "25%": d.quarter[index].y,
-      "75%": d.quarter[index].y0,
-    })));
+    setCrosshairValues(lines.map(({mean = [], quarter = []} = {}, i) => {
+      let value = mean[index];
+      let quat = quarter[index];
+      return {
+        value,
+        color: colors[i % colors.length],
+        label: yLabels[i],
+        x: value ? value.x : null,
+        mean: value ? value.y.toFixed(3) : "NaN",
+        range: quat ? (0.5 * (quat.y0 - quat.y)).toFixed(3) : "NaN",
+      };
+    }));
   }
 
   return <FlexibleXYPlot onMouseLeave={_onMouseLeave} {..._props}>
-    {lines.map((line, i) =>
-        [(line.quarter.length > 100)
+    {lines.map(({quarter = [], mean = []} = {}, i) =>
+        [(quarter.length > 100)
             ? null // do not show area if there are a lot of points. As an optimization.
             : <AreaSeries key={`area-${i}`}
-                          data={line.quarter}
+                          data={quarter}
                           style={{
                             stroke: Color(colors[i % colors.length]).alpha(0.4).rgb().string(),
                             strokeWidth: 0.5,
                             fill: Color(colors[i % colors.length]).alpha(0.2).rgb().string()
                           }}/>,
-          (line.mean.length <= 100)
-              ? <LineSeries key={`line-${i}`} data={line.mean} stroke={colors[i % colors.length]}
+          (mean.length <= 100)
+              ? <LineSeries key={`line-${i}`} data={mean} stroke={colors[i % colors.length]}
                             strokeWidth={2} onNearestX={_onNearestX}/>
-              : <LineSeriesCanvas key={i} data={line.mean} stroke={colors[i % colors.length]}
+              : <LineSeriesCanvas key={i} data={mean} stroke={colors[i % colors.length]}
                                   strokeWidth={2} onNearestX={_onNearestX}/>
         ]
     )}
@@ -139,13 +172,28 @@ export function LinePlot({xLabels, yLabels, xTitle, yTitle, xFormat, yFormat, co
     <XAxis tickLabelAngle={-35}
            tickFormat={xFormat === 'time' ? time : null}
            style={{text: {background: "white", fontWeight: 800}}}/>
-    <ChartLabel text={yTitle || yLabels.join(', ')}
-                className="alt-y-label"
-                includeMargin={false}
-                xPercent={0.05}
-                yPercent={0.16}
-                style={yLabelStyles}/>
-    <ChartLabel text={xTitle || xLabels}
+    {typeof (title) === 'string'
+        ? <StyledTitle text={title}
+                       includeMargin={false}
+                       xPercent={0.5}
+                       yPercent={1.32}
+        />
+        : null}
+    {typeof (yLabels) === 'string'
+        ? <ChartLabel text={yTitle || yLabels.join(', ')}
+                      includeMargin={false}
+                      xPercent={0.05}
+                      yPercent={0.16}
+                      style={yLabelStyles}/>
+        : yLabels.map((label, i) =>
+            <StyledLabelH key={i}
+                          text={label}
+                          includeMargin={false}
+                          xPercent={0.05}
+                          yPercent={0.12 * (i + 1)}
+                          fill={colors[i % colors.length]}/>)
+    }
+    <ChartLabel text={xTitle || xLabel}
                 className="alt-x-label"
                 includeMargin={false}
                 xPercent={0.95}
@@ -165,18 +213,17 @@ export function LinePlot({xLabels, yLabels, xTitle, yTitle, xFormat, yFormat, co
           }}>
             <tbody>
             <tr>
-              <td style={{textAlign: "right"}}><strong>{xLabels}</strong>:</td>
+              <td style={{textAlign: "right"}}><strong>{xLabel}</strong>:</td>
               <td>{
-                (xFormat === "time")
-                    ? time(crosshairValues[0].value.x)
-                    : crosshairValues[0].value.x
+                (xFormat === "time") ? time(crosshairValues[0].x) : crosshairValues[0].x
               }</td>
             </tr>
             {
-              crosshairValues.map((ch, i) => <tr key={i} style={{color: colors[i % colors.length]}}>
-                <td style={{textAlign: "right"}}><strong>{yLabels[i]}</strong>:</td>
-                <td>{ch.value.y.toFixed(3)}±{(0.5 * (ch['75%'] - ch['25%'])).toFixed(3)}</td>
-              </tr>)
+              crosshairValues.sort((a, b) => (b.mean - a.mean)).map(({mean, range, color, label}, i) =>
+                  <tr key={i} style={{color}}>
+                    <td style={{textAlign: "right"}}><strong>{label}</strong>:</td>
+                    <td>{mean}±{range}</td>
+                  </tr>)
             }
             </tbody>
           </table>
@@ -189,13 +236,13 @@ export default function LineChart({
                                     metricsFile = null,
                                     metricsFiles = [],
                                     xKey,
-                                    yKey, yKeys,
+                                    yKey, yKeys = [],
                                     xFormat, yFormat,
                                     xTitle, yTitle,
                                     xAlign,
                                     color,
                                     k = 20,
-                                    colors = [chartColors.blue, chartColors.red, chartColors.grey],
+                                    colors = colorPalette,
                                     ..._props
                                   }) {
   if (!!yKey) yKeys = [yKey];
