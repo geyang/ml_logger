@@ -1207,6 +1207,8 @@ class ML_Logger:
 
         :return: None
         """
+        import torch
+
         # todo: why did pytorch moved to a zip-based format?
         if hasattr(module, "state_dict"):
             state_dict = module.state_dict()
@@ -1220,18 +1222,17 @@ class ML_Logger:
             from tqdm import tqdm
             items = tqdm(items, desc=show_progress if isinstance(show_progress, str) else path[-24:])
 
-        size, data_chunk = 0, {}
+        total_size, data_chunk = 0, {}
         for k, v in items:
-            if hasattr(v, "detach"):
-                v = v.detach().cpu().numpy()
             if hasattr(v, "size"):
-                assert v.size < chunk, "individual weight tensors need to be smaller than the chunk size"
-                if size + v.size > chunk:
+                size = np.prod(v.size()) if torch.is_tensor(v) else v.size
+                assert size < chunk, "individual weight tensors need to be smaller than the chunk size"
+                if total_size + size > chunk:
                     self.log_data(data=data_chunk, path=path, overwrite=False if size else True)
-                    size = v.size
+                    total_size = size
                     data_chunk = {k: v}
                 else:
-                    size += v.size
+                    total_size += size
                     data_chunk[k] = v
             else:
                 data_chunk[k] = v
@@ -1240,7 +1241,7 @@ class ML_Logger:
 
     def read_state_dict(self, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None):
         if "*" in path:
-            all_paths = self.glob(path, wd=wd or self.prefix)
+            all_paths = self.glob(path, wd=wd)
             if len(all_paths) == 0:
                 raise FileNotFoundError(f"Path matching {path} is not found")
             path = pJoin(wd, sorted(all_paths)[-1])
@@ -1304,15 +1305,12 @@ class ML_Logger:
                         def matcher(checkpoint_dict, key, current_dict):
         :return: None
         """
-        import torch
-
+        if wd is None:
+            wd = "/" if path.startswith('/') else self.prefix
         state_dict = self.read_state_dict(path=path, wd=wd, stream=stream, tries=tries, matcher=matcher)
         assert state_dict, f"the datafile can not be empty: [state_dict == {{{state_dict.keys()}...}}]"
 
-        module.load_state_dict({
-            k: torch.tensor(matcher(state_dict, k, p) if matcher else state_dict[k], dtype=p.dtype).to(p.device)
-            for k, p in module.state_dict().items()
-        })
+        module.load_state_dict(state_dict)
 
     def save_modules(self, path="modules.pkl", modules=None, **_modules):
         raise DeprecationWarning("This method has gone out of use, and should be deprecated.")
@@ -1332,8 +1330,7 @@ class ML_Logger:
         :return: None
         """
         _modules.update(modules or {})
-        data = {name: {k: v.cpu().detach().numpy() for k, v in module.state_dict().items()}
-                for name, module in _modules.items()}
+        data = {name: module.state_dict() for name, module in _modules.items()}
         self.log_data(data=data, path=path, overwrite=True)
 
     def save_variables(self, variables, path="variables.pkl", keys=None):
