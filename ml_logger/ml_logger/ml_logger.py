@@ -1305,8 +1305,6 @@ class ML_Logger:
                         def matcher(checkpoint_dict, key, current_dict):
         :return: None
         """
-        if wd is None:
-            wd = "/" if path.startswith('/') else self.prefix
         state_dict = self.read_state_dict(path=path, wd=wd, stream=stream, tries=tries, matcher=matcher)
         assert state_dict, f"the datafile can not be empty: [state_dict == {{{state_dict.keys()}...}}]"
 
@@ -1707,6 +1705,10 @@ class ML_Logger:
         :param stop:
         :return: None if the director does not exist (internal FileNotFoundError)
         """
+        if query.startswith('/'):
+            return ['/' + p for p in
+                    self.client.glob(query, wd="/", recursive=recursive, start=start, stop=stop)]
+
         wd = pJoin(self.prefix, wd or "")
         return self.client.glob(query, wd=wd, recursive=recursive, start=start, stop=stop)
 
