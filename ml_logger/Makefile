@@ -29,8 +29,7 @@ update-doc: convert-rst
 release:
 	git tag v$(VERSION) -m '$(msg)'
 	git push origin --tags
-publish: convert-rst
-	make test
+publish: convert-rst test
 	make wheel
 	twine upload dist/*
 test:
