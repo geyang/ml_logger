@@ -61,7 +61,7 @@ def _AsyncContext(logger, clean=False, max_workers=None):
 
 
 class LogClient:
-    local_server = None
+    local_server: LoggingServer = None
     session = None
     max_workers = None
     # note: used by the context switchers. They do not take parameters, so

@@ -5,6 +5,7 @@ import dill  # done: switch to dill instead
 from ml_logger.helpers import load_from_file
 from ml_logger.serdes import deserialize, serialize
 from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
+from termcolor import cprint
 
 
 class LoggingServer:
@@ -89,7 +90,7 @@ class LoggingServer:
         import sanic
         if not req.json:
             msg = f'request json is empty: {req.text}'
-            print(msg)
+            cprint(msg, 'red')
             return sanic.response.text(msg)
         remove_entry = RemoveEntry(**req.json)
         print("removing: {}".format(remove_entry.key))
@@ -99,8 +100,8 @@ class LoggingServer:
     async def log_handler(self, req):
         import sanic
         if not req.json:
-            print(f'request json is empty: {req.text}')
-            return sanic.response.text("Reuqest json is empty")
+            cprint(f'request json is empty: {req.text}', 'red')
+            return sanic.response.text("Request json is empty")
         log_entry = LogEntry(**req.json)
         print("writing: {} type: {} options: {}".format(log_entry.key, log_entry.type, log_entry.options))
         data = deserialize(log_entry.data)
@@ -231,6 +232,8 @@ class LoggingServer:
         """
         # todo: overwrite mode is not tested and not in-use.
         write_mode = "w" if options and options.overwrite else "a"
+        if key.startswith('/'):
+            key = key[1:]
         if dtype == "log":
             abs_path = os.path.join(self.data_dir, key)
             # fixme: There is a race condition with multiple requests

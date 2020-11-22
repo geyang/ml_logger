@@ -28,9 +28,6 @@ from ml_logger import logger, Color, metrify
 from ml_logger.helpers.color_helpers import percent
 
 
-# from tests.conftest import LOCAL_TEST_DIR
-
-
 @pytest.fixture(scope='session')
 def log_dir(request):
     return request.config.getoption('--log-dir')
@@ -40,9 +37,6 @@ def log_dir(request):
 def setup(log_dir):
     logger.configure(log_dir, prefix='main_test_script')
     logger.remove('')
-    logger.log_line('hey')
-    logger.log_data(dict(test=True), "test-data/dict.pkl")
-
     print(f"logging to {pathJoin(logger.root_dir, logger.prefix)}")
 
 
@@ -53,14 +47,14 @@ def test_glob(setup):
     print(f"globbed file paths: {[file_paths]}")
 
 
-def test_save_and_load_pkl(setup):
+def test_log_data(setup):
     import numpy
     d1 = numpy.random.randn(20, 10)
     logger.log_data(d1, 'test_file.pkl')
-    sleep(1.0)
+    sleep(0.1)
     d2 = numpy.random.randn(20, 10)
     logger.log_data(d2, 'test_file.pkl')
-    sleep(1.0)
+    sleep(0.1)
 
     data = logger.load_pkl('test_file.pkl')
     assert len(data) == 2, "data should contain two arrays"
@@ -68,31 +62,15 @@ def test_save_and_load_pkl(setup):
     assert numpy.array_equal(data[1], d2), "first should be the same as d2"
 
 
-# def __save_unavailable_pkl():
-#     import pickle
-#     from uvpn.domains.sawyer import GoalImg
-#     config = dict(wrappers=[GoalImg, ])
-#     logger.log_data(config, 'demo_config.pkl', overwrite=True)
-#     return pickle.dumps(config)
-#
-#
-# # todo: check if this is actually testing correctly
-# def test_pkl_with_unavailable_modules():
-#     agent = logger.load_pkl('demo_config.pkl')
-
-
-def test_log_data(setup):
+def test_save_pkl_abs_path(setup):
     import numpy
     d1 = numpy.random.randn(20, 10)
-    logger.log_data(d1, 'test_file.pkl')
-    sleep(1.0)
-    d2 = numpy.random.randn(20, 10)
-    logger.log_data(d2, 'test_file.pkl', overwrite=True)
-    sleep(1.0)
+    logger.save_pkl(d1, '/test_file_1.pkl')
+    sleep(0.1)
 
-    data = logger.load_pkl('test_file.pkl')
+    data = logger.load_pkl('/test_file_1.pkl')
     assert len(data) == 1, "data should contain only one array because we overwrote it."
-    assert numpy.array_equal(data[0], d2), "first should be the same as d2"
+    assert numpy.array_equal(data[0], d1), "first should be the same as d2"
 
 
 def test(setup):
@@ -111,6 +89,13 @@ def test_json(setup):
     a = dict(a=0)
     logger.save_json(dict(a=0), "data/d.json")
     b = logger.load_json("data/d.json")
+    assert a == b, "a and b should be the same"
+
+
+def test_json_abs(setup):
+    a = dict(a=0)
+    logger.save_json(dict(a=0), "/data/d.json")
+    b = logger.load_json("/data/d.json")
     assert a == b, "a and b should be the same"
 
 
@@ -192,6 +177,8 @@ def test_video_gif(setup):
     frames = [im(100 + i, 80) for i in range(20)]
 
     logger.save_video(frames, "test_video.gif")
+    logger.save_video(frames, "/videos/test_video.gif")
+    assert '/videos/test_video.gif' in logger.glob('/videos/*.gif')
 
 
 def test_load_params(setup):

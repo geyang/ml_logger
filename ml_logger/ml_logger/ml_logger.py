@@ -1244,7 +1244,7 @@ class ML_Logger:
             all_paths = self.glob(path, wd=wd)
             if len(all_paths) == 0:
                 raise FileNotFoundError(f"Path matching {path} is not found")
-            path = pJoin(wd, sorted(all_paths)[-1])
+            path = pJoin(wd or "", sorted(all_paths)[-1])
 
         state_dict = {}
         for chunk in (self.iload_pkl if stream else self.load_pkl)(path, tries=tries):
@@ -1705,7 +1705,7 @@ class ML_Logger:
         :param stop:
         :return: None if the director does not exist (internal FileNotFoundError)
         """
-        if query.startswith('/'):
+        if not wd and query.startswith('/'):
             return ['/' + p for p in
                     self.client.glob(query, wd="/", recursive=recursive, start=start, stop=stop)]
 
