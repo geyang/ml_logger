@@ -4,7 +4,7 @@ from sanic_graphql import GraphQLView
 from sanic import Sanic
 from sanic_cors import CORS
 
-app = Sanic(__name__)
+app = Sanic("ml_dash.server")
 # CORS(app)
 CORS(app, resources={r"/*": {"origins": "*"}}, automatic_options=True)
 

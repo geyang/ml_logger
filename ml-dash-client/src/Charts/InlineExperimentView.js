@@ -103,8 +103,9 @@ function InlineFile({path, name, style = {}, onClose}) {
     default: // note: if no type is detected, show as text file.
       view = <TextEditor path={path}/>
       // view = <TextView path={path} key={path}/>;
-      style['gridColumn'] = "span 2";
-      style['gridRow'] = "span 1";
+      // style['gridColumn'] = "span 3";
+      style['gridColumn'] = "1 / -1";
+      style['gridRow'] = "span 2";
   }
   return <Box style={style}>
     <StyledTitle>

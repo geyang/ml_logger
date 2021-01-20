@@ -175,7 +175,7 @@ export default function Dash({match, router, ..._props}) {
       e.stopPropagation();
       if (selected.indexOf(experiments[0].path) === -1) {
         select([...selected, experiments[0].path]);
-        setSideCar('all');
+        setSideCar("selected");
       } else {
         let new_selected = selected.filter(_ => _ !== experiments[0].path)
         //set the sideCar to default if the selection is empty.
@@ -189,7 +189,7 @@ export default function Dash({match, router, ..._props}) {
       setSideCar('charts');
     } else {
       select([experiments[0].path]);
-      setSideCar('all');
+      setSideCar("selected");
     }
   };
 
@@ -260,8 +260,8 @@ export default function Dash({match, router, ..._props}) {
       <StyledColContainer>
         <PaddedRowContainer height="56px" background="white">
           {selected.length
-              ? <Button className={sideCar === "all" ? "selected" : null}
-                        onClick={() => setSideCar('all')}>SELECTED</Button>
+              ? <Button className={sideCar === "selected" ? "selected" : null}
+                        onClick={() => setSideCar("selected")}>SELECTED</Button>
               : null}
           <Button className={sideCar === "readme" ? "selected" : null}
                   onClick={() => setSideCar('readme')}>README</Button>
@@ -278,8 +278,8 @@ export default function Dash({match, router, ..._props}) {
               case "readme":
                 return <Resizable key={"readme-editor"}
                                   enable={{"bottom": true}}
-                                  defaultSize={{width: "auto", height: 800}}><TextEditor
-                    path={pathJoin(breadCrumb.slice(-1)[0], "README.md")}/></Resizable>;
+                                  defaultSize={{width: "auto", height: 800}}
+                ><TextEditor path={pathJoin(breadCrumb.slice(-1)[0], "README.md")}/></Resizable>;
               case "charts":
                 // 1. look for ".charts" in the current folder
                 // 2. add chart view to markdown
@@ -293,7 +293,7 @@ export default function Dash({match, router, ..._props}) {
                   <GroupBody minHeight="250px"><ChartGridView path={breadCrumb.slice(-1)[0]}/></GroupBody>
                 </StyledColContainer>;
               case "details":
-              case "all":
+              case "selected":
               default:
                 return <>
                   {(selected && selected.length > 1) ?

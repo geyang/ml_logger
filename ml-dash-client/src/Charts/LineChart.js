@@ -64,10 +64,10 @@ let yLabelStyles = {
 
 const StyledTitle = styled(ChartLabel)`
 > text { 
-  font-weight: 900;
+  font-weight: 500;
   text-anchor: middle;
   font-size: 14px !important;
-  fill: black;
+  fill: #444 !important;
   stroke: white;
   stroke-width: 2px;
   paint-order: stroke
@@ -132,8 +132,6 @@ export function LinePlot({title, xLabels: xLabel, yLabels, xTitle, yTitle, xForm
     setCrosshairValues([]);
   }
 
-  console.log(title);
-
   function _onNearestX(value, {object, index}) {
     setCrosshairValues(lines.map(({mean = [], quarter = []} = {}, i) => {
       let value = mean[index];
@@ -149,7 +147,11 @@ export function LinePlot({title, xLabels: xLabel, yLabels, xTitle, yTitle, xForm
     }));
   }
 
-  return <FlexibleXYPlot onMouseLeave={_onMouseLeave} {..._props}>
+  return <FlexibleXYPlot onMouseLeave={_onMouseLeave}
+                         margin={{
+                           top: title ? 30 : 10,
+                           right: (yLabels.length <= 3) ? 0 : 120
+                         }} {..._props}>
     {lines.map(({quarter = [], mean = []} = {}, i) =>
         [(quarter.length > 100)
             ? null // do not show area if there are a lot of points. As an optimization.
@@ -173,31 +175,27 @@ export function LinePlot({title, xLabels: xLabel, yLabels, xTitle, yTitle, xForm
            tickFormat={xFormat === 'time' ? time : null}
            style={{text: {background: "white", fontWeight: 800}}}/>
     {typeof (title) === 'string'
-        ? <StyledTitle text={title}
-                       includeMargin={false}
-                       xPercent={0.5}
-                       yPercent={1.32}
-        />
+        ? <StyledTitle text={title} includeMargin={false} xPercent={0.5} yPercent={0.1}/>
         : null}
-    {typeof (yLabels) === 'string'
-        ? <ChartLabel text={yTitle || yLabels.join(', ')}
+    {(yLabels.length <= 1)
+        ? <ChartLabel text={yTitle || yLabels[0]}
                       includeMargin={false}
                       xPercent={0.05}
-                      yPercent={0.16}
+                      yPercent={title ? 0.3 : 0.12}
                       style={yLabelStyles}/>
         : yLabels.map((label, i) =>
             <StyledLabelH key={i}
                           text={label}
                           includeMargin={false}
-                          xPercent={0.05}
-                          yPercent={0.12 * (i + 1)}
+                          xPercent={(yLabels.length <= 3) ? 0.05 : 1.1}
+                          yPercent={0.12 * i + (title ? 0.3 : 0.12)}
                           fill={colors[i % colors.length]}/>)
     }
     <ChartLabel text={xTitle || xLabel}
                 className="alt-x-label"
                 includeMargin={false}
                 xPercent={0.95}
-                yPercent={1}
+                yPercent={title ? 1.17 : 1}
                 style={labelStyles}/>
     {crosshairValues.length
         ? <Crosshair values={crosshairValues.map(_ => _.value)}>

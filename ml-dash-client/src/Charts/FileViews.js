@@ -17,7 +17,7 @@ import {toGlobalId} from "../lib/relay-helpers";
 import Ellipsis from "../components/Form/Ellipsis";
 import {RowContainer} from "../components/layouts";
 import JSON5 from "json5";
-import CompoundChart, {numOfFacets} from "./CompoundChart";
+import CompoundChart, {numOfFacets, numOfLines} from "./CompoundChart";
 import {RefreshCw, X} from "react-feather";
 
 const globQuery = graphql`
@@ -328,10 +328,10 @@ export default function InlineFile({type, prefix, glob, title, src, ...chart}) {
           {/*make multiple col span wide*/}
           {selected
               ? <>
-                <p direction={"row"} gap={'none'} height={30}>
+                <p>
                   <strong>glob</strong>: <span style={{display: "inline-block"}}>{glob}</span>
                 </p>
-                <p direction={"row"} gap={'none'} height={30}>
+                <p>
                   <strong>file</strong>:
                   <span style={{display: "inline-block", wordBreak: "break-word"}}>{
                     subPrefix(selected.path, pathPrefix)}</span>
@@ -343,14 +343,19 @@ export default function InlineFile({type, prefix, glob, title, src, ...chart}) {
   </>
 }
 
-export function InlineChart({configPath = null, onRefresh = null, ...chart}) {
+export function InlineChart({configPath = null, onRefresh = null, title, ...chart}) {
   //path is the link to the chart file
   const [showEditor, toggleEditor] = useToggle();
 
-  const title = chart.title || chart.yKey || chart.yKeys;
-  const style = {gridColumn: `span ${chart.metricsGroups ? numOfFacets(chart) : 1}`};
+  if (!title) title = chart.yKey || chart.yKeys.join(', ');
 
-  const charts = (!!chart.metricsGroups) ? <CompoundChart {...chart}/> : <LineChart  {...chart}/>
+  let numSpan = 1;
+  if (chart.metricsGroups) numSpan = numOfFacets(chart);
+  if (numOfLines(chart) > 3) numSpan *= 2;
+
+  const style = {gridColumn: `span ${numSpan}`};
+
+  const charts = (!!chart.metricsGroups) ? <CompoundChart {...chart}/> : <LineChart {...chart}/>
 
   return <>
     <Box style={style}>
@@ -359,8 +364,7 @@ export function InlineChart({configPath = null, onRefresh = null, ...chart}) {
             ? <span className="control" onClick={onRefresh}><RefreshCw color={"#afafaf"} height={12} width={12}/></span>
             : null}
         <span className="spacer"/>
-        <span className="title" onClick={toggleEditor}
-              title={title || "N/A"}>{title || "N/A"}</span>
+        <span className="title" onClick={toggleEditor} title={title || "N/A"}>{title || "N/A"}</span>
         <span className="spacer"/>
       </StyledTitle>
       <MainContainer>{charts}</MainContainer>

@@ -2,11 +2,6 @@ import React, {Fragment} from "react";
 import LineChart from "../../Charts/LineChart";
 import {Grid, Box, CheckBox} from "grommet";
 
-function GridView({series, ...props}) {
-  console.log(series);
-  return <LineChart {...series} {...props}/>
-}
-
 function chartRegular(chartString) {
   if (typeof chartString === 'object')  // a bit dangerous
     return chartString;
@@ -19,8 +14,7 @@ function chartRegular(chartString) {
 
 function ChartGrid({experiments, charts, relay, ..._props}) {
   return <div>
-    <Box justify="left" pad='small' height="36px" direction='row' align="start" fill='horizontal' gap='medium'
-         height={56}>
+    <Box justify="left" pad='small' direction='row' align="start" fill='horizontal' gap='medium' height={56}>
       <Box as="h1">Comparison</Box>
       <Box as={CheckBox} label="by Row"/>
     </Box>

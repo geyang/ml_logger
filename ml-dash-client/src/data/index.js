@@ -6,8 +6,8 @@ import {pathJoin} from "../lib/path-join";
 export let tempID = 0;
 export const inc = () => tempID++;
 
-const oneMinute = 60 * 1000;
-const cache = new QueryResponseCache({size: 250, ttl: oneMinute});
+const oneSecond = 1000;
+const cache = new QueryResponseCache({size: 250, ttl: 5 * oneSecond});
 
 function fetchQuery(
     operation,

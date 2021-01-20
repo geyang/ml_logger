@@ -33,9 +33,14 @@ function timeDelta() {
   //todo: add timeDelta formatter
 }
 
-export function numOfFacets(chart) {
-  if (chart.facet === "group") return chart.metricsGroups.length
-  else return chart.yKeys ? chart.yKeys.length : 1;
+export function numOfFacets({facet, metricsGroups = [], yKeys = []}) {
+  if (facet === "group") return metricsGroups.length || 1;
+  else return yKeys.length || 1;
+}
+
+export function numOfLines({facet, metricsGroups = [], yKeys = []} = {}) {
+  if (facet === "group") return yKeys.length || 1
+  else return metricsGroups.length || 1
 }
 
 export default function CompoundChart({
