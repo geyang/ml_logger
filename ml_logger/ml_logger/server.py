@@ -24,7 +24,7 @@ class LoggingServer:
 
     def serve(self, host, port, workers):
         import sanic
-        self.app = sanic.Sanic()
+        self.app = sanic.Sanic("ml_logger.server")
         self.app.add_route(self.log_handler, '/', methods=['POST'])
         self.app.add_route(self.read_handler, '/', methods=['GET'])
         self.app.add_route(self.ping_handler, '/ping', methods=['POST'])
