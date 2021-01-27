@@ -1,29 +1,35 @@
 import os
-from time import perf_counter, sleep
-from functools import partial
-from math import ceil
-from os.path import join as pJoin
 from collections import defaultdict
+from collections.abc import Sequence
 from contextlib import contextmanager
+from functools import partial
+from io import BytesIO
+from math import ceil
+from numbers import Number
+from os.path import join as pJoin
+from time import perf_counter, sleep
+from typing import Any, Union
+from typing import NamedTuple
 
 import numpy as np
-from collections.abc import Sequence
-from io import BytesIO
-from numbers import Number
-from typing import Any, Union
-
-from ml_logger.helpers import Whatever, load_from_pickle, load_from_pickle_file
+from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
 from termcolor import cprint
 from waterbear import DefaultBear
 
-from .helpers.default_set import DefaultSet
-from .full_duplex import Duplex
-from .log_client import LogClient
-from .helpers.print_utils import PrintHelper
-from .helpers.func_helpers import dot_flatten, dot_unflatten
 from .caches.key_value_cache import KeyValueCache
 from .caches.summary_cache import SummaryCache
+from .full_duplex import Duplex
 from .helpers.color_helpers import Color
+from .helpers.default_set import DefaultSet
+from .helpers.print_utils import PrintHelper
+from .log_client import LogClient
+
+
+# todo: move to analysis
+class BinOptions(NamedTuple):
+    key: str
+    n: int = None
+    size: int = None
 
 
 def metrify(data):
@@ -1428,6 +1434,29 @@ class ML_Logger:
         """
         return self.client.read_text(pJoin(self.prefix, *keys))
 
+    def load_jsonl(self, *keys, start=None, stop=None, tries=1, delay=1):
+        path = pJoin(self.prefix, *keys)
+        while tries > 1:
+            try:
+                with BytesIO() as buf:
+                    blobs = self.client.read(path, start, stop)
+                    for blob in blobs:
+                        buf.write(blob)
+                    buf.seek(0)
+                    return list(load_from_jsonl_file(buf))
+            except Exception as e:
+                import random
+                # todo: use separate random generator to avoid mutating global random generator.
+                sleep((1 + random.random() * 0.5) * delay)
+                tries -= 1
+        # last one does not catch.
+        with BytesIO() as buf:
+            chunks = self.client.read(path, start, stop)
+            for chunk in chunks:
+                buf.write(chunk)
+            buf.seek(0)
+            return list(load_from_jsonl_file(buf))
+
     def load_pkl(self, *keys, start=None, stop=None, tries=1, delay=1):
         """
         load a pkl file *as a tuple*. By default, each file would contain 1 data item.
@@ -1770,7 +1799,8 @@ class ML_Logger:
 
     read_params = get_parameters
 
-    def read_metrics(self, *keys, path="metrics.pkl", wd=None, silent=False, default=None, verbose=False):
+    def read_metrics(self, *keys, bin: BinOptions = None, path="metrics.pkl", wd=None, silent=False, default=None,
+                     collect="std", verbose=False):
         """
         Returns a Pandas.DataFrame object that contains metrics from all files.
 
@@ -1780,30 +1810,57 @@ class ML_Logger:
                      If you want to get the joined table for multiple keys, directly filter after
                      this call.
 
+        :param bin: binOption(xKey, n, steps)
         :param path: can contain glob patterns, will return concatenated dataframe from
                      all paths found with the pattern.
         :param silent:
         :param default: Default value for columns. Not widely used.
+        :param collect: One of [ "std", True, False ]
         :param kwargs: Not used besides the default argument.
         :return: pandas.DataFrame or None when no metric file is found.
         """
         import pandas as pd
         from contextlib import ExitStack
 
+        if bin is not None:
+            assert not keys or bin.key in keys, f"bin.key need to be in keys {keys}"
+        if bin.n:
+            assert bin.size is None, f"n and size are exclusive {bin}"
+
+        if keys:
+            meta_keys = defaultdict(list)
+            for k in keys:
+                k, *aggs = k.split("@")
+                meta_keys[k].extend(aggs)
+
+            keys, query_keys = meta_keys.keys(), keys
+
         # todo: remove default from this.
         paths = self.glob(path, wd=wd) if "*" in path else [path]
+        if verbose:
+            print(*paths, sep="\n")
 
         if not paths:
             return None
 
-        all_metrics = []
+        all_metrics = {}
         for path in paths:
             with self.PrefixContext(wd) if wd else ExitStack():
-                metrics = self.load_pkl(path)
+                if path.endswith(".jsonl"):
+                    metrics = self.load_jsonl(path)
+                elif path.endswith(".pkl"):
+                    metrics = self.load_pkl(path)
+                elif path.endswith(".csv"):
+                    metrics = self.load_csv(path)
             if metrics is None:
-                if keys and keys[-1] and "metrics.pkl" in keys[-1]:
+                if keys and keys[-1] and (
+                        ".pkl" in keys[-1] or
+                        ".jsonl" in keys[-1] or
+                        ".csv" in keys[-1]
+                ):
                     self.log_line('Your last key looks like a `metrics.pkl` path. Make '
-                                  'sure you use a keyword argument to specify the path!', color="yellow")
+                                  'sure you use a keyword argument to specify the path!',
+                                  color="yellow")
                 if silent:
                     return
                 raise FileNotFoundError(f'fails to load metric file at {path}')
@@ -1814,14 +1871,60 @@ class ML_Logger:
                 display(HTML(f"""<a href="http://localhost:3001{url}">{path}</a>"""))
                 # self.print(f"loaded:", path, flush=True)
 
-            all_metrics.append(pd.DataFrame(metrics))
+            df = pd.DataFrame(metrics)
+            if keys:
+                df = df[keys].dropna()
 
-        metrics = pd.concat(all_metrics)
+            if bin is not None:
+                if bin.n:
+                    bins = pd.qcut(df[bin.key], bin.n, duplicates="drop")
+                elif bin.size:
+                    bins = pd.cut(df[bin.key], bin.size)
 
+                new_df = {}
+                grouped = df.groupby(bins)
+                for k in keys or df.keys():
+                    if k == bin.key:
+                        new_df[bin.key] = grouped[bin.key].agg('min')
+                    else:
+                        try:
+                            new_df[k] = grouped[k].agg("mean")
+                        except Exception:
+                            new_df[k] = float('nan')
+                df = pd.DataFrame(new_df).reset_index(drop=True)
+
+            all_metrics[path] = pd.DataFrame(df)
+
+        if not keys:
+            return all_metrics
+
+        df = pd.concat(all_metrics.values())
+
+        if bin is not None:
+            df = df.set_index(bin.key).sort_values(by=bin.key).reset_index()
+            if bin.n:
+                bins = pd.qcut(df[bin.key], bin.n, duplicates="drop")
+            elif bin.size:
+                bins = pd.cut(df[bin.key], bin.size)
+        else:
+            bins = df.index
+
+        grouped = df.groupby(bins)
+        new_df = {}
+        for k, aggs in meta_keys.items():
+            if k == bin.key:
+                new_df[k] = grouped[k].agg("min")
+            else:
+                for reduce in ["mean", *aggs]:
+                    new_df[k + "@" + reduce] = grouped[k].agg(reduce)
+
+        df = pd.DataFrame(new_df)
+
+        # apply bin, min@x, mean@y, etc.
         if len(keys) > 1:
-            return [metrics.get(k, default) for k in keys] if default else metrics[list(keys)]
+            return [df.get(k, default or None) for k in query_keys]
         elif len(keys) == 1:
-            return metrics.get(keys[0], default) if default else metrics[keys[0]]
+            return df.get(query_keys[0], default or None)
         return metrics
 
     get_dataframe = read_metrics

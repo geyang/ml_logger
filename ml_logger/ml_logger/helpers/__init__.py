@@ -1,6 +1,6 @@
-from random import randint
-
+import io
 import pickle
+from random import randint
 
 
 class Whatever(pickle.Unpickler):
@@ -49,6 +49,12 @@ def load_from_pickle_file(file, **__):
             yield Whatever(file, **__).load()
         except EOFError:
             break
+
+
+def load_from_jsonl_file(file: io.StringIO, **__):
+    import json
+    for l in file.readlines():
+        yield json.loads(l)
 
 
 def regularize_for_json(obj):

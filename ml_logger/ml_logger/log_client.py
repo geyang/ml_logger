@@ -3,10 +3,10 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 
 from ml_logger.requests import SyncRequests
-from requests_futures.sessions import FuturesSession
 from ml_logger.serdes import serialize, deserialize
 from ml_logger.server import LoggingServer
 from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
+from requests_futures.sessions import FuturesSession
 
 
 # noinspection PyPep8Naming
@@ -105,18 +105,31 @@ class LogClient:
 
     configure = __init__
 
-    def set_session(self, asynchronous, max_workers):
+    def set_session(self, asynchronous, max_workers, proxy=None):
         """
         
         :param asynchronous: bool
         :param max_workers: int for number of workers
         :return: 
         """
+        if proxy is None:
+            import os
+            proxy = os.environ.get('http_proxy', None) or os.environ.get('HTTP_PROXY', None)
+
         self.max_workers = 10 if max_workers is None else max_workers
+
         if asynchronous is True:
             self.session = FuturesSession(ThreadPoolExecutor(max_workers=self.max_workers))
+            if proxy is not None:
+                # conditionally detect proxy setting
+                if proxy.startswith("https://"):
+                    self.session.proxies = {"https": proxy[8:]}
+                elif proxy.startswith("http://"):
+                    self.session.proxies = {"http": proxy[7:]}
+                else:
+                    self.session.proxies = {"http": proxy}
         elif asynchronous is False:
-            self.session = SyncRequests(max_workers=self.max_workers)
+            self.session = SyncRequests(max_workers=self.max_workers, proxy=proxy)
 
     # noinspection PyPep8Naming
     def SyncContext(self, **kwargs):

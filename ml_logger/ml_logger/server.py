@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-import numpy as np
+
 import dill  # done: switch to dill instead
 from ml_logger.helpers import load_from_file
 from ml_logger.serdes import deserialize, serialize
@@ -99,13 +99,23 @@ class LoggingServer:
 
     async def log_handler(self, req):
         import sanic
+        from collections import Sequence
         if not req.json:
             cprint(f'request json is empty: {req.text}', 'red')
             return sanic.response.text("Request json is empty")
         log_entry = LogEntry(**req.json)
-        print("writing: {} type: {} options: {}".format(log_entry.key, log_entry.type, log_entry.options))
+        print(f"writing: {log_entry.key} type: {log_entry.type} options: {log_entry.options}")
         data = deserialize(log_entry.data)
-        options = log_entry.options if log_entry.options is None else LogOptions(*log_entry.options)
+        if not log_entry:
+            options = None
+        elif log_entry.options is None:
+            options = log_entry.options
+        elif isinstance(log_entry.options, Sequence):
+            options = LogOptions(*log_entry.options)
+        elif isinstance(log_entry.options, dict):
+            options = LogOptions(**log_entry.options)
+        else:
+            options = None
         self.log(log_entry.key, data, log_entry.type, options)
         return sanic.response.text('ok')
 

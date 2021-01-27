@@ -24,10 +24,17 @@ class Response:
 
 
 class SyncRequests:
-    def __init__(self, max_workers=1):
+    def __init__(self, max_workers=1, proxy=None, **kwargs):
+        """
+        :param max_workers:
+        :param proxy: only one proxy is supported with urllib3.
+        """
         import urllib3
         retries = urllib3.Retry(connect=5, read=2, redirect=5)
-        self.pool = urllib3.PoolManager(num_pools=max_workers, retries=retries)
+        if proxy:
+            self.pool = urllib3.ProxyManager(proxy_url=proxy, num_pools=max_workers, retries=retries, **kwargs)
+        else:
+            self.pool = urllib3.PoolManager(num_pools=max_workers, retries=retries, **kwargs)
 
     def get(self, *args, json, **kwargs):
         _ = self.pool.request('GET', *args, body=dumps(json).encode('utf-8'), **kwargs)
