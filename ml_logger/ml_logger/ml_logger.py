@@ -6,7 +6,6 @@ from functools import partial
 from io import BytesIO
 from math import ceil
 from numbers import Number
-from os.path import join as pJoin
 from time import perf_counter, sleep
 from typing import Any, Union
 from typing import NamedTuple
@@ -23,6 +22,32 @@ from .helpers.color_helpers import Color
 from .helpers.default_set import DefaultSet
 from .helpers.print_utils import PrintHelper
 from .log_client import LogClient
+
+
+def pJoin(*args):
+    from os.path import join
+    args = [a for a in args if a]
+    if args:
+        return join(*args)
+    return None
+
+
+def now(fmt=None):
+    """
+    This is not idempotent--each call returns a new value. So it has to be a method
+
+    returns a datetime object if no format string is specified.
+    Otherwise returns a formated string.
+
+    Each call returns the current time.
+
+    :param fmt: formating string, i.e. "%Y-%m-%d-%H-%M-%S-%f"
+    :return: OneOf[datetime, string]
+    """
+    # todo: add time zone support
+    from datetime import datetime
+    now = datetime.now().astimezone()
+    return now.strftime(fmt) if fmt else now
 
 
 # todo: move to analysis
@@ -63,13 +88,19 @@ ML_DASH = "http://localhost:3001/{prefix}"
 
 
 @contextmanager
-def _PrefixContext(logger, new_prefix):
+def _PrefixContext(logger, new_prefix=None, metrics=None):
+    old_metrics_prefix = logger.metrics_prefix
     old_prefix = logger.prefix
-    logger.prefix = new_prefix
+
+    if new_prefix:
+        logger.prefix = new_prefix
+    if metrics:
+        logger.metrics_prefix = metrics
     try:
         yield
     finally:
         logger.prefix = old_prefix
+        logger.metrics_prefix = old_metrics_prefix
 
 
 # @contextmanager
@@ -95,27 +126,29 @@ class ML_Logger:
     """
     ML_Logger, a logging utility for ML training.
     ---
-
-
-
     """
     client = None
     root_dir = None
 
     prefix = ""  # is okay b/c strings are immutable in python
+    metrics_prefix = ""
     print_buffer = None  # move initialization to init.
     print_buffer_size = 2048
 
     ### Context Helpers
-    def PrefixContext(self, *praefixa):
+    def Prefix(self, *praefixa, metrics=None):
         """
         Returns a context in which the prefix of the logger is set to `prefix`
         :param praefixa: the new prefix
         :return: context object
         """
-        return _PrefixContext(self, os.path.normpath(pJoin(self.prefix, *praefixa)))
+        try:
+            path_prefix = os.path.normpath(pJoin(self.prefix, *praefixa))
+            return _PrefixContext(self, path_prefix, metrics)
+        except:
+            return _PrefixContext(self, metrics=metrics)
 
-    def SyncContext(self, clean=False, **kwargs):
+    def Sync(self, clean=False, **kwargs):
         """
         Returns a context in which the logger logs synchronously. The new
         synchronous request pool is cached on the logging client, so this
@@ -132,7 +165,7 @@ class ML_Logger:
         """
         return self.client.SyncContext(clean=clean, **kwargs)
 
-    def AsyncContext(self, clean=False, **kwargs):
+    def Async(self, clean=False, **kwargs):
         """
         Returns a context in which the logger logs [a]synchronously. The new
         asynchronous request pool is cached on the logging client, so this
@@ -148,6 +181,10 @@ class ML_Logger:
         :return: context object
         """
         return self.client.AsyncContext(clean=clean, **kwargs)
+
+    PrefixContext = Prefix
+    SyncContext = Sync
+    AsyncContext = Async
 
     def __repr__(self):
         return f'Logger(log_directory="{self.root_dir}",' + "\n" + \
@@ -497,22 +534,9 @@ class ML_Logger:
             else:
                 logger.print(f"{data.mean():0.3E}s", color="green")
 
-    def now(self, fmt=None):
-        """
-        This is not idempotent--each call returns a new value. So it has to be a method
-
-        returns a datetime object if no format string is specified.
-        Otherwise returns a formated string.
-
-        Each call returns the current time.
-
-        :param fmt: formating string, i.e. "%Y-%m-%d-%H-%M-%S-%f"
-        :return: OneOf[datetime, string]
-        """
-        # todo: add time zone support
-        from datetime import datetime
-        now = datetime.now().astimezone()
-        return now.strftime(fmt) if fmt else now
+    @staticmethod
+    def now(fmt=None):
+        return now(fmt)
 
     def truncate(self, path, depth=-1):
         """
@@ -846,8 +870,8 @@ class ML_Logger:
         metrics = metrics.copy() if metrics else {}
         if _key_values:
             metrics.update(_key_values)
-        if _prefix:
-            metrics = {_prefix + k: v for k, v in metrics.items()}
+        if _prefix or self.metrics_prefix:
+            metrics = {(_prefix or self.metrics_prefix) + k: v for k, v in metrics.items()}
         metrics.update({"__timestamp": timestamp})
         cache.update(metrics)
         if silent:
@@ -1232,7 +1256,7 @@ class ML_Logger:
         for k, v in items:
             if hasattr(v, "size"):
                 size = np.prod(v.size()) if torch.is_tensor(v) else v.size
-                assert size < chunk, "individual weight tensors need to be smaller than the chunk size"
+                assert size < chunk, f"weight tensors {k}({size}) is larger than the chunk size"
                 if total_size + size > chunk:
                     self.log_data(data=data_chunk, path=path, overwrite=False if size else True)
                     total_size = size
@@ -1245,7 +1269,7 @@ class ML_Logger:
 
         return self.log_data(data=data_chunk, path=path, overwrite=False)
 
-    def read_state_dict(self, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None):
+    def read_state_dict(self, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None, map_location=None):
         if "*" in path:
             all_paths = self.glob(path, wd=wd)
             if len(all_paths) == 0:
@@ -1254,10 +1278,17 @@ class ML_Logger:
 
         state_dict = {}
         for chunk in (self.iload_pkl if stream else self.load_pkl)(path, tries=tries):
-            state_dict.update(chunk)
+            if map_location is None:
+                state_dict.update(chunk)
+            else:
+                for k, v in chunk.items():
+                    try:
+                        state_dict[k] = v.to(map_location)
+                    except:
+                        state_dict[k] = v
         return state_dict
 
-    def load_module(self, module, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None):
+    def load_module(self, module, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None, map_location=None):
         """
         Load torch module from file.
 
@@ -1311,7 +1342,8 @@ class ML_Logger:
                         def matcher(checkpoint_dict, key, current_dict):
         :return: None
         """
-        state_dict = self.read_state_dict(path=path, wd=wd, stream=stream, tries=tries, matcher=matcher)
+        state_dict = self.read_state_dict(path=path, wd=wd, stream=stream, tries=tries, matcher=matcher,
+                                          map_location=map_location)
         assert state_dict, f"the datafile can not be empty: [state_dict == {{{state_dict.keys()}...}}]"
 
         module.load_state_dict(state_dict)
@@ -1824,8 +1856,8 @@ class ML_Logger:
 
         if bin is not None:
             assert not keys or bin.key in keys, f"bin.key need to be in keys {keys}"
-        if bin.n:
-            assert bin.size is None, f"n and size are exclusive {bin}"
+            if bin.n:
+                assert bin.size is None, f"n and size are exclusive {bin}"
 
         if keys:
             meta_keys = defaultdict(list)
@@ -1833,7 +1865,7 @@ class ML_Logger:
                 k, *aggs = k.split("@")
                 meta_keys[k].extend(aggs)
 
-            keys, query_keys = meta_keys.keys(), keys
+            keys, query_keys = [*meta_keys.keys()], keys
 
         # todo: remove default from this.
         paths = self.glob(path, wd=wd) if "*" in path else [path]
@@ -1912,7 +1944,7 @@ class ML_Logger:
         grouped = df.groupby(bins)
         new_df = {}
         for k, aggs in meta_keys.items():
-            if k == bin.key:
+            if (k == bin.key if bin else keys[0]):
                 new_df[k] = grouped[k].agg("min")
             else:
                 for reduce in ["mean", *aggs]:

@@ -84,6 +84,13 @@ def test(setup):
     logger.log({"some_var/smooth": 10}, some=Color(0.85, 'yellow', percent), step=3)
     logger.log(step=4, some=Color(10, 'yellow'))
 
+def test_metrics_prefix(setup):
+    from ml_logger import logger
+
+    with logger.Prefix(metrics="evaluate/"):
+        logger.log(loss=0.5, flush=True)
+
+    assert logger.read_metrics("evaluate/loss", )[0] == 0.5
 
 def test_json(setup):
     a = dict(a=0)
