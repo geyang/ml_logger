@@ -228,7 +228,7 @@ class LoggingServer:
             return None
         except OSError as e:
             import shutil
-            shutil.rmtree(abs_path)
+            return shutil.rmtree(abs_path, ignore_errors=True)
 
     def log(self, key, data, dtype, options: LogOptions = None):
         """
