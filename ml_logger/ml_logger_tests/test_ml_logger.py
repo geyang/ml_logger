@@ -30,7 +30,7 @@ from ml_logger.helpers.color_helpers import percent
 
 @pytest.fixture(scope='session')
 def log_dir(request):
-    return request.config.getoption('--log-dir')
+    return request.config.getoption('--logdir')
 
 
 @pytest.fixture(scope="session")

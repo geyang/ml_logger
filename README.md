@@ -29,9 +29,8 @@ To **install** `ml_logger`, do:
 pip install ml-logger
 ```
 
-> Note: we need the following graphene version.
-> I am in the process of updating the version of
-> the dependencies.
+> The landscape of python modules is a lot messier than that of javascript. The most up-to-date `graphene` requires the following versions:
+> 
 > ```
 > yes | pip install graphene==2.1.3
 > yes | pip install graphql-core==2.1
@@ -73,6 +72,7 @@ python -m ml_logger.server
 ```
 Use ssh tunnel if you are running on a managed cluster (with SLURM for instance).
 **Important**: to set allow remote logging, you need to pass in `--host=0.0.0.0` so that the server accepts non-localhost connections.
+
 ```bash
 python -m ml_logger.server --host=0.0.0.0
 ```
@@ -216,7 +216,7 @@ def im(x, y):
 frames = [im(100 + i, 80) for i in range(20)]
 
 logger.log_video(frames, "test_video.mp4")
-``` 
+```
 
 ### Saving PyTorch Modules
 

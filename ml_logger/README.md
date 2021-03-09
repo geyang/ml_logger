@@ -18,7 +18,7 @@ ML-logger is highly performant -- the remote writes are asynchronous. For this r
 even with 100+ metric keys.
 
 Why did we built this, you might ask? Because we want to make it easy for people in ML to 
-use the same logging code in all of they projects, so that it is easy to get started with 
+use the same logging code in all of their projects, so that it is easy to get started with 
 someone else's baseline.
 
 
@@ -60,6 +60,10 @@ for i in range(1):
 ```bash
 python -m ml_logger.server --log-dir /home/yourname/ml-logger-debug --host 0.0.0.0 --port 8081
 ```
+The logging server uses the `sanic` framework, which means defaults to `sanic`, such as maximum request size are carried over. 
+
+When using `ml-logger` to save and load **very large** `pytorch` checkpoints, you need  to raise `sanic`'s default request size limit from 100MB to something like a gigabyte or even larger. The file upload is done using multi-part form upload, where each query is kept small. However sanic will throw if the overall size of the query exceeds this parameter `SANIC_REQUEST_MAX_SIZE=1000_000_000`. The default is `100_000_000`, or 100MB.
+
 Use ssh tunnel if you are running on a managed cluster.
 
 ## Allowing Non-local Requests
@@ -215,7 +219,7 @@ def im(x, y):
 frames = [im(100 + i, 80) for i in range(20)]
 
 logger.log_video(frames, "test_video.mp4")
-``` 
+```
 
 ## Saving PyTorch Modules
 

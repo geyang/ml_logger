@@ -60,7 +60,7 @@ def update_graph_live(n):
 
 
 def log(req):
-    return req.Response(text='ok')
+    return req.xResponse(text='ok')
 
 
 if __name__ == '__main__':

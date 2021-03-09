@@ -2,7 +2,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 
-from ml_logger.requests import SyncRequests
+from ml_logger.requests import xSyncRequests, SyncRequests
 from ml_logger.serdes import serialize, deserialize
 from ml_logger.server import LoggingServer
 from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
@@ -35,29 +35,6 @@ def _SyncContext(logger, clean=False, max_workers=None):
         logger.session = old_session
 
 
-@contextmanager
-def _AsyncContext(logger, clean=False, max_workers=None):
-    """
-    Context function for Asynchronous network sessions
-
-    :param logger: logger object
-    :param clean: remove sync_pool after __exit__()
-    :param max_workers: urllib3 max_workers field
-    :return:
-    """
-    old_session = logger.session
-    if isinstance(old_session, FuturesSession):
-        logger.async_pool = old_session
-    if logger.async_pool:
-        logger.session = logger.async_pool
-    else:
-        logger.set_session(True, max_workers or logger.max_workers)
-        if not clean:
-            logger.async_pool = logger.session
-    try:
-        yield
-    finally:
-        logger.session = old_session
 
 
 class LogClient:
@@ -93,6 +70,7 @@ class LogClient:
         elif url.startswith('http://'):
             self.local_server = None  # remove local server to use sessions.
             self.url = url
+            self.stream_url = os.path.join(url, "stream")
             self.ping_url = os.path.join(url, "ping")
             self.glob_url = os.path.join(url, "glob")
             # when setting sessions the first time, default to use Asynchronous Session.
@@ -120,16 +98,8 @@ class LogClient:
 
         if asynchronous is True:
             self.session = FuturesSession(ThreadPoolExecutor(max_workers=self.max_workers))
-            if proxy is not None:
-                # conditionally detect proxy setting
-                if proxy.startswith("https://"):
-                    self.session.proxies = {"https": proxy[8:]}
-                elif proxy.startswith("http://"):
-                    self.session.proxies = {"http": proxy[7:]}
-                else:
-                    self.session.proxies = {"http": proxy}
         elif asynchronous is False:
-            self.session = SyncRequests(max_workers=self.max_workers, proxy=proxy)
+            self.session = SyncRequests()
 
     # noinspection PyPep8Naming
     def SyncContext(self, **kwargs):
@@ -171,7 +141,36 @@ class LogClient:
             json = LogEntry(key, serialize(data), dtype, options)._asdict()
             self.session.post(self.url, json=json)
 
-    def _glob(self, query, **kwargs):
+    def stream_download(self, key):
+        import io
+        buf = io.BytesIO()
+        if self.local_server:
+            for d in self.local_server.load(key, dtype="byte"):
+                buf.write(d)
+            buf.seek(0)
+            return buf
+        else:
+            import requests
+            from requests_toolbelt.downloadutils import stream
+
+            json = LoadEntry(key, "byte")._asdict()
+            # note: reading stuff from the server is always synchronous.
+            #  with (future) sessions, this is forced by the result call.
+            r = self.session.get(self.stream_url, json=json, stream=True)
+            assert stream.stream_response_to_file(r.result(), path=buf) is None
+            buf.seek(0)
+            return buf
+
+    def multipart_upload(self, key, buf, **options):
+        if self.local_server:
+            self.local_server.log(key, buf.read(), 'byte', LogOptions(**options))
+        else:
+            from requests_toolbelt import MultipartEncoder
+            import json
+            encoder = MultipartEncoder({'file': (key, buf), 'dtype': 'byte', "options": json.dumps(options)})
+            self.session.post(self.url, data=encoder, headers={'Content-Type': encoder.content_type})
+
+    def glob(self, query, **kwargs):
         if self.local_server:
             return self.local_server.glob(query, **kwargs)
         else:
@@ -180,7 +179,7 @@ class LogClient:
             res = self.session.post(self.glob_url, json=json).result()
             return res.json()
 
-    def _delete(self, key):
+    def delete(self, key):
         if self.local_server:
             self.local_server.remove(key)
         else:
@@ -210,23 +209,23 @@ class LogClient:
 
     # Reads binary data
     def read(self, key, start=None, stop=None):
-        return self._get(key, dtype="read", start=start, stop=stop)
+        return self._get(key, dtype="byte", start=start, stop=stop)
 
     def read_text(self, key):
-        return self._get(key, dtype="read_text")
+        return self._get(key, dtype="text")
 
     # Reads binary data
     def read_pkl(self, key, start=None, stop=None):
-        return self._get(key, dtype="read_pkl", start=start, stop=stop)
+        return self._get(key, dtype="pkl", start=start, stop=stop)
 
     def read_np(self, key):
-        return self._get(key, dtype="read_np")
+        return self._get(key, dtype="np")
 
     def read_json(self, key):
-        return self._get(key, dtype="read_json")
+        return self._get(key, dtype="json")
 
     def read_h5(self, key):
-        return self._get(key, dtype="read_h5")
+        return self._get(key, dtype="h5")
 
     # read_buffer is an alias of read, which returns the buffer.
     read_buffer = read
@@ -253,6 +252,4 @@ class LogClient:
     def log_buffer(self, key, buf, **options):
         # defaults to overwrite for binary data.
         self._log(key, buf, dtype="byte", options=LogOptions(**options))
-
-    def glob(self, query, **kwargs):
-        return self._glob(query, **kwargs)
+        # self._multipart(key, buf, options=LogOptions(**options))

@@ -50,6 +50,14 @@ def load_from_pickle_file(file, **__):
         except EOFError:
             break
 
+def load_from_torch_file(file, **kwargs):
+    import torch
+    while True:
+        try:
+            yield torch.load(file, **kwargs)
+        except EOFError:
+            break
+
 
 def load_from_jsonl_file(file: io.StringIO, **__):
     import json

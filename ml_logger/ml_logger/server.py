@@ -27,11 +27,23 @@ class LoggingServer:
         self.app = sanic.Sanic("ml_logger.server")
         self.app.add_route(self.log_handler, '/', methods=['POST'])
         self.app.add_route(self.read_handler, '/', methods=['GET'])
+        self.app.add_route(self.stream_handler, '/stream', methods=['GET'])
         self.app.add_route(self.ping_handler, '/ping', methods=['POST'])
         self.app.add_route(self.glob_handler, '/glob', methods=['POST'])
         self.app.add_route(self.remove_handler, '/', methods=['DELETE'])
         # todo: need a file serving url
         self.app.run(host=host, port=port, workers=workers, debug=Params.debug)
+
+    async def stream_handler(self, req):
+        import sanic
+        if not req.json:
+            msg = f'request json is empty: {req.text}'
+            print(msg)
+            return sanic.response.text(msg)
+        load_entry = LoadEntry(**req.json)
+        print(f"streaming: {load_entry.key}")
+        path = os.path.join(self.data_dir, load_entry.key)
+        return await sanic.response.file_stream(path)
 
     async def ping_handler(self, req):
         import sanic
@@ -49,7 +61,7 @@ class LoggingServer:
         self.log(status_path, dict(status=status, time=datetime.now()), dtype="yaml",
                  options=LogOptions(overwrite=True, write_mode='key'))
         signal_path = os.path.join(exp_key, '__signal.pkl')
-        res = self.load(signal_path, 'read_pkl')
+        res = self.load(signal_path, 'pkl')
         if burn:
             self.remove(signal_path)
         return serialize(res)
@@ -100,7 +112,13 @@ class LoggingServer:
     async def log_handler(self, req):
         import sanic
         from collections import Sequence
-        if not req.json:
+        req.files.keys()
+        if req.files:
+            file, = req.files['file']
+            print(f"uploading: {file.name} len: {len(file.body)}")
+            self.log(file.name, file.body, "byte", LogOptions(overwrite=True))
+            return sanic.response.text('ok')
+        elif not req.json:
             cprint(f'request json is empty: {req.text}', 'red')
             return sanic.response.text("Request json is empty")
         log_entry = LogEntry(**req.json)
@@ -157,53 +175,53 @@ class LoggingServer:
         "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
 
         Modes:
-            "read": returns the binary string.
-            "read_text": returns the file's content as plain-text
-            "read_pkl": reads the content of a pickle file
-            "read_np": reads the content of numpy file.
+            "byte": returns the binary string.
+            "text": returns the file's content as plain-text
+            "pkl": reads the content of a pickle file
+            "np": reads the content of numpy file.
 
         Note: We might want to do the hydration of the pickle and numpy files on the client-side.
         This way we only send the serilized data over-the-wire.
 
         :param key: a path string
-        :param dtype: (str), one of "read", "read_text", "read_pickle", "read_np"
+        :param dtype: (str), one of "byte", "text", "pickle", "np"
         :param start: end index
         :param stop: start index
         :return: None, or a tuple of each one of the data chunks logged into the file.
         """
         key = key[1:] if key.startswith("/") else key
         abs_path = os.path.join(self.data_dir, key)
-        if dtype == 'read':
+        if dtype == 'byte':
             try:
                 return list(load_from_file(abs_path))[start:stop]
             except FileNotFoundError as e:
                 return None
-        elif dtype == 'read_text':
+        elif dtype == 'text':
             try:
                 with open(abs_path, 'r') as f:
                     return f.read()
             except FileNotFoundError as e:
                 return None
-        elif dtype == 'read_pkl':
+        elif dtype == 'pkl':
             from .helpers import load_from_pickle
             try:
                 return list(load_from_pickle(abs_path))[start:stop]
             except FileNotFoundError as e:
                 return None
-        elif dtype == 'read_np':
+        elif dtype == 'np':
             import numpy
             try:
                 return numpy.load(abs_path)
             except FileNotFoundError as e:
                 return None
-        elif dtype == 'read_json':
+        elif dtype == 'json':
             import json
             try:
                 with open(abs_path, 'r') as f:
                     return json.load(f)
             except Exception as e:
                 return None
-        elif dtype == 'read_h5':
+        elif dtype == 'h5':
             import h5py
             file_path, *object_keys = abs_path.split(":")
             try:
@@ -211,8 +229,6 @@ class LoggingServer:
                     return tuple(f[key] for key in object_keys)
             except FileNotFoundError as e:
                 return None
-        elif dtype == 'read_image':
-            raise NotImplementedError('reading images is not implemented.')
 
     def remove(self, key):
         """
@@ -329,7 +345,7 @@ if __name__ == '__main__':
 
     @cli_parse
     class Params:
-        data_dir = Proto("/tmp/logging-server", help="The directory for saving the logs")
+        logdir = Proto("/tmp/logging-server", help="The directory for saving the logs")
         port = Proto(8081, help="port for the logging server")
         host = Proto("127.0.0.1", help="IP address for running the server. Default only allows localhost from making "
                                        "requests. If you want to allow all ip, set this to '0.0.0.0'.")
@@ -341,5 +357,5 @@ if __name__ == '__main__':
 
     v = pkg_resources.get_distribution("ml_logger").version
     print('running ml_logger.server version {}'.format(v))
-    server = LoggingServer(data_dir=Params.data_dir)
+    server = LoggingServer(data_dir=Params.logdir)
     server.serve(host=Params.host, port=Params.port, workers=Params.workers)

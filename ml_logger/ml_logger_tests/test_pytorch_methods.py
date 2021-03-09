@@ -2,10 +2,11 @@
 In this file we test the tensorflow specific logging methods.
 """
 import pytest
+import torch.nn as nn
+
 from ml_logger import logger
 from ml_logger_tests.test_ml_logger import setup, log_dir
 from ml_logger_tests.conftest import LOCAL_TEST_DIR
-import torch.nn as nn
 
 
 class View(nn.Module):
@@ -44,8 +45,26 @@ demo_module = nn.Sequential(
 )
 
 
+def test_torch_save(setup):
+    logger.torch_save(demo_module, "modules/test_torch_save.pkl")
+
+
+def test_torch_load(setup):
+    with logger.Sync():
+        test_torch_save(setup)
+    module = logger.torch_load("modules/test_torch_save.pkl")
+    print(module)
+
+
+def test_torch_load_sync(setup):
+    with logger.Sync():
+        test_torch_save(setup)
+        module = logger.torch_load("modules/test_torch_save.pkl")
+    print(module)
+
+
 def test_module(setup):
-    logger.save_module(demo_module, "modules/test_module.pkl", show_progress=True)
+    logger.save_module(demo_module, "modules/test_module.pkl")
 
 
 def xtest_modules(setup):

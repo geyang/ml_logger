@@ -754,7 +754,7 @@ class ML_Logger:
         paths = self.glob(path, wd=None) if "*" in path else [path]
         for p in paths or []:
             abs_path = pJoin(self.prefix, p)
-            self.client._delete(abs_path)
+            self.client.delete(abs_path)
 
     def log_params(self, path="parameters.pkl", silent=False, **kwargs):
         """
@@ -1206,7 +1206,7 @@ class ML_Logger:
         """
         return self.save_pyplot(path=key, fig=fig, format=format, **kwargs)
 
-    def save_module(self, module, path="weights.pkl", chunk=100_000, show_progress=False):
+    def save_module(self, module, path="weights.pkl"):
         """
         Save torch module. Overwrites existing file.
 
@@ -1229,15 +1229,9 @@ class ML_Logger:
 
         :param module: the PyTorch module to be saved.
         :param path: filename to which we save the module.
-        :param chunk: chunk size for the tensor, measured in number of tensor entries.
-        :param show_progress: boolean flag, default to False. Displays a progress bar when trueful. If the type
-            is string, then use this as the description for the progress bar.
-
-            Default progress description text is the file key to which we are writing.
 
         :return: None
         """
-        import torch
 
         # todo: why did pytorch moved to a zip-based format?
         if hasattr(module, "state_dict"):
@@ -1247,27 +1241,7 @@ class ML_Logger:
         else:
             raise AttributeError('module does not have `.state_dict` attribute or a valid `.module`.')
 
-        items = state_dict.items()
-        if show_progress:
-            from tqdm import tqdm
-            items = tqdm(items, desc=show_progress if isinstance(show_progress, str) else path[-24:])
-
-        total_size, data_chunk = 0, {}
-        for k, v in items:
-            if hasattr(v, "size"):
-                size = np.prod(v.size()) if torch.is_tensor(v) else v.size
-                assert size < chunk, f"weight tensors {k}({size}) is larger than the chunk size"
-                if total_size + size > chunk:
-                    self.log_data(data=data_chunk, path=path, overwrite=False if size else True)
-                    total_size = size
-                    data_chunk = {k: v}
-                else:
-                    total_size += size
-                    data_chunk[k] = v
-            else:
-                data_chunk[k] = v
-
-        return self.log_data(data=data_chunk, path=path, overwrite=False)
+        return self.save_torch(state_dict, path=path)
 
     def read_state_dict(self, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None, map_location=None):
         if "*" in path:
@@ -1276,19 +1250,10 @@ class ML_Logger:
                 raise FileNotFoundError(f"Path matching {path} is not found")
             path = pJoin(wd or "", sorted(all_paths)[-1])
 
-        state_dict = {}
-        for chunk in (self.iload_pkl if stream else self.load_pkl)(path, tries=tries):
-            if map_location is None:
-                state_dict.update(chunk)
-            else:
-                for k, v in chunk.items():
-                    try:
-                        state_dict[k] = v.to(map_location)
-                    except:
-                        state_dict[k] = v
-        return state_dict
+        return self.load_torch(path, map_location=map_location)
 
-    def load_module(self, module, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None, map_location=None):
+    def load_module(self, module, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None,
+                    map_location=None):
         """
         Load torch module from file.
 
@@ -1488,6 +1453,24 @@ class ML_Logger:
                 buf.write(chunk)
             buf.seek(0)
             return list(load_from_jsonl_file(buf))
+
+    def save_torch(self, obj, *keys, path=None):
+        path = pJoin(self.prefix, *keys, path)
+        import io, torch
+        buf = io.BytesIO()
+        torch.save(obj, buf)
+        buf.seek(0)
+        self.client.multipart_upload(key=path, buf=buf, overwrite=True)
+
+    torch_save = save_torch
+
+    def load_torch(self, *keys, path=None, tries=1, delay=1, map_location=None, **kwargs):
+        import torch
+        path = pJoin(self.prefix, *keys, path)
+        buf = self.client.stream_download(path)
+        return torch.load(buf, map_location=map_location, **kwargs)
+
+    torch_load = load_torch
 
     def load_pkl(self, *keys, start=None, stop=None, tries=1, delay=1):
         """

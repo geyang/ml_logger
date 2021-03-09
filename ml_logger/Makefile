@@ -35,9 +35,9 @@ publish: convert-rst test
 test:
 	python -m pytest ml_logger_tests --capture=no
 start-test-server:
-	python -m ml_logger.server --log-dir /tmp/ml-logger-debug
+	python -m ml_logger.server --logdir /tmp/ml-logger-debug
 test-with-server:
-	python -m pytest ml_logger_tests --capture=no --log-dir http://0.0.0.0:8081
+	python -m pytest ml_logger_tests --capture=no --logdir http://0.0.0.0:8081
 deploy-vis-app:
 	git subtree push --prefix ml-vis-app/build ml-vis-ghpage gh-pages
 deploy-vis-app-force:
