@@ -46,6 +46,7 @@ demo_module = nn.Sequential(
 
 
 def test_torch_save(setup):
+    logger.remove("modules/test_torch_save.pkl")
     logger.torch_save(demo_module, "modules/test_torch_save.pkl")
 
 

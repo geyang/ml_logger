@@ -1,8 +1,9 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from io import BytesIO, StringIO
 
-from ml_logger.requests import xSyncRequests, SyncRequests
+from ml_logger.requests import SyncRequests
 from ml_logger.serdes import serialize, deserialize
 from ml_logger.server import LoggingServer
 from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
@@ -33,8 +34,6 @@ def _SyncContext(logger, clean=False, max_workers=None):
         yield
     finally:
         logger.session = old_session
-
-
 
 
 class LogClient:
@@ -142,15 +141,13 @@ class LogClient:
             self.session.post(self.url, json=json)
 
     def stream_download(self, key):
-        import io
-        buf = io.BytesIO()
+        buf = BytesIO()
         if self.local_server:
             for d in self.local_server.load(key, dtype="byte"):
                 buf.write(d)
             buf.seek(0)
             return buf
         else:
-            import requests
             from requests_toolbelt.downloadutils import stream
 
             json = LoadEntry(key, "byte")._asdict()
@@ -161,14 +158,56 @@ class LogClient:
             buf.seek(0)
             return buf
 
-    def multipart_upload(self, key, buf, **options):
-        if self.local_server:
-            self.local_server.log(key, buf.read(), 'byte', LogOptions(**options))
-        else:
+    def save_buffer(self, buffer, key):
+        # proxy = os.environ.get('HTTP_PROXY')
+        # c.setopt(c.PROXY, proxy)
+        # logger.print('proxy:', proxy)
+        if isinstance(buffer, BytesIO):
             from requests_toolbelt import MultipartEncoder
-            import json
-            encoder = MultipartEncoder({'file': (key, buf), 'dtype': 'byte', "options": json.dumps(options)})
+            encoder = MultipartEncoder({'file': (key, buf), 'canary': true})
             self.session.post(self.url, data=encoder, headers={'Content-Type': encoder.content_type})
+        elif isinstance(buffer, StringIO):
+            from pycurl import Curl
+            c = Curl()
+            c.setopt(c.URL, self.url)
+            c.setopt(c.TIMEOUT, 3600)
+            c.setopt(c.HTTPPOST, [
+                ('file', (
+                    c.FORM_BUFFER, source_path,
+                    c.FORM_BUFFERPTR, buffer.read(),
+                    c.FORM_CONTENTTYPE, 'plain/text',
+                )),
+            ])
+            c.perform()
+            c.close()
+
+    def save_file(self, source_path, key):
+        """
+
+        :param source_path: is relative to the local file system.
+        :param key: the key is relative to the current prefix.
+        :return:
+        """
+        if self.local_server:
+            if source_path.startswith('/'):
+                source_path = "/" + source_path
+            return self.local_server.copy(source_path, key)
+        # proxy = os.environ.get('HTTP_PROXY')
+        # c.setopt(c.PROXY, proxy)
+        # logger.print('proxy:', proxy)
+        from pycurl import Curl
+        c = Curl()
+        c.setopt(c.URL, self.url)
+        c.setopt(c.TIMEOUT, 3600)
+        c.setopt(c.HTTPPOST, [
+            ('file', (
+                c.FORM_FILE, source_path,
+                c.FORM_FILENAME, key,
+                c.FORM_CONTENTTYPE, 'plain/text',
+            )),
+        ])
+        c.perform()
+        c.close()
 
     def glob(self, query, **kwargs):
         if self.local_server:

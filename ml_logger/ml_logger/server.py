@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from io import BytesIO
 
 import dill  # done: switch to dill instead
 from ml_logger.helpers import load_from_file
@@ -112,12 +113,11 @@ class LoggingServer:
     async def log_handler(self, req):
         import sanic
         from collections import Sequence
-        req.files.keys()
         if req.files:
             file, = req.files['file']
             print(f"uploading: {file.name} len: {len(file.body)}")
             self.log(file.name, file.body, "byte", LogOptions(overwrite=True))
-            return sanic.response.text('ok')
+            return sanic.response.json(dict(name=file.name, length=len(file.body), overwrite=True))
         elif not req.json:
             cprint(f'request json is empty: {req.text}', 'red')
             return sanic.response.text("Request json is empty")
@@ -245,6 +245,36 @@ class LoggingServer:
         except OSError as e:
             import shutil
             return shutil.rmtree(abs_path, ignore_errors=True)
+
+    def copy(self, src, target):
+        import shutil
+        assert isinstance(src, str), "src needs to be a string"
+
+        if target.startswith('/'):
+            target = target[1:]
+        if src.startswith('/'):
+            src = src[1:]
+
+        abs_target = os.path.join(self.data_dir, target)
+        abs_src = os.path.join(self.data_dir, src)
+        os.makedirs(os.path.dirname(abs_target), exist_ok=True)
+        shutil.copyfile(abs_src, abs_target, follow_symlinks=True)
+        return target
+
+    def save_buffer(self, key, buff):
+        assert isinstance(src, BytesIO), f"buff needs to be a BytesIO object."
+        if target.startswith('/'):
+            target = target[1:]
+
+        abs_target = os.path.join(self.data_dir, target)
+
+        with open(abs_target, 'wb') as t:
+            while True:
+                content = src.read()
+                if content == b"":
+                    break
+                t.write(content)
+        return target
 
     def log(self, key, data, dtype, options: LogOptions = None):
         """

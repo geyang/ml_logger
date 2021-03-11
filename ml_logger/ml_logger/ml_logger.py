@@ -1456,11 +1456,12 @@ class ML_Logger:
 
     def save_torch(self, obj, *keys, path=None):
         path = pJoin(self.prefix, *keys, path)
-        import io, torch
-        buf = io.BytesIO()
-        torch.save(obj, buf)
-        buf.seek(0)
-        self.client.multipart_upload(key=path, buf=buf, overwrite=True)
+        import torch
+        from tempfile import NamedTemporaryFile
+        with NamedTemporaryFile(delete=True) as tfile:
+            torch.save(obj, tfile)
+            tfile.seek(0)
+            self.client.save_file(source_path=tfile.name, key=path)
 
     torch_save = save_torch
 
