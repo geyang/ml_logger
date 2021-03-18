@@ -7,9 +7,8 @@ from params_proto import cli_parse, Proto
 # gets current directory
 BASE = os.path.realpath(__file__)
 build_path = os.path.join(os.path.dirname(BASE), "client-dist")
-print(build_path)
 
-app = Sanic("ml_logger.app")
+app = Sanic("ml_dash.app")
 # serve js file for webpack
 app.static('/', build_path)
 

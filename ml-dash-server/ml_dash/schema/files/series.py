@@ -176,10 +176,11 @@ def get_series(metrics_files=tuple(),
 
         # todo: only dropna if we are not using ranges. <need to test>
         try:
+            column = df[join_keys]
             if head is None and tail is None:
-                dataframes.append(df[join_keys].dropna())
+                dataframes.append(column.dropna())
             else:
-                dataframes.append(df[join_keys])
+                dataframes.append(column)
         except KeyError as e:
             raise KeyError(f"{join_keys} contain keys that is not in the dataframe. "
                            f"Keys available include {df.keys()}") from e
