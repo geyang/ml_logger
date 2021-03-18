@@ -27,7 +27,6 @@ def setup_static(app, loop):
     app.static('/files', expanduser(config.Args.logdir),
                use_modified_since=True, use_content_range=True, stream_large_files=True)
 
-
 # note: currently disabled, file events API.
 # from .file_events import file_events, setup_watch_queue
 # app.add_route(file_events, '/file-events', methods=['GET', 'OPTIONS'])
