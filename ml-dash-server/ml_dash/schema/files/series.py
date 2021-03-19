@@ -1,10 +1,22 @@
-from os.path import split, realpath, join, isabs
-from graphene import relay, ObjectType, String, List, JSONString, ID, Enum, Date, Time, DateTime, Int, Float, Union
-from graphene.types.generic import GenericScalar
-from ml_dash.config import Args
-from ml_dash.schema.files.file_helpers import find_files, read_records, read_dataframe
+from os.path import join, isabs
+
 import numpy as np
 import pandas as pd
+from graphene import relay, ObjectType, String, List, ID, Int, Float
+from graphene.types.generic import GenericScalar
+from ml_dash.config import Args
+from ml_dash.schema.files.file_helpers import read_dataframe
+
+
+def get_column(df, key, stat_key):
+    try:
+        return df[key][stat_key].to_numpy().tolist()
+    except:
+        return []
+
+
+def get_columns(df, keys, stat_key):
+    return {k: get_column(df, k, stat_key) for k in keys}
 
 
 class Series(ObjectType):
@@ -60,8 +72,8 @@ class Series(ObjectType):
 
     def resolve_y_mean(self, info):
         if self.y_key is not None:
-            return self._df[self.y_key]['mean'].to_numpy().tolist()
-        return {k: self._df[k]['mean'].to_numpy().tolist() for k in self.y_keys}
+            return get_column(self._df, self.y_key, 'mean')
+        return get_columns(self._df, self.y_keys, 'mean')
 
     # def resolve_y_mode(self, info):
     #     if self.y_key is not None:
@@ -70,43 +82,43 @@ class Series(ObjectType):
 
     def resolve_y_min(self, info):
         if self.y_key is not None:
-            return self._df[self.y_key]['min'].to_numpy().tolist()
-        return {k: self._df[k]['min'].to_numpy().tolist() for k in self.y_keys}
+            return get_column(self._df, self.y_key, 'min')
+        return get_columns(self._df, self.y_keys, 'min')
 
     def resolve_y_max(self, info):
         if self.y_key is not None:
-            return self._df[self.y_key]['max'].to_numpy().tolist()
-        return {k: self._df[k]['max'].to_numpy().tolist() for k in self.y_keys}
+            return get_column(self._df, self.y_key, 'max')
+        return get_columns(self._df, self.y_keys, 'max')
 
     def resolve_y_median(self, info):
         if self.y_key is not None:
-            return self._df[self.y_key]['50%'].to_numpy().tolist()
-        return {k: self._df[k]['50%'].to_numpy().tolist() for k in self.y_keys}
+            return get_column(self._df, self.y_key, '50%')
+        return get_columns(self._df, self.y_keys, '50%')
 
     def resolve_y_25pc(self, info):
         if self.y_key is not None:
-            return self._df[self.y_key]['25%'].to_numpy().tolist()
-        return {k: self._df[k]['25%'].to_numpy().tolist() for k in self.y_keys}
+            return get_column(self._df, self.y_key, '25%')
+        return get_columns(self._df, self.y_keys, '25%')
 
     def resolve_y_75pc(self, info):
         if self.y_key is not None:
-            return self._df[self.y_key]['75%'].to_numpy().tolist()
-        return {k: self._df[k]['75%'].to_numpy().tolist() for k in self.y_keys}
+            return get_column(self._df, self.y_key, '75%')
+        return get_columns(self._df, self.y_keys, '75%')
 
     def resolve_y_95pc(self, info):
         if self.y_key is not None:
-            return self._df[self.y_key]['95%'].to_numpy().tolist()
-        return {k: self._df[k]['95%'].to_numpy().tolist() for k in self.y_keys}
+            return get_column(self._df, self.y_key, '95%')
+        return get_columns(self._df, self.y_keys, '95%')
 
     def resolve_y_05pc(self, info):
         if self.y_key is not None:
-            return self._df[self.y_key]['5%'].to_numpy().tolist()
-        return {k: self._df[k]['5%'].to_numpy().tolist() for k in self.y_keys}
+            return get_column(self._df, self.y_key, '5%')
+        return get_columns(self._df, self.y_keys, '5%')
 
     def resolve_y_count(self, info):
         if self.y_key is not None:
-            return self._df[self.y_key]['count'].to_numpy().tolist()
-        return {k: self._df[k]['count'].to_numpy().tolist() for k in self.y_keys}
+            return get_column(self._df, self.y_key, 'count')
+        return get_columns(self._df, self.y_keys, 'count')
 
     @classmethod
     def get_node(cls, info, id):
@@ -143,8 +155,10 @@ def get_series(metrics_files=tuple(),
     dataframes = []
     for df in dfs:
         if df is None:
+            df['index'] = df.index
+            df.set_index('index')
             continue
-        if x_key is not None:
+        elif x_key is not None:
             df.set_index(x_key)
             if x_align is None:
                 pass
@@ -207,6 +221,8 @@ def get_series(metrics_files=tuple(),
     df = grouped[y_keys].describe(percentiles=[0.25, 0.75, 0.5, 0.05, 0.95]).reset_index()
 
     if k is not None:
+        if 'index' not in df:
+            df['index'] = df.index
         if x_edge == "right" or x_edge is None:
             df['__x'] = df['index'].apply(lambda r: r.right)
         elif x_edge == "left":
