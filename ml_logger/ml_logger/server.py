@@ -159,6 +159,9 @@ class LoggingServer:
             with CwdContext(os.path.join(self.data_dir, wd or "")):
                 file_paths = list(islice(iglob(query, recursive=recursive), start, stop))
                 return file_paths
+        except PermissionError:
+            print('PermissionError:', os.path.join(self.data_dir, wd or ""))
+            return None
         except FileNotFoundError:
             return None
 

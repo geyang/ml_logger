@@ -140,17 +140,17 @@ class LogClient:
             json = LogEntry(key, serialize(data), dtype, options)._asdict()
             self.session.post(self.url, json=json)
 
-    def stream_download(self, key):
+    def stream_download(self, path):
         buf = BytesIO()
         if self.local_server:
-            for d in self.local_server.load(key, dtype="byte"):
+            for d in self.local_server.load(path, dtype="byte"):
                 buf.write(d)
             buf.seek(0)
             return buf
         else:
             from requests_toolbelt.downloadutils import stream
 
-            json = LoadEntry(key, "byte")._asdict()
+            json = LoadEntry(path, "byte")._asdict()
             # note: reading stuff from the server is always synchronous.
             #  with (future) sessions, this is forced by the result call.
             r = self.session.get(self.stream_url, json=json, stream=True)

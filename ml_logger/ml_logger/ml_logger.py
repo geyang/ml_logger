@@ -1391,26 +1391,6 @@ class ML_Logger:
                     continue
                 v.load(val, sess)
 
-    def load_file(self, key):
-        """ return the binary stream, most versatile.
-
-        todo: check handling of line-separated files
-
-        when key starts with a single slash as in "/debug/some-run", the leading slash is removed
-        and the remaining path is pathJoin'ed with the data_dir of the server.
-
-        So if you want to access absolute path of the filesystem that the logging server is in,
-        you should append two leadning slashes. This way, when the leanding slash is removed,
-        the remaining path is still an absolute value and joining with the data_dir would post
-        no effect.
-
-        "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
-
-        :param key: a path string
-        :return: a tuple of each one of the data chunck logged into the file.
-        """
-        return self.client.read(pJoin(self.prefix, key))
-
     def load_text(self, *keys):
         """ return the text content of the file (in a single chunk)
 
@@ -1465,10 +1445,41 @@ class ML_Logger:
 
     torch_save = save_torch
 
-    def load_torch(self, *keys, path=None, tries=1, delay=1, map_location=None, **kwargs):
-        import torch
+    def load_file(self, *keys, path=None):
+        """ return the binary stream, most versatile.
+
+        todo: check handling of line-separated files
+
+        when key starts with a single slash as in "/debug/some-run", the leading slash is removed
+        and the remaining path is pathJoin'ed with the data_dir of the server.
+
+        So if you want to access absolute path of the filesystem that the logging server is in,
+        you should append two leadning slashes. This way, when the leanding slash is removed,
+        the remaining path is still an absolute value and joining with the data_dir would post
+        no effect.
+
+        "//home/ubuntu/ins-runs/debug/some-other-run" would point to the system absolute path.
+
+        :param *keys: path string fragments that are joined together
+        :return: a tuple of each one of the data chunck logged into the file.
+        """
         path = pJoin(self.prefix, *keys, path)
-        buf = self.client.stream_download(path)
+        return self.client.stream_download(path)
+
+    def download_file(self, *keys, path=None, to, relative=False):
+        buf = self.load_file(*keys)
+        path = pJoin(*keys, path)
+        if relative:
+            to = pJoin(to, path)
+        elif to.endswith('/'):
+            to += os.path.basename(path)
+        os.makedirs(os.path.dirname(to), exist_ok=True)
+        with open(to, "wb") as f:
+            f.write(buf.getbuffer())
+
+    def load_torch(self, *keys, map_location=None, **kwargs):
+        import torch
+        buf = self.load_file(*keys)
         return torch.load(buf, map_location=map_location, **kwargs)
 
     torch_load = load_torch
@@ -1928,11 +1939,17 @@ class ML_Logger:
         grouped = df.groupby(bins)
         new_df = {}
         for k, aggs in meta_keys.items():
-            if (k == bin.key if bin else keys[0]):
+            if k == (bin.key if bin else keys[0]):
                 new_df[k] = grouped[k].agg("min")
             else:
-                for reduce in ["mean", *aggs]:
-                    new_df[k + "@" + reduce] = grouped[k].agg(reduce)
+                new_df[k] = grouped[k].mean()
+                new_df[k + "@mean"] = grouped[k].mean()
+                for reduce in aggs:
+                    if reduce.endswith("%"):
+                        pc = float(reduce[:-1])
+                        new_df[k + "@" + reduce] = grouped[k].quantile(0.01 * pc)
+                    else:
+                        new_df[k + "@" + reduce] = grouped[k].agg(reduce)
 
         df = pd.DataFrame(new_df)
 
