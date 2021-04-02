@@ -89,6 +89,8 @@ def test(setup):
 def test_metrics_prefix(setup):
     from ml_logger import logger
 
+    logger.remove("metrics.pkl")
+
     with logger.Prefix(metrics="evaluate/", sep=""):
         logger.log(loss=0.5, flush=True)
 
@@ -97,6 +99,8 @@ def test_metrics_prefix(setup):
 
 def test_metrics_prefix_2(setup):
     from ml_logger import logger
+
+    logger.remove("metrics.pkl")
 
     with logger.Prefix(metrics="evaluate"):
         logger.log(loss=1, flush=True)
@@ -108,19 +112,17 @@ def test_store_metrics_prefix(setup):
     import numpy as np
     from ml_logger import logger
 
-    np.random.seed(100)
-    for i in range(10):
-        a = np.random.normal(1.0, 0.4)
-        b = np.random.normal(3.0, 0.4)
+    logger.remove("metrics.pkl")
 
+    for i in range(10):
         with logger.Prefix(metrics="test"):
-            logger.store_metrics(value=a)
+            logger.store_metrics(value=1.0)
         with logger.Prefix(metrics="eval"):
-            logger.store_metrics(value=b)
+            logger.store_metrics(value=3.0)
 
     logger.log_metrics_summary(key_values={'step': 10})
 
-    assert logger.read_metrics("test/value/mean")[0] == 0.9631183090074579
+    assert logger.read_metrics("test/value/mean")[0] == 1.0
     assert logger.read_metrics("step")[0] == 10
 
 
