@@ -88,14 +88,18 @@ ML_DASH = "http://localhost:3001/{prefix}"
 
 
 @contextmanager
-def _PrefixContext(logger, new_prefix=None, metrics=None):
+def _PrefixContext(logger, new_prefix=None, metrics=None, sep="/"):
     old_metrics_prefix = logger.metrics_prefix
     old_prefix = logger.prefix
 
+    sep = sep or ""
+
     if new_prefix:
-        logger.prefix = new_prefix
+        logger.prefix = new_prefix + sep
     if metrics:
-        logger.metrics_prefix = metrics
+        logger.metrics_prefix = metrics + sep
+    elif metrics is False:
+        logger.metrics_prefix = ""
     try:
         yield
     finally:
@@ -136,7 +140,7 @@ class ML_Logger:
     print_buffer_size = 2048
 
     ### Context Helpers
-    def Prefix(self, *praefixa, metrics=None):
+    def Prefix(self, *praefixa, metrics=None, sep="/"):
         """
         Returns a context in which the prefix of the logger is set to `prefix`
         :param praefixa: the new prefix
@@ -144,9 +148,9 @@ class ML_Logger:
         """
         try:
             path_prefix = os.path.normpath(pJoin(self.prefix, *praefixa))
-            return _PrefixContext(self, path_prefix, metrics)
+            return _PrefixContext(self, path_prefix, metrics, sep=sep)
         except:
-            return _PrefixContext(self, metrics=metrics)
+            return _PrefixContext(self, metrics=metrics, sep=sep)
 
     def Sync(self, clean=False, **kwargs):
         """
@@ -870,8 +874,11 @@ class ML_Logger:
         metrics = metrics.copy() if metrics else {}
         if _key_values:
             metrics.update(_key_values)
-        if _prefix or self.metrics_prefix:
-            metrics = {(_prefix or self.metrics_prefix) + k: v for k, v in metrics.items()}
+
+        with self.Prefix(metrics=_prefix):
+            if self.metrics_prefix:
+                metrics = {self.metrics_prefix + k: v for k, v in metrics.items()}
+
         metrics.update({"__timestamp": timestamp})
         cache.update(metrics)
         if silent:
@@ -906,7 +913,7 @@ class ML_Logger:
         self.store_metrics({key: value}, silent=silent, cache=cache)
 
     def store_metrics(self, metrics=None, silent=None, cache: Union[str, None] = None,
-                      prefix=None, **key_values):
+                      _prefix=None, **key_values):
         """
         Store the metric data (with the default summary cache) for making the summary later.
         This allows the logging/saving of training metrics asynchronously from the logging.
@@ -923,8 +930,10 @@ class ML_Logger:
             key_values.update(metrics)
         if silent:  # todo: deprecate this
             self.do_not_print.update(key_values.keys())
-        if prefix:
-            key_values = {prefix + k: v for k, v in key_values.items()}
+
+        with self.Prefix(metrics=_prefix):
+            if self.metrics_prefix:
+                key_values= {self.metrics_prefix + k: v for k, v in key_values.items()}
         cache.store(metrics, **key_values)
 
     store = store_metrics
@@ -937,7 +946,7 @@ class ML_Logger:
     def log_metrics_summary(self, key_values: dict = None,
                             cache: str = None, key_stats: dict = None,
                             default_stats=None, silent=False, flush: bool = True,
-                            prefix=None, **_key_modes) -> None:
+                            _prefix=None, **_key_modes) -> None:
         """
         logs the statistical properties of the stored metrics, and clears the
         `summary_cache` if under `tiled` mode, and keeps the data otherwise
@@ -968,12 +977,15 @@ class ML_Logger:
         cache = self.summary_caches[cache]
         summary = cache.summarize(key_stats=key_stats, default_stats=default_stats, **_key_modes)
         if key_values:
+            with self.Prefix(metrics=_prefix):
+                if self.metrics_prefix:
+                    key_values = {self.metrics_prefix + k: v for k, v in key_values}
             summary.update(key_values)
-        if prefix:
-            summary = {prefix + k: v for k, v in summary.items()}
-        # todo: use `summary` key to avoid interference with keyvalue metrics.
-        #  self.log_metrics(metrics=summary, silent=silent, flush=flush, cache="summary")
-        self.log_metrics(metrics=summary, silent=silent, flush=flush)
+
+        with self.Prefix(metrics=False):
+            # todo: use `summary` key to avoid interference with keyvalue metrics.
+            #  self.log_metrics(metrics=summary, silent=silent, flush=flush, cache="summary")
+            self.log_metrics(metrics=summary, silent=silent, flush=flush)
 
     def log(self, *args, metrics=None, silent=False, sep=" ", end="\n", flush=None,
             cache=None, file=None, _prefix=None, **_key_values) -> None:
@@ -1900,7 +1912,10 @@ class ML_Logger:
 
             df = pd.DataFrame(metrics)
             if keys:
-                df = df[keys].dropna()
+                try:
+                    df = df[keys].dropna()
+                except KeyError:
+                    continue
 
             if bin is not None:
                 if bin.n:

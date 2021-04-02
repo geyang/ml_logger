@@ -21,9 +21,10 @@ or do
 make test-with-server
 ```
 """
-import pytest
-from time import sleep
 from os.path import join as pathJoin
+from time import sleep
+
+import pytest
 from ml_logger import logger, Color, metrify
 from ml_logger.helpers.color_helpers import percent
 
@@ -84,13 +85,44 @@ def test(setup):
     logger.log({"some_var/smooth": 10}, some=Color(0.85, 'yellow', percent), step=3)
     logger.log(step=4, some=Color(10, 'yellow'))
 
+
 def test_metrics_prefix(setup):
     from ml_logger import logger
 
-    with logger.Prefix(metrics="evaluate/"):
+    with logger.Prefix(metrics="evaluate/", sep=""):
         logger.log(loss=0.5, flush=True)
 
     assert logger.read_metrics("evaluate/loss", )[0] == 0.5
+
+
+def test_metrics_prefix_2(setup):
+    from ml_logger import logger
+
+    with logger.Prefix(metrics="evaluate"):
+        logger.log(loss=1, flush=True)
+
+    assert logger.read_metrics("evaluate/loss", )[0] == 1.0
+
+
+def test_store_metrics_prefix(setup):
+    import numpy as np
+    from ml_logger import logger
+
+    np.random.seed(100)
+    for i in range(10):
+        a = np.random.normal(1.0, 0.4)
+        b = np.random.normal(3.0, 0.4)
+
+        with logger.Prefix(metrics="test"):
+            logger.store_metrics(value=a)
+        with logger.Prefix(metrics="eval"):
+            logger.store_metrics(value=b)
+
+    logger.log_metrics_summary(key_values={'step': 10})
+
+    assert logger.read_metrics("test/value/mean")[0] == 0.9631183090074579
+    assert logger.read_metrics("step")[0] == 10
+
 
 def test_json(setup):
     a = dict(a=0)

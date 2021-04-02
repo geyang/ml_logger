@@ -10,8 +10,7 @@ if __name__ == "__main__":
     from scipy.misc import face
 
     fn = lambda x: np.random.rand() + (1 + 0.001 * x) * np.sin(x * 0.1 / np.pi)
-    fn_1 = lambda x: np.random.rand() + (1 + 0.001 * x) * np.sin(x * 0.04 / np.
-                                                                 pi)
+    fn_1 = lambda x: np.random.rand() + (1 + 0.001 * x) * np.sin(x * 0.04 / np.pi)
 
     for username in ["episodeyang", "amyzhang"]:
         for project in ['cpc-belief', 'playground']:
@@ -27,15 +26,11 @@ if __name__ == "__main__":
                                             env_id="GoalMassDiscreteIdLess-v0",
                                             seed=int(i * 100)))
                 for ep in range(50 + 1):
-                    logger.log_metrics(epoch=ep,
-                                       sine=fn(ep),
-                                       slow_sine=fn_1(ep))
+                    logger.log_metrics(epoch=ep, sine=fn(ep), slow_sine=fn_1(ep))
                     logger.flush()
                     if ep % 10 == 0:
-                        logger.save_image(face('gray'),
-                                          f"figures/gray_{ep:04d}.png")
-                        logger.save_image(face('rgb'),
-                                          f"figures/rgb_{ep:04d}.png")
+                        logger.save_image(face('gray'), f"figures/gray_{ep:04d}.png")
+                        logger.save_image(face('rgb'), f"figures/rgb_{ep:04d}.png")
 
                 logger.save_image(face('gray'), "figures/face_gray.png")
                 logger.save_image(face('rgb'), "figures/face_rgb.png")
