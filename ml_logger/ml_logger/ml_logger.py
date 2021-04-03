@@ -933,7 +933,7 @@ class ML_Logger:
 
         with self.Prefix(metrics=_prefix):
             if self.metrics_prefix:
-                key_values= {self.metrics_prefix + k: v for k, v in key_values.items()}
+                key_values = {self.metrics_prefix + k: v for k, v in key_values.items()}
         cache.store(metrics, **key_values)
 
     store = store_metrics
@@ -1218,7 +1218,7 @@ class ML_Logger:
         """
         return self.save_pyplot(path=key, fig=fig, format=format, **kwargs)
 
-    def save_module(self, module, path="weights.pkl"):
+    def save_module(self, module, path="weights.pkl", tries=3, backup=3.0):
         """
         Save torch module. Overwrites existing file.
 
@@ -1244,8 +1244,7 @@ class ML_Logger:
 
         :return: None
         """
-
-        # todo: why did pytorch moved to a zip-based format?
+        # todo: add
         if hasattr(module, "state_dict"):
             state_dict = module.state_dict()
         elif hasattr(module, "module"):
@@ -1253,7 +1252,7 @@ class ML_Logger:
         else:
             raise AttributeError('module does not have `.state_dict` attribute or a valid `.module`.')
 
-        return self.save_torch(state_dict, path=path)
+        return self.save_torch(state_dict, path=path, tries=tries, backup=backup)
 
     def read_state_dict(self, path="weights.pkl", wd=None, stream=True, tries=5, matcher=None, map_location=None):
         if "*" in path:
@@ -1325,27 +1324,6 @@ class ML_Logger:
 
         module.load_state_dict(state_dict)
 
-    def save_modules(self, path="modules.pkl", modules=None, **_modules):
-        raise DeprecationWarning("This method has gone out of use, and should be deprecated.")
-        """
-        Save torch modules in a dictionary, keyed by the keys.
-
-        *Overwrites existing file*.
-
-        This function is only used to save a collection of modules that can be
-        sent over in a single post request. When the modules are large, we use
-        the `logger.save_module` method, to send chunks of weight tensors one-
-        by-one.
-
-        :param path: filename to be saved.
-        :param modules: dictionary/namespace for the modules.
-        :param _modules: key/value pairs for different modules to be saved
-        :return: None
-        """
-        _modules.update(modules or {})
-        data = {name: module.state_dict() for name, module in _modules.items()}
-        self.log_data(data=data, path=path, overwrite=True)
-
     def save_variables(self, variables, path="variables.pkl", keys=None):
         """
         save tensorflow variables in a dictionary
@@ -1360,6 +1338,7 @@ class ML_Logger:
         tensor (from the variable itself).
         :return: None
         """
+        # todo: need to upgrade to the multi-part upload scheme
         if keys is None:
             keys = [v.name for v in variables]
         assert len(keys) == len(variables), 'the keys and the variables have to be the same length.'
@@ -1446,14 +1425,24 @@ class ML_Logger:
             buf.seek(0)
             return list(load_from_jsonl_file(buf))
 
-    def save_torch(self, obj, *keys, path=None):
+    def save_torch(self, obj, *keys, path=None, tries=3, backup=3.0):
         path = pJoin(self.prefix, *keys, path)
         import torch
         from tempfile import NamedTemporaryFile
         with NamedTemporaryFile(delete=True) as tfile:
             torch.save(obj, tfile)
-            tfile.seek(0)
-            self.client.save_file(source_path=tfile.name, key=path)
+
+            while tries > 0:
+                tries -= 1
+                tfile.seek(0)
+                try:
+                    self.client.save_file(source_path=tfile.name, key=path)
+                except Exception as e:
+                    if tries == 0:
+                        raise e
+                    dt = random * backgup
+                    self.warn(f"{tries} left, saving to {path} again. Backup for {dt:0.3f} sec...")
+                    sleep(dt)
 
     torch_save = save_torch
 
