@@ -1441,7 +1441,7 @@ class ML_Logger:
                     if tries == 0:
                         raise e
                     dt = random() * backup
-                    self.warn(f"{tries} left, saving to {path} again. Backup for {dt:0.3f} sec...")
+                    self.print(f"{tries} left, saving to {path} again. Backup for {dt:0.3f} sec...")
                     sleep(dt)
 
     torch_save = save_torch
