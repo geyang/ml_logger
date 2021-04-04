@@ -6,6 +6,7 @@ from functools import partial
 from io import BytesIO
 from math import ceil
 from numbers import Number
+from random import random
 from time import perf_counter, sleep
 from typing import Any, Union
 from typing import NamedTuple
@@ -1413,9 +1414,8 @@ class ML_Logger:
                     buf.seek(0)
                     return list(load_from_jsonl_file(buf))
             except Exception as e:
-                import random
                 # todo: use separate random generator to avoid mutating global random generator.
-                sleep((1 + random.random() * 0.5) * delay)
+                sleep((1 + random() * 0.5) * delay)
                 tries -= 1
         # last one does not catch.
         with BytesIO() as buf:
@@ -1440,7 +1440,7 @@ class ML_Logger:
                 except Exception as e:
                     if tries == 0:
                         raise e
-                    dt = random * backgup
+                    dt = random() * backup
                     self.warn(f"{tries} left, saving to {path} again. Backup for {dt:0.3f} sec...")
                     sleep(dt)
 
