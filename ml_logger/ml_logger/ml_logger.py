@@ -236,7 +236,8 @@ class ML_Logger:
         self.summary_caches = defaultdict(partial(SummaryCache, **(summary_cache_opts or {})))
 
         # todo: add https support
-        self.root_dir = interpolate(root_dir) or os.getcwd()
+        self.root_dir = interpolate(root_dir) or "/"
+        self.prefix = interpolate(prefix) or os.getcwd()[1:]
         if prefix is not None:
             self.prefix = os.path.join(*[interpolate(p) for p in (prefix, *prefixae) if p is not None])
 
