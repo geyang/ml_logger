@@ -45,7 +45,7 @@ class LogClient:
     sync_pool = None
     async_pool = None
 
-    def __init__(self, url: str = None, asynchronous=None, max_workers=None):
+    def __init__(self, root: str = None, user=None, access_token=None, asynchronous=None, max_workers=None):
         """
         When max_workers is 0, the HTTP requests are synchronous. This allows one to make
         synchronous requests procedurally.
@@ -54,7 +54,7 @@ class LogClient:
         Mujoco-py for example, would have trouble with forked processes if multiple
         threads are started before forking the subprocesses.
 
-        :param url:
+        :param root:
         :param asynchronous: If this is not None, we create a request pool. This way
             we can use the (A)SyncContext call right after construction.
         :param max_workers:
@@ -62,16 +62,17 @@ class LogClient:
         if asynchronous is not None:
             self.set_session(asynchronous, max_workers)
 
-        if url.startswith("file://"):
-            self.local_server = LoggingServer(data_dir=url[6:], silent=True)
-        elif os.path.isabs(url):
-            self.local_server = LoggingServer(data_dir=url, silent=True)
-        elif url.startswith('http://'):
+        if root.startswith("file://"):
+            self.local_server = LoggingServer(cwd=root[6:], silent=True)
+        elif os.path.isabs(root):
+            self.local_server = LoggingServer(cwd=root, silent=True)
+        elif root.startswith('http://'):
             self.local_server = None  # remove local server to use sessions.
-            self.url = url
-            self.stream_url = os.path.join(url, "stream")
-            self.ping_url = os.path.join(url, "ping")
-            self.glob_url = os.path.join(url, "glob")
+            self.url = os.path.join(root, user)
+            self.access_token = access_token
+            self.stream_url = os.path.join(root, user, "stream")
+            self.ping_url = os.path.join(root, user, "ping")
+            self.glob_url = os.path.join(root, user, "glob")
             # when setting sessions the first time, default to use Asynchronous Session.
             if self.session is None:
                 asynchronous = True if asynchronous is None else asynchronous
