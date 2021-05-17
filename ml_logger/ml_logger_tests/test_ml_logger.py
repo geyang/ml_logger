@@ -36,7 +36,7 @@ def log_dir(request):
 
 @pytest.fixture(scope="session")
 def setup(log_dir):
-    logger.configure(log_dir, prefix='main_test_script')
+    logger.configure('main_test_script', log_dir=log_dir)
     logger.remove('')
     print(f"logging to {pathJoin(logger.root_dir, logger.prefix)}")
 
@@ -65,11 +65,12 @@ def test_log_data(setup):
 
 def test_save_pkl_abs_path(setup):
     import numpy
+
     d1 = numpy.random.randn(20, 10)
-    logger.save_pkl(d1, '/test_file_1.pkl')
+    logger.save_pkl(d1, "/tmp/ml-logger-test/test_file_1.pkl")
     sleep(0.1)
 
-    data = logger.load_pkl('/test_file_1.pkl')
+    data = logger.load_pkl("/tmp/ml-logger-test/test_file_1.pkl")
     assert len(data) == 1, "data should contain only one array because we overwrote it."
     assert numpy.array_equal(data[0], d1), "first should be the same as d2"
 
@@ -135,8 +136,8 @@ def test_json(setup):
 
 def test_json_abs(setup):
     a = dict(a=0)
-    logger.save_json(dict(a=0), "/data/d.json")
-    b = logger.load_json("/data/d.json")
+    logger.save_json(dict(a=0), "/tmp/ml-logger-test/data/d.json")
+    b = logger.load_json("/tmp/ml-logger-test/data/d.json")
     assert a == b, "a and b should be the same"
 
 
@@ -218,8 +219,9 @@ def test_video_gif(setup):
     frames = [im(100 + i, 80) for i in range(20)]
 
     logger.save_video(frames, "test_video.gif")
-    logger.save_video(frames, "/videos/test_video.gif")
-    assert '/videos/test_video.gif' in logger.glob('/videos/*.gif')
+    assert 'test_video.gif' in logger.glob('*.gif')
+    logger.save_video(frames, "/tmp/ml-logger-test/videos/test_video.gif")
+    assert 'ml-logger-test/videos/test_video.gif' in logger.glob('**/videos/*.gif', wd="/tmp")
 
 
 def test_load_params(setup):

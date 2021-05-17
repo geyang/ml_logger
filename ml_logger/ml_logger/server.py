@@ -12,14 +12,20 @@ from termcolor import cprint
 class LoggingServer:
     silent = None
 
-    def __init__(self, data_dir, silent=False):
-        assert os.path.isabs(data_dir)
-        self.data_dir = data_dir
-        os.makedirs(data_dir, exist_ok=True)
+    def abs_path(self, key):
+        log_dir = os.path.join(self.cwd, key)
+        return os.path.join(self.root, log_dir[1:])
+
+    def __init__(self, cwd="/", root="/", silent=False):
+        assert os.path.isabs(root)
+        assert os.path.isabs(cwd)
+        self.root = root
+        self.cwd = cwd
+        os.makedirs(root, exist_ok=True)
 
         self.silent = silent
         if not silent:
-            print('logging data to {}'.format(data_dir))
+            cprint(f'logging data to {root}', 'green')
 
     configure = __init__
 
@@ -43,7 +49,7 @@ class LoggingServer:
             return sanic.response.text(msg)
         load_entry = LoadEntry(**req.json)
         print(f"streaming: {load_entry.key}")
-        path = os.path.join(self.data_dir, load_entry.key)
+        path = os.path.join(self.root, load_entry.key)
         return await sanic.response.file_stream(path)
 
     async def ping_handler(self, req):
@@ -141,8 +147,9 @@ class LoggingServer:
         """
         Glob under the work directory. (so that the wd is not included in the file paths that are returned.)
 
-        :param query: we remove the leading slash so that //home/directory allows you to access absolute path of the server host environment. single leanding slash accesses w.r.t. the data_dir.
-        :param wd: we remove the leading slash so that //home/directory allows you to access absolute path of the server host environment. single leanding slash accesses w.r.t. the data_dir.
+        :param query:
+        :param wd: Use double slash //home/directory to access absolute path of the
+            server host environment. single leading slash accesses the data_dir.
         :param recursive:
         :param start:
         :param stop:
@@ -153,14 +160,11 @@ class LoggingServer:
         from itertools import islice
 
         from ml_logger.helpers.file_helpers import CwdContext
-        wd = wd[1:] if wd and wd.startswith("/") else wd
-        query = query[1:] if query and query.startswith("/") else query
         try:
-            with CwdContext(os.path.join(self.data_dir, wd or "")):
-                file_paths = list(islice(iglob(query, recursive=recursive), start, stop))
-                return file_paths
+            with CwdContext(self.abs_path(wd or "")):
+                return list(islice(iglob(query, recursive=recursive), start, stop))
         except PermissionError:
-            print('PermissionError:', os.path.join(self.data_dir, wd or ""))
+            print('PermissionError:', os.path.join(self.root, wd or ""))
             return None
         except FileNotFoundError:
             return None
@@ -192,8 +196,7 @@ class LoggingServer:
         :param stop: start index
         :return: None, or a tuple of each one of the data chunks logged into the file.
         """
-        key = key[1:] if key.startswith("/") else key
-        abs_path = os.path.join(self.data_dir, key)
+        abs_path = self.abs_path(key)
         if dtype == 'byte':
             try:
                 return list(load_from_file(abs_path))[start:stop]
@@ -240,7 +243,7 @@ class LoggingServer:
         :param key: the path from the logging directory.
         :return: None
         """
-        abs_path = os.path.join(self.data_dir, key)
+        abs_path = self.abs_path(key)
         try:
             os.remove(abs_path)
         except FileNotFoundError as e:
@@ -253,31 +256,25 @@ class LoggingServer:
         import shutil
         assert isinstance(src, str), "src needs to be a string"
 
-        if target.startswith('/'):
-            target = target[1:]
-        if src.startswith('/'):
-            src = src[1:]
+        abs_target = self.abs_path(target)
+        abs_src = self.abs_path(src)
 
-        abs_target = os.path.join(self.data_dir, target)
-        abs_src = os.path.join(self.data_dir, src)
         os.makedirs(os.path.dirname(abs_target), exist_ok=True)
         shutil.copyfile(abs_src, abs_target, follow_symlinks=True)
         return target
 
     def save_buffer(self, key, buff):
-        assert isinstance(src, BytesIO), f"buff needs to be a BytesIO object."
-        if target.startswith('/'):
-            target = target[1:]
+        assert isinstance(buff, BytesIO), f"buff needs to be a BytesIO object."
 
-        abs_target = os.path.join(self.data_dir, target)
+        abs_path = self.abs_path(key)
 
-        with open(abs_target, 'wb') as t:
+        with open(abs_path, 'wb') as t:
             while True:
-                content = src.read()
+                content = buff.read()
                 if content == b"":
                     break
                 t.write(content)
-        return target
+        return key
 
     def log(self, key, data, dtype, options: LogOptions = None):
         """
@@ -291,36 +288,31 @@ class LoggingServer:
         """
         # todo: overwrite mode is not tested and not in-use.
         write_mode = "w" if options and options.overwrite else "a"
-        if key.startswith('/'):
-            key = key[1:]
+        abs_path = self.abs_path(key)
+        parent_dir = os.path.dirname(abs_path)
+        # fixme: There is a race condition with multiple requests
         if dtype == "log":
-            abs_path = os.path.join(self.data_dir, key)
-            # fixme: There is a race condition with multiple requests
             try:
                 with open(abs_path, write_mode + 'b') as f:
                     dill.dump(data, f)
             except FileNotFoundError:
-                os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+                os.makedirs(parent_dir, exist_ok=True)
                 with open(abs_path, write_mode + 'b') as f:
                     dill.dump(data, f)
         if dtype == "byte":
-            abs_path = os.path.join(self.data_dir, key)
-            # fixme: There is a race condition with multiple requests
             try:
                 with open(abs_path, write_mode + 'b') as f:
                     f.write(data)
             except FileNotFoundError:
-                os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+                os.makedirs(parent_dir, exist_ok=True)
                 with open(abs_path, write_mode + 'b') as f:
                     f.write(data)
         elif dtype.startswith("text"):
-            abs_path = os.path.join(self.data_dir, key)
-            # fixme: There is a race condition with multiple requests
             try:
                 with open(abs_path, write_mode + "+") as f:
                     f.write(data)
             except FileNotFoundError:
-                os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+                os.makedirs(parent_dir, exist_ok=True)
                 with open(abs_path, write_mode + "+") as f:
                     f.write(data)
         elif dtype.startswith("yaml"):
@@ -338,7 +330,6 @@ class LoggingServer:
             stream = StringIO()
             yaml.dump(data, stream)
             output = stream.getvalue()
-            abs_path = os.path.join(self.data_dir, key)
             try:
                 with open(abs_path, write_mode + "+") as f:
                     if options.write_mode == 'key':
@@ -348,7 +339,7 @@ class LoggingServer:
                             output = d
                     f.write(output)
             except FileNotFoundError:
-                os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+                os.makedirs(parent_dir, exist_ok=True)
                 with open(abs_path, write_mode + "+") as f:
                     if options.write_mode == 'key':
                         d = load_fn('\n'.join(f))
@@ -357,7 +348,7 @@ class LoggingServer:
                             output = d
                     f.write(output)
         elif dtype.startswith("image"):
-            abs_path = os.path.join(self.data_dir, key)
+            abs_path = self.abs_path(key)
             if "." not in key:
                 abs_path = abs_path + ".png"
             from PIL import Image
@@ -368,7 +359,7 @@ class LoggingServer:
             try:
                 im.save(abs_path)
             except FileNotFoundError:
-                os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+                os.makedirs(parent_dir, exist_ok=True)
                 im.save(abs_path)
 
 
@@ -390,5 +381,5 @@ if __name__ == '__main__':
 
     v = pkg_resources.get_distribution("ml_logger").version
     print('running ml_logger.server version {}'.format(v))
-    server = LoggingServer(data_dir=Params.logdir)
+    server = LoggingServer(root=Params.logdir)
     server.serve(host=Params.host, port=Params.port, workers=Params.workers)

@@ -24,6 +24,15 @@ from .helpers.default_set import DefaultSet
 from .helpers.print_utils import PrintHelper
 from .log_client import LogClient
 
+# environment defaults
+CWD = os.environ["PWD"]
+USER = os.environ["USER"]
+
+# ML_Logger defaults
+ROOT = os.environ.get("ML_LOGGER_ROOT", CWD)
+USER = os.environ.get("ML_LOGGER_USER", USER)
+ACCESS_TOKEN = os.environ.get("ML_LOGGER_ACCESS_TOKEN", None)
+
 
 def pJoin(*args):
     from os.path import join
@@ -198,7 +207,9 @@ class ML_Logger:
     # noinspection PyInitNewSignature
     # todo: use prefixes as opposed to prefix. (add *prefixae after prefix=None)
     # todo: resolve path segment with $env variables.
-    def __init__(self, root_dir: str = None, prefix=None, *prefixae, buffer_size=2048, max_workers=None,
+    def __init__(self, prefix="", *prefixae,
+                 log_dir=ROOT, user=USER, access_token=ACCESS_TOKEN,
+                 buffer_size=2048, max_workers=None,
                  asynchronous=None, summary_cache_opts: dict = None):
         """ logger constructor.
 
@@ -213,8 +224,11 @@ class ML_Logger:
         | 1. prefix="causal_infogan" => logs to "/tmp/some_dir/causal_infogan"
         | 2. prefix="" => logs to "/tmp/some_dir"
 
-        :param root_dir: the server host and port number
         :param prefix: the prefix path
+        :param **prefixae: the rest of the prefix arguments
+        :param log_dir: the server host and port number
+        :param user: environment $ML_LOGGER_USER
+        :param access_token: environment $ML_LOGGER_ACCESS_TOKEN
         :param asynchronous: When this is not None, we create a http thread pool.
         :param buffer_size: The string buffer size for the print buffer.
         :param max_workers: the number of request-session workers for the async http requests.
@@ -236,18 +250,19 @@ class ML_Logger:
         self.summary_caches = defaultdict(partial(SummaryCache, **(summary_cache_opts or {})))
 
         # todo: add https support
-        self.root_dir = interpolate(root_dir) or "/"
-        self.prefix = interpolate(prefix) or os.getcwd()[1:]
-        if prefix is not None:
-            self.prefix = os.path.join(*[interpolate(p) for p in (prefix, *prefixae) if p is not None])
+        self.root_dir = interpolate(log_dir) or ROOT
 
-        # logger client contains thread pools, should not be re-created lightly.
-        self.client = LogClient(url=self.root_dir, asynchronous=asynchronous, max_workers=max_workers)
+        prefixae = [interpolate(p) for p in (prefix or "", *prefixae) if p is not None]
+        self.prefix = os.path.join(*prefixae) if prefixae else ""
+        self.client = LogClient(root=self.root_dir, user=user, access_token=access_token,
+                                asynchronous=asynchronous, max_workers=max_workers)
 
     def configure(self,
-                  root_dir: str = None,
                   prefix=None,
                   *prefixae,
+                  log_dir: str = None,
+                  user=None,
+                  access_token=None,
                   asynchronous=None,
                   max_workers=None,
                   buffer_size=None,
@@ -293,8 +308,11 @@ class ML_Logger:
         todo: the table at the moment seems a bit verbose. I'm considering making this
           just a single line print.
 
-        :param log_directory:
-        :param prefix:
+        :param prefix: the first prefix
+        :param *prefixae: a list of prefix segments
+        :param log_dir:
+        :param user:
+        :param access_token:
         :param buffer_size:
         :param summary_cache_opts:
         :param asynchronous:
@@ -305,9 +323,11 @@ class ML_Logger:
         """
 
         # path logic
-        root_dir = interpolate(root_dir) or os.getcwd()
+        log_dir = interpolate(log_dir) or os.getcwd()
         if prefix is not None:
-            self.prefix = os.path.join(*[interpolate(p) for p in (prefix, *prefixae) if p is not None])
+            prefixae = [interpolate(p) for p in (prefix, *prefixae) if p is not None]
+            if prefixae is not None:
+                self.prefix = os.path.join(*prefixae)
 
         if buffer_size is not None:
             self.print_buffer_size = buffer_size
@@ -318,17 +338,18 @@ class ML_Logger:
             self.summary_caches.clear()
             self.summary_caches = defaultdict(partial(SummaryCache, **(summary_cache_opts or {})))
 
-        if root_dir != self.root_dir or asynchronous is not None or max_workers is not None:
-            # note: logger.configure shouldn't be called too often, so it is okay to assume
-            #   that we can discard the old logClient.
-            #       To quickly switch back and forth between synchronous and asynchronous calls,
-            #   use the `SyncContext` and `AsyncContext` instead.
+        if log_dir:
+            self.root_dir = interpolate(log_dir) or ROOT
+        if log_dir or asynchronous is not None or max_workers is not None:
+            # note: logger.configure shouldn't be called too often. To quickly switch back
+            #  and forth between synchronous and asynchronous calls, use the `SyncContext`
+            #  and `AsyncContext` instead.
             if not silent:
-                cprint('creating new logging client...', color='yellow', end=' ')
-            self.root_dir = root_dir
-            self.client.__init__(url=self.root_dir, asynchronous=asynchronous, max_workers=max_workers)
+                cprint('creating new logging client...', color='yellow', end='\r')
+            self.client.__init__(root=self.root_dir, user=user, access_token=access_token,
+                                 asynchronous=asynchronous, max_workers=max_workers)
             if not silent:
-                cprint('✓ done', color="green")
+                cprint('✓ created a new logging client', color="green")
 
         if not silent:
             from urllib.parse import quote
