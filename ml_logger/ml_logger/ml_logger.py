@@ -1,19 +1,19 @@
-import os
 from collections import defaultdict
+
+import numpy as np
+import os
 from collections.abc import Sequence
 from contextlib import contextmanager
 from functools import partial
 from io import BytesIO
 from math import ceil
+from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
 from numbers import Number
 from random import random
+from termcolor import cprint
 from time import perf_counter, sleep
 from typing import Any, Union
 from typing import NamedTuple
-
-import numpy as np
-from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
-from termcolor import cprint
 from waterbear import DefaultBear
 
 from .caches.key_value_cache import KeyValueCache
@@ -29,7 +29,7 @@ CWD = os.environ["PWD"]
 USER = os.environ["USER"]
 
 # ML_Logger defaults
-ROOT = os.environ.get("ML_LOGGER_ROOT", CWD)
+ROOT = os.environ.get("ML_LOGGER_ROOT", CWD) or CWD
 USER = os.environ.get("ML_LOGGER_USER", USER)
 ACCESS_TOKEN = os.environ.get("ML_LOGGER_ACCESS_TOKEN", None)
 

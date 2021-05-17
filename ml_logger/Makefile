@@ -1,3 +1,8 @@
+.EXPORT_ALL_VARIABLES:
+ML_LOGGER_ROOT=
+ML_LOGGER_USER=ml-logger-test
+ML_LOGGER_ACCESS_TOKEN=
+
 # shell option to use extended glob from from https://stackoverflow.com/a/6922447/1560241
 SHELL:=/bin/bash -O extglob
 

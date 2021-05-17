@@ -68,11 +68,11 @@ class LogClient:
             self.local_server = LoggingServer(cwd=root, silent=True)
         elif root.startswith('http://'):
             self.local_server = None  # remove local server to use sessions.
-            self.url = os.path.join(root, user)
+            self.url = root
             self.access_token = access_token
-            self.stream_url = os.path.join(root, user, "stream")
-            self.ping_url = os.path.join(root, user, "ping")
-            self.glob_url = os.path.join(root, user, "glob")
+            self.stream_url = os.path.join(root, "stream")
+            self.ping_url = os.path.join(root, "ping")
+            self.glob_url = os.path.join(root, "glob")
             # when setting sessions the first time, default to use Asynchronous Session.
             if self.session is None:
                 asynchronous = True if asynchronous is None else asynchronous
