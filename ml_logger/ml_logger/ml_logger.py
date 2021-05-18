@@ -26,7 +26,7 @@ from .log_client import LogClient
 
 # environment defaults
 CWD = os.environ["PWD"]
-USER = os.environ["USER"]
+USER = os.environ.get("USER", None)
 
 # ML_Logger defaults
 ROOT = os.environ.get("ML_LOGGER_ROOT", CWD) or CWD
