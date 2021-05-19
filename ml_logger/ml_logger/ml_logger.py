@@ -323,7 +323,6 @@ class ML_Logger:
         """
 
         # path logic
-        log_dir = interpolate(log_dir) or os.getcwd()
         if prefix is not None:
             prefixae = [interpolate(p) for p in (prefix, *prefixae) if p is not None]
             if prefixae is not None:
