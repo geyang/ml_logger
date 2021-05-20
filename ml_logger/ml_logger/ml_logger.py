@@ -1,19 +1,19 @@
-from collections import defaultdict
-
-import numpy as np
 import os
+from collections import defaultdict
 from collections.abc import Sequence
 from contextlib import contextmanager
 from functools import partial
 from io import BytesIO
 from math import ceil
-from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
 from numbers import Number
 from random import random
-from termcolor import cprint
 from time import perf_counter, sleep
 from typing import Any, Union
 from typing import NamedTuple
+
+import numpy as np
+from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
+from termcolor import cprint
 from waterbear import DefaultBear
 
 from .caches.key_value_cache import KeyValueCache
@@ -142,7 +142,7 @@ class ML_Logger:
     ---
     """
     client = None
-    root_dir = None
+    root = None
 
     prefix = ""  # is okay b/c strings are immutable in python
     metrics_prefix = ""
@@ -201,14 +201,14 @@ class ML_Logger:
     AsyncContext = Async
 
     def __repr__(self):
-        return f'Logger(log_directory="{self.root_dir}",' + "\n" + \
+        return f'Logger(log_directory="{self.root}",' + "\n" + \
                f'       prefix="{self.prefix}")'
 
     # noinspection PyInitNewSignature
     # todo: use prefixes as opposed to prefix. (add *prefixae after prefix=None)
     # todo: resolve path segment with $env variables.
     def __init__(self, prefix="", *prefixae,
-                 log_dir=ROOT, user=USER, access_token=ACCESS_TOKEN,
+                 root=ROOT, user=USER, access_token=ACCESS_TOKEN,
                  buffer_size=2048, max_workers=None,
                  asynchronous=None, summary_cache_opts: dict = None):
         """ logger constructor.
@@ -226,7 +226,7 @@ class ML_Logger:
 
         :param prefix: the prefix path
         :param **prefixae: the rest of the prefix arguments
-        :param log_dir: the server host and port number
+        :param root: the server host and port number
         :param user: environment $ML_LOGGER_USER
         :param access_token: environment $ML_LOGGER_ACCESS_TOKEN
         :param asynchronous: When this is not None, we create a http thread pool.
@@ -250,17 +250,17 @@ class ML_Logger:
         self.summary_caches = defaultdict(partial(SummaryCache, **(summary_cache_opts or {})))
 
         # todo: add https support
-        self.root_dir = interpolate(log_dir) or ROOT
+        self.root = interpolate(root) or ROOT
 
         prefixae = [interpolate(p) for p in (prefix or "", *prefixae) if p is not None]
         self.prefix = os.path.join(*prefixae) if prefixae else ""
-        self.client = LogClient(root=self.root_dir, user=user, access_token=access_token,
+        self.client = LogClient(root=self.root, user=user, access_token=access_token,
                                 asynchronous=asynchronous, max_workers=max_workers)
 
     def configure(self,
                   prefix=None,
                   *prefixae,
-                  log_dir: str = None,
+                  root: str = None,
                   user=None,
                   access_token=None,
                   asynchronous=None,
@@ -310,7 +310,7 @@ class ML_Logger:
 
         :param prefix: the first prefix
         :param *prefixae: a list of prefix segments
-        :param log_dir:
+        :param root:
         :param user:
         :param access_token:
         :param buffer_size:
@@ -337,23 +337,24 @@ class ML_Logger:
             self.summary_caches.clear()
             self.summary_caches = defaultdict(partial(SummaryCache, **(summary_cache_opts or {})))
 
-        if log_dir:
-            self.root_dir = interpolate(log_dir) or ROOT
-        if log_dir or asynchronous is not None or max_workers is not None:
+        if root:
+            self.root = interpolate(root) or ROOT
+        if root or asynchronous is not None or max_workers is not None:
             # note: logger.configure shouldn't be called too often. To quickly switch back
             #  and forth between synchronous and asynchronous calls, use the `SyncContext`
             #  and `AsyncContext` instead.
             if not silent:
                 cprint('creating new logging client...', color='yellow', end='\r')
-            self.client.__init__(root=self.root_dir, user=user, access_token=access_token,
+            self.client.__init__(root=self.root, user=user, access_token=access_token,
                                  asynchronous=asynchronous, max_workers=max_workers)
             if not silent:
                 cprint('✓ created a new logging client', color="green")
 
         if not silent:
-            from urllib.parse import quote
-            print(f"Dashboard: {ML_DASH.format(prefix=quote(self.prefix))}")
-            print(f"Log_directory: {self.root_dir}")
+            if prefix:
+                from urllib.parse import quote
+                print(f"Dashboard: {ML_DASH.format(prefix=quote(self.prefix))}")
+            print(f"Log_directory: {self.root}")
 
         # now register the experiment
         if register_experiment:
@@ -876,14 +877,12 @@ class ML_Logger:
         """
         return self.save_pkl(data, path, append=not overwrite)
 
-    def log_metrics(self, metrics=None, silent=None,
-                    _prefix=None,
+    def log_metrics(self, metrics=None, _prefix=None, silent=None,
                     cache: Union[str, None] = None, file: Union[str, None] = None,
                     flush=None, **_key_values) -> None:
         """
 
         :param metrics: (mapping) key/values of metrics to be logged. Overwrites previous value if exist.
-        :param silent: adds the keys being logged to the silent list, do not print out in table when flushing.
         :param cache: optional KeyValueCache object to be passed in
         :param flush:
         :param _key_values:
@@ -901,22 +900,15 @@ class ML_Logger:
             if self.metrics_prefix:
                 metrics = {self.metrics_prefix + k: v for k, v in metrics.items()}
 
-        metrics.update({"__timestamp": timestamp})
         cache.update(metrics)
-        if silent:
-            # fixme: need to remove this causes subtle unexpected behaviors
-            self.do_not_print.update(metrics.keys())
 
         if flush:
-            self.flush_metrics(cache=cache_key, file=file)
+            self.flush_metrics(cache=cache_key, file=file, silent=silent)
 
-    def log_key_value(self, key: str, value: Any, silent=False, cache=None) -> None:
+    def log_key_value(self, key: str, value: Any, cache=None) -> None:
         cache = self.key_value_caches[cache]
         timestamp = np.datetime64(self.now())
-        if silent:
-            # note: this causes subtle unexpected behaviors
-            self.do_not_print.add(key)
-        cache.update({key: value, "__timestamp": timestamp})
+        cache.update({key: value})
 
     @property  # get default cache
     def summary_cache(self):
@@ -1035,14 +1027,22 @@ class ML_Logger:
     metric_filename = "metrics.pkl"
     log_filename = "outputs.log"
 
-    def flush_metrics(self, cache=Union[None, str], file=Union[str, None]):
+    def flush_metrics(self, cache=Union[None, str], file=Union[str, None], silent=None):
         cache = self.key_value_caches[cache]
         key_values = cache.pop_all()
         file = file or self.metric_filename
         output = self.print_helper.format_tabular(key_values, self.do_not_print)
-        if output is not None:
+        if not silent and not output:
             self.print(output, flush=True)  # not buffered
-        self.client.log(key=pJoin(self.prefix, file), data=key_values)
+        file_key = pJoin(self.prefix, file)
+        if file.endswith(".jsonl"):
+            import json
+            self.client.log_text(json.dumps(key_values) + "\n", key=file_key)
+        elif file.endswith(".yaml") or file.endswith(".yml"):
+            import yaml
+            self.client.log_text(yaml.dump(key_values) + "\n", key=file_key)
+        else:
+            self.client.log(key=file_key, data=key_values)
         # fixme: this has caused trouble before.
         self.do_not_print.reset()
 

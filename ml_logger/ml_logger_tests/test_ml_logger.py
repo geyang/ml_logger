@@ -36,9 +36,9 @@ def log_dir(request):
 
 @pytest.fixture(scope="session")
 def setup(log_dir):
-    logger.configure('main_test_script', log_dir=log_dir)
+    logger.configure('main_test_script', root=log_dir)
     logger.remove('')
-    print(f"logging to {pathJoin(logger.root_dir, logger.prefix)}")
+    print(f"logging to {pathJoin(logger.root, logger.prefix)}")
 
 
 def test_glob(setup):
