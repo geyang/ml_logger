@@ -102,12 +102,10 @@ def _PrefixContext(logger, new_prefix=None, metrics=None, sep="/"):
     old_metrics_prefix = logger.metrics_prefix
     old_prefix = logger.prefix
 
-    sep = sep or ""
-
     if new_prefix:
-        logger.prefix = new_prefix + sep
+        logger.prefix = new_prefix
     if metrics:
-        logger.metrics_prefix = metrics + sep
+        logger.metrics_prefix = metrics + (sep or "")
     elif metrics is False:
         logger.metrics_prefix = ""
     try:
