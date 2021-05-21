@@ -1030,15 +1030,15 @@ class ML_Logger:
         key_values = cache.pop_all()
         file = file or self.metric_filename
         output = self.print_helper.format_tabular(key_values, self.do_not_print)
-        if not silent and not output:
+        if not silent and output:
             self.print(output, flush=True)  # not buffered
         file_key = pJoin(self.prefix, file)
         if file.endswith(".jsonl"):
             import json
-            self.client.log_text(json.dumps(key_values) + "\n", key=file_key)
+            self.client.log_text(key=file_key, text=json.dumps(key_values) + "\n", )
         elif file.endswith(".yaml") or file.endswith(".yml"):
             import yaml
-            self.client.log_text(yaml.dump(key_values) + "\n", key=file_key)
+            self.client.log_text(key=file_key, text=yaml.dump(key_values) + "\n")
         else:
             self.client.log(key=file_key, data=key_values)
         # fixme: this has caused trouble before.
