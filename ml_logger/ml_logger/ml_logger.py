@@ -30,7 +30,7 @@ USER = os.environ.get("USER", None)
 
 # ML_Logger defaults
 ROOT = os.environ.get("ML_LOGGER_ROOT", CWD) or CWD
-USER = os.environ.get("ML_LOGGER_USER", USER)
+LOGGER_USER = os.environ.get("ML_LOGGER_USER", USER)
 ACCESS_TOKEN = os.environ.get("ML_LOGGER_ACCESS_TOKEN", None)
 
 
@@ -206,7 +206,7 @@ class ML_Logger:
     # todo: use prefixes as opposed to prefix. (add *prefixae after prefix=None)
     # todo: resolve path segment with $env variables.
     def __init__(self, prefix="", *prefixae,
-                 root=ROOT, user=USER, access_token=ACCESS_TOKEN,
+                 root=ROOT, user=LOGGER_USER, access_token=ACCESS_TOKEN,
                  buffer_size=2048, max_workers=None,
                  asynchronous=None, summary_cache_opts: dict = None):
         """ logger constructor.
