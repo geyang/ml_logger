@@ -1846,8 +1846,8 @@ class ML_Logger:
 
     read_params = get_parameters
 
-    def read_metrics(self, *keys, bin: BinOptions = None, path="metrics.pkl", wd=None, silent=False, default=None,
-                     collect="std", verbose=False):
+    def read_metrics(self, *keys, path="metrics.pkl", wd=None, bin: BinOptions = None, silent=False,
+                     default=None, collect="std", verbose=False):
         """
         Returns a Pandas.DataFrame object that contains metrics from all files.
 
@@ -1895,10 +1895,10 @@ class ML_Logger:
             with self.PrefixContext(wd) if wd else ExitStack():
                 if path.endswith(".jsonl"):
                     metrics = self.load_jsonl(path)
-                elif path.endswith(".pkl"):
-                    metrics = self.load_pkl(path)
                 elif path.endswith(".csv"):
                     metrics = self.load_csv(path)
+                else: # if path.endswith(".pkl"):
+                    metrics = self.load_pkl(path)
             if metrics is None:
                 if keys and keys[-1] and (
                         ".pkl" in keys[-1] or
@@ -1922,7 +1922,8 @@ class ML_Logger:
             if keys:
                 try:
                     df = df[keys].dropna()
-                except KeyError:
+                except KeyError as e:
+                    cprint(f"{keys} not in {path}. Contains {list(df.keys())}", color="red")
                     continue
 
             if bin is not None:
@@ -1967,6 +1968,7 @@ class ML_Logger:
             else:
                 new_df[k] = grouped[k].mean()
                 new_df[k + "@mean"] = grouped[k].mean()
+                new_df[k + "@median"] = grouped[k].quantile(0.5)
                 for reduce in aggs:
                     if reduce.endswith("%"):
                         pc = float(reduce[:-1])

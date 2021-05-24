@@ -62,7 +62,12 @@ def load_from_torch_file(file, **kwargs):
 def load_from_jsonl_file(file: io.StringIO, **__):
     import json
     for l in file.readlines():
-        yield json.loads(l)
+        trimmed = l.strip()
+        if trimmed.startswith(b'//'):
+            # support comment line
+            pass
+        else:
+            yield json.loads(l)
 
 
 def regularize_for_json(obj):
