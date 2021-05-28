@@ -9,7 +9,6 @@ from numbers import Number
 from random import random
 from time import perf_counter, sleep
 from typing import Any, Union
-from typing import NamedTuple
 
 import numpy as np
 from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
@@ -58,13 +57,6 @@ def now(fmt=None):
     from datetime import datetime
     now = datetime.now().astimezone()
     return now.strftime(fmt) if fmt else now
-
-
-# todo: move to analysis
-class BinOptions(NamedTuple):
-    key: str
-    n: int = None
-    size: int = None
 
 
 def metrify(data):
@@ -1846,8 +1838,8 @@ class ML_Logger:
 
     read_params = get_parameters
 
-    def read_metrics(self, *keys, path="metrics.pkl", wd=None, bin: BinOptions = None, silent=False,
-                     default=None, collect="std", verbose=False):
+    def read_metrics(self, *keys, x_key=None, path="metrics.pkl", wd=None, num_bins=None,
+                     bin_size=1, silent=False, default=None, collect="std", verbose=False):
         """
         Returns a Pandas.DataFrame object that contains metrics from all files.
 
@@ -1869,10 +1861,9 @@ class ML_Logger:
         import pandas as pd
         from contextlib import ExitStack
 
-        if bin is not None:
-            assert not keys or bin.key in keys, f"bin.key need to be in keys {keys}"
-            if bin.n:
-                assert bin.size is None, f"n and size are exclusive {bin}"
+        if x_key:
+            keys = [*keys, x_key]
+            x_key, *_ = x_key.split("@")
 
         if keys:
             meta_keys = defaultdict(list)
@@ -1897,7 +1888,7 @@ class ML_Logger:
                     metrics = self.load_jsonl(path)
                 elif path.endswith(".csv"):
                     metrics = self.load_csv(path)
-                else: # if path.endswith(".pkl"):
+                else:  # if path.endswith(".pkl"):
                     metrics = self.load_pkl(path)
             if metrics is None:
                 if keys and keys[-1] and (
@@ -1916,7 +1907,6 @@ class ML_Logger:
                 from IPython.core.display import display, HTML
                 url = os.path.normpath(pJoin(wd or self.prefix, path, "../.."))
                 display(HTML(f"""<a href="http://localhost:3001{url}">{path}</a>"""))
-                # self.print(f"loaded:", path, flush=True)
 
             df = pd.DataFrame(metrics)
             if keys:
@@ -1926,17 +1916,20 @@ class ML_Logger:
                     cprint(f"{keys} not in {path}. Contains {list(df.keys())}", color="red")
                     continue
 
-            if bin is not None:
-                if bin.n:
-                    bins = pd.qcut(df[bin.key], bin.n, duplicates="drop")
-                elif bin.size:
-                    bins = pd.cut(df[bin.key], bin.size)
+            if x_key is not None:
+                if num_bins:
+                    bins = pd.cut(df[x_key], num_bins)
+                else:
+                    bin_size = bin_size or 1
+                    import math
+                    num_bins = math.ceil(df[x_key].unique().__len__() / bin_size)
+                    bins = pd.qcut(df[x_key], num_bins, duplicates="drop")
 
                 new_df = {}
                 grouped = df.groupby(bins)
                 for k in keys or df.keys():
-                    if k == bin.key:
-                        new_df[bin.key] = grouped[bin.key].agg('min')
+                    if k == x_key:
+                        new_df[x_key] = grouped[x_key].agg('min')
                     else:
                         try:
                             new_df[k] = grouped[k].agg("mean")
@@ -1951,37 +1944,37 @@ class ML_Logger:
 
         df = pd.concat(all_metrics.values())
 
-        if bin is not None:
-            df = df.set_index(bin.key).sort_values(by=bin.key).reset_index()
-            if bin.n:
-                bins = pd.qcut(df[bin.key], bin.n, duplicates="drop")
-            elif bin.size:
-                bins = pd.cut(df[bin.key], bin.size)
+        if x_key is not None:
+            df = df.set_index(x_key).sort_values(by=x_key).reset_index()
+            if num_bins:
+                bins = pd.qcut(df[x_key], num_bins, duplicates="drop")
+            elif bin_size:
+                bins = pd.cut(df[x_key], bin_size)
         else:
-            bins = df.index
+            bins = df.index.unique()
 
         grouped = df.groupby(bins)
         new_df = {}
         for k, aggs in meta_keys.items():
-            if k == (bin.key if bin else keys[0]):
-                new_df[k] = grouped[k].agg("min")
-            else:
-                new_df[k] = grouped[k].mean()
-                new_df[k + "@mean"] = grouped[k].mean()
-                new_df[k + "@median"] = grouped[k].quantile(0.5)
-                for reduce in aggs:
-                    if reduce.endswith("%"):
-                        pc = float(reduce[:-1])
-                        new_df[k + "@" + reduce] = grouped[k].quantile(0.01 * pc)
-                    else:
-                        new_df[k + "@" + reduce] = grouped[k].agg(reduce)
+            new_df[k] = grouped[k].apply(lambda items: np.array(items))
+            # new_df[k + "@min"] = grouped[k].min()
+            # new_df[k + "@max"] = grouped[k].max()
+            # new_df[k + "@std"] = grouped[k].std()
+            # new_df[k + "@mean"] = grouped[k].mean()
+            new_df[k + "@median"] = grouped[k].quantile(0.5)
+            for reduce in aggs:
+                if reduce.endswith("%"):
+                    pc = float(reduce[:-1])
+                    new_df[k + "@" + reduce] = grouped[k].quantile(0.01 * pc)
+                else:
+                    new_df[k + "@" + reduce] = grouped[k].agg(reduce)
 
         df = pd.DataFrame(new_df)
 
         # apply bin, min@x, mean@y, etc.
-        if len(keys) > 1:
+        if len(query_keys) > 1:
             return [df.get(k, default or None) for k in query_keys]
-        elif len(keys) == 1:
+        elif len(query_keys) == 1:
             return df.get(query_keys[0], default or None)
         return metrics
 

@@ -75,12 +75,12 @@ The logging server uses the ``sanic`` framework, which means defaults to
 ``sanic``, such as maximum request size are carried over.
 
 When using ``ml-logger`` to save and load **very
-large** ``pytorch`` checkpoints, you need  to raise \ ``sanic``\ ’s
+large** ``pytorch`` checkpoints, you need  to raise ``sanic``\ ’s
 default request size limit from 100MB to something like a gigabyte or
 even larger. The file upload is done using multi-part form upload, where
 each query is kept small. However sanic will throw if the overall size
 of the query exceeds this
-parameter \ ``SANIC_REQUEST_MAX_SIZE=1000_000_000``. The default is
+parameter ``SANIC_REQUEST_MAX_SIZE=1000_000_000``. The default is
 ``100_000_000``, or 100MB.
 
 Use ssh tunnel if you are running on a managed cluster.
