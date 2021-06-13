@@ -27,7 +27,7 @@ class RUN(PrefixProto):
     """
     server = ROOT
     username = LOGGER_USER
-    project = "model-free"
+    project = "scratch"
 
     cwd = os.getcwd()
     script_root = os.environ.get("HOME", cwd)
