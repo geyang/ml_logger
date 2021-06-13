@@ -37,6 +37,8 @@ class RUN(PrefixProto):
     script_root = os.environ.get("HOME", cwd)
     script_path = None
 
+    from datetime import datetime
+    now = datetime.now().astimezone()
     prefix = "{username}/{project}/{now:%Y/%m-%d}/{file_stem}/{job_name}"
     job_name = "{job_prefix}/{job_postfix}"
     job_prefix = logger.now('%H.%M.%S')
