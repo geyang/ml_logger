@@ -587,13 +587,14 @@ class ML_Logger:
 
     def stem(self, path):
         """
-        returns the stem of the filename in the path, truncates parent directories w.r.t. given depth.
+        returns the stem of the filename in the path, removes the extension
 
         .. code:: python
 
             path = "/Users/geyang/some-proj/experiments/rope-cnn.py"
             logger.stem(path)
 
+        returns:
         ::
 
             "/Users/geyang/some-proj/experiments/rope-cnn"
@@ -1623,6 +1624,12 @@ class ML_Logger:
     def load_json(self, *keys):
         return self.client.read_json(pJoin(self.prefix, *keys))
 
+    def load_csv(self, *keys):
+        import pandas as pd
+        from io import StringIO
+        csv_str = self.client.read_text(pJoin(self.prefix, *keys))
+        return pd.read_csv(StringIO(csv_str))
+
     def load_yaml(self, *keys):
         import yaml
         text = self.client.read_text(pJoin(self.prefix, *keys))
@@ -1908,7 +1915,7 @@ class ML_Logger:
                 url = os.path.normpath(pJoin(wd or self.prefix, path, "../.."))
                 display(HTML(f"""<a href="http://localhost:3001{url}">{path}</a>"""))
 
-            df = pd.DataFrame(metrics)
+            df = metrics if isinstance(metrics, pd.DataFrame) else pd.DataFrame(metrics)
             if keys:
                 try:
                     df = df[keys].dropna()

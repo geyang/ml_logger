@@ -25,7 +25,8 @@ from os.path import join as pathJoin
 from time import sleep
 
 import pytest
-from ml_logger import logger, Color, metrify
+from ml_logger import logger
+from ml_logger.ml_logger import Color, metrify
 from ml_logger.helpers.color_helpers import percent
 
 
