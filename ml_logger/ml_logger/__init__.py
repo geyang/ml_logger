@@ -16,9 +16,13 @@ class RUN(PrefixProto):
     """The main point of this config object is to provide a way for config functions
     to directly specify the job prefix.
 
+    :param server: the ml-logger server address <host>:<port>
+    :param username: the username for the ml-logger server
+    :param project: the logging prefix for the project. Default to "scratch"
+
     :param job_prefix: prefix for this job
     :param job_postfix: postfix for this job
-    :param job_counter:
+    :param job_counter: a counter. Details see below
 
     example:
         - job_counter == 0: sets counter to 0
@@ -27,7 +31,7 @@ class RUN(PrefixProto):
     """
     server = ROOT
     username = LOGGER_USER
-    project = "scratch"
+    project = "scratch"  # default project name
 
     cwd = os.getcwd()
     script_root = os.environ.get("HOME", cwd)
