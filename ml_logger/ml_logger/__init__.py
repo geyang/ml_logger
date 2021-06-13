@@ -3,13 +3,11 @@ from os.path import abspath
 from typing import Union
 
 from params_proto.neo_proto import PrefixProto, Accumulant
-
 from .caches.summary_cache import SummaryCache
 from .helpers.print_utils import PrintHelper
 from .log_client import LogClient
-from .ml_logger import USER, ROOT, LOGGER_USER, logger, ML_Logger, pJoin
+from .ml_logger import USER, ROOT, logger, LOGGER_USER, ML_Logger, pJoin
 from .struts import ALLOWED_TYPES
-
 
 
 class RUN(PrefixProto):
@@ -41,7 +39,7 @@ class RUN(PrefixProto):
     now = datetime.now().astimezone()
     prefix = "{username}/{project}/{now:%Y/%m-%d}/{file_stem}/{job_name}"
     job_name = "{job_prefix}/{job_postfix}"
-    job_prefix = logger.now('%H.%M.%S')
+    job_prefix = f'{now:%H.%M.%S}'
     job_postfix = '{job_counter}'
     job_counter = Accumulant(None)
 
