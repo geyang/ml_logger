@@ -1,4 +1,5 @@
 import os
+import tempfile
 from collections import defaultdict
 from collections.abc import Sequence
 from contextlib import contextmanager
@@ -1068,6 +1069,45 @@ class ML_Logger:
         """log a directory, or upload an entire directory."""
         raise NotImplementedError
 
+    @staticmethod
+    def upload_s3(source_path, path):
+        """Upload a file to an S3 bucket
+
+        :param source_path: File name for the file to be uploaded
+        :param path: path to an S3 bucket to upload to
+        :return: True if file was uploaded, else False
+        """
+        import boto3
+
+        assert isinstance(source_path, str), "file has to be a filename of the string type."
+
+        if path.endswith('/'):
+            # If path ends with '/' use file_name as the object name
+            object_name = source_path
+        else:
+            *bucket, object_name = path.split('/')
+            bucket = '/'.join(bucket)
+
+        # todo: consider adding exception handling -- good or bad?
+        # Upload the file
+        s3_client = boto3.client('s3')
+        # from botocore.exceptions import ClientError
+        # try:
+        response = s3_client.upload_file(source_path, bucket, object_name)
+        return response
+        # except ClientError as e:
+        #     return False
+        # return True
+
+    def download_s3(self, path, to):
+        import boto3
+
+        *bucket, object_name = path.split('/')
+        bucket = '/'.join(bucket)
+
+        s3 = boto3.client('s3')
+        s3.download_file(bucket, object_name, to)
+
     def save_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None, background=1):
         """Log images as a composite of a grid. Images input as a 4-D stack.
 
@@ -1437,23 +1477,28 @@ class ML_Logger:
             buf.seek(0)
             return list(load_from_jsonl_file(buf))
 
-    def save_torch(self, obj, *keys, path=None, tries=3, backup=3.0):
-        path = pJoin(self.prefix, *keys, path)
+    def save_torch(self, obj, path=None, tries=3, backup=3.0):
+        target_path = pJoin(self.prefix, path)
+
         import torch
         from tempfile import NamedTemporaryFile
         with NamedTemporaryFile(delete=True) as tfile:
             torch.save(obj, tfile)
 
+            if path.lower().startswith('s3://'):
+                tfile.seek(0)
+                return self.upload_s3(source_path=tfile.name, path=target_path)
+
             while tries > 0:
                 tries -= 1
                 tfile.seek(0)
                 try:
-                    self.client.save_file(source_path=tfile.name, key=path)
+                    self.client.save_file(source_path=tfile.name, key=target_path)
                 except Exception as e:
                     if tries == 0:
                         raise e
                     dt = random() * backup
-                    self.print(f"{tries} left, saving to {path} again. Backup for {dt:0.3f} sec...")
+                    self.print(f"{tries} left, saving to {target_path} again. Backup for {dt:0.3f} sec...")
                     sleep(dt)
 
     torch_save = save_torch
@@ -1490,10 +1535,14 @@ class ML_Logger:
         with open(to, "wb") as f:
             f.write(buf.getbuffer())
 
-    def load_torch(self, *keys, map_location=None, **kwargs):
+    def load_torch(self, path, map_location=None, **kwargs):
         import torch
-        buf = self.load_file(*keys)
-        return torch.load(buf, map_location=map_location, **kwargs)
+        if path.lower().startswith('s3://'):
+            fn_or_buff = os.path.basename(path)
+            self.download_s3(path, fn_or_buff)
+        else:
+            fn_or_buff = self.load_file(path)
+        return torch.load(fn_or_buff, map_location=map_location, **kwargs)
 
     torch_load = load_torch
 

@@ -2,7 +2,7 @@ import os
 from os.path import abspath
 from typing import Union
 
-from params_proto.neo_proto import PrefixProto, Accumulant
+from params_proto.neo_proto import PrefixProto, Accumulant, Proto
 from .caches.summary_cache import SummaryCache
 from .helpers.print_utils import PrintHelper
 from .log_client import LogClient
@@ -31,8 +31,8 @@ class RUN(PrefixProto):
     username = LOGGER_USER
     project = "scratch"  # default project name
 
-    cwd = os.getcwd()
-    script_root = os.environ.get("HOME", cwd)
+    cwd = Proto(env="CWD")
+    script_root = Proto(cwd, env="HOME")
     script_path = None
 
     from datetime import datetime
@@ -48,14 +48,15 @@ class RUN(PrefixProto):
 
     # noinspection PyMissingConstructor
     @classmethod
-    def __init__(cls, job_counter: Union[None, bool, int] = True, **kwargs):
-        cls._update(**kwargs)
+    def __init__(cls, deps=None, script_path=None, **kwargs):
+        cls._update(deps, script_path=script_path, **kwargs)
         from ml_logger import logger
 
         script_root_depth = cls.script_root.split('/').__len__()
-        script_truncated = logger.truncate(cls.script_path, depth=script_root_depth)
+        script_truncated = logger.truncate(script_path, depth=script_root_depth)
         cls.file_stem = logger.stem(script_truncated)
 
+        job_counter = cls.job_counter
         if job_counter is None:
             pass
         elif job_counter is False:
@@ -74,6 +75,9 @@ class RUN(PrefixProto):
 
         cls.JOB_NAME = data['job_name']
         cls.PREFIX = data['prefix']
+        cls.JOB_NAME = data['job_name']
+        cls.JOB_PREFIX = data['job_prefix']
+        cls.JOB_POSTFIX = data['job_postfix']
 
 
 if __name__ == '__main__':
@@ -118,6 +122,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, **KWARGS):
         __file = launch_module.__file__
         caller_script = abspath(__file)
 
+    # need to set the deps
     # note: for scripts in the `plan2vec` module this also works -- b/c we truncate fixed depth.
     RUN(script_path=caller_script)
 
@@ -128,6 +133,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, **KWARGS):
     # todo: we shouldn't need to log to the same directory, and the directory for the run shouldn't be fixed.
     logger.configure(root=RUN.server, prefix=PREFIX, asynchronous=False,  # use sync logger
                      max_workers=4, register_experiment=False)
+    # this is debatable
     if RUN.restart:
         with logger.Sync():
             logger.remove(".")
