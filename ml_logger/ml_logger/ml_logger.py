@@ -1070,7 +1070,7 @@ class ML_Logger:
         raise NotImplementedError
 
     @staticmethod
-    def upload_s3(source_path, path):
+    def upload_s3(source_path, *keys, path=None):
         """Upload a file to an S3 bucket
 
         :param source_path: File name for the file to be uploaded
@@ -1080,6 +1080,8 @@ class ML_Logger:
         import boto3
 
         assert isinstance(source_path, str), "file has to be a filename of the string type."
+
+        path = pJoin(*keys, path)
 
         if path.endswith('/'):
             # If path ends with '/' use file_name as the object name
@@ -1099,9 +1101,10 @@ class ML_Logger:
         #     return False
         # return True
 
-    def download_s3(self, path, to):
+    def download_s3(self, *keys, path=None, to):
         import boto3
 
+        path = pJoin(*keys, path)
         *bucket, object_name = path.split('/')
         bucket = '/'.join(bucket)
 
@@ -1477,8 +1480,8 @@ class ML_Logger:
             buf.seek(0)
             return list(load_from_jsonl_file(buf))
 
-    def save_torch(self, obj, path=None, tries=3, backup=3.0):
-        target_path = pJoin(self.prefix, path)
+    def save_torch(self, obj, *keys, path=None, tries=3, backup=3.0):
+        path = pJoin(*keys, path)
 
         import torch
         from tempfile import NamedTemporaryFile
@@ -1487,8 +1490,9 @@ class ML_Logger:
 
             if path.lower().startswith('s3://'):
                 tfile.seek(0)
-                return self.upload_s3(source_path=tfile.name, path=target_path)
+                return self.upload_s3(source_path=tfile.name, path=path)
 
+            target_path = pJoin(self.prefix, path)
             while tries > 0:
                 tries -= 1
                 tfile.seek(0)
@@ -1535,8 +1539,9 @@ class ML_Logger:
         with open(to, "wb") as f:
             f.write(buf.getbuffer())
 
-    def load_torch(self, path, map_location=None, **kwargs):
+    def load_torch(self, *keys, path=None, map_location=None, **kwargs):
         import torch
+        path = pJoin(*keys, path)
         if path.lower().startswith('s3://'):
             fn_or_buff = os.path.basename(path)
             self.download_s3(path, fn_or_buff)
