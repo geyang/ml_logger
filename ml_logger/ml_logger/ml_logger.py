@@ -1480,6 +1480,11 @@ class ML_Logger:
             buf.seek(0)
             return list(load_from_jsonl_file(buf))
 
+    def rmove_s3(self, path):
+        import boto3
+        client = boto3.client('s3')
+        return client.delete_bucket(path)
+
     def save_torch(self, obj, *keys, path=None, tries=3, backup=3.0):
         path = pJoin(*keys, path)
 

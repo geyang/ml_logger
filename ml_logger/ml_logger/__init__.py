@@ -133,10 +133,10 @@ def instr(fn, *ARGS, __file=False, __silent=False, **KWARGS):
     # todo: we shouldn't need to log to the same directory, and the directory for the run shouldn't be fixed.
     logger.configure(root=RUN.server, prefix=PREFIX, asynchronous=False,  # use sync logger
                      max_workers=4, register_experiment=False)
-    # this is debatable
-    if RUN.restart:
-        with logger.Sync():
-            logger.remove(".")
+    # # this is debatable
+    # if RUN.restart:
+    #     with logger.Sync():
+    #         logger.remove(".")
     logger.upload_file(caller_script)
     # the tension is in between creation vs run. Code snapshot are shared, but runs need to be unique.
     _ = dict()
