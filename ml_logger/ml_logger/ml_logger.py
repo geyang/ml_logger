@@ -1882,7 +1882,7 @@ class ML_Logger:
         :param default: Undefined. If the default key is present, return default when param is missing.
         :return:
         """
-        _ = self.load_pkl(path)
+        _ = self.load_pkl(self.glob(path)[0] if "*" in path else path)
         if _ is None:
             if keys and keys[-1] and "parameters.pkl" in keys[-1]:
                 self.print('Your last key looks like a `parameters.pkl` path. Make '

@@ -43,7 +43,7 @@ class RUN(PrefixProto):
     job_postfix = '{job_counter}'
     job_counter = Accumulant(None)
 
-    restart = False
+    resume = Flag(help="whether starting the run from scratch, or resume previous checkpoints")
     readme = None
 
     # noinspection PyMissingConstructor
