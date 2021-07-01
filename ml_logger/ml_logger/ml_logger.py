@@ -30,6 +30,7 @@ USER = os.environ.get("USER", None)
 
 # ML_Logger defaults
 ROOT = os.environ.get("ML_LOGGER_ROOT", CWD) or CWD
+S3_ROOT = os.environ.get("ML_LOGGER_S3_ROOT", None)
 LOGGER_USER = os.environ.get("ML_LOGGER_USER", USER)
 ACCESS_TOKEN = os.environ.get("ML_LOGGER_ACCESS_TOKEN", None)
 
@@ -1070,6 +1071,12 @@ class ML_Logger:
         raise NotImplementedError
 
     @staticmethod
+    def remove_s3(bucket, *keys):
+        import boto3
+        client = boto3.client('s3')
+        return client.delete_object(Bucket=bucket, Key=pJoin(*keys))
+
+    @staticmethod
     def upload_s3(source_path, *keys, path=None):
         """Upload a file to an S3 bucket
 
@@ -1479,11 +1486,6 @@ class ML_Logger:
                 buf.write(chunk)
             buf.seek(0)
             return list(load_from_jsonl_file(buf))
-
-    def remove_s3(self, path):
-        import boto3
-        client = boto3.client('s3')
-        return client.delete_bucket(path)
 
     def save_torch(self, obj, *keys, path=None, tries=3, backup=3.0):
         path = pJoin(*keys, path)
