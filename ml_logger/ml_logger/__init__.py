@@ -1,8 +1,7 @@
 import os
 from os.path import abspath
-from typing import Union
 
-from params_proto.neo_proto import PrefixProto, Accumulant, Proto
+from params_proto.neo_proto import PrefixProto, Accumulant, Proto, Flag
 from .caches.summary_cache import SummaryCache
 from .helpers.print_utils import PrintHelper
 from .log_client import LogClient
