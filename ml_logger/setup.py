@@ -26,6 +26,7 @@ setup(name="ml_logger",
           "ml_logger.helpers",  # ml_dash is now in a different package
       ],
       install_requires=[
+          "boto3",
           "cloudpickle",
           "dill",
           "imageio",
