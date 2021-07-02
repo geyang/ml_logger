@@ -26,8 +26,8 @@ from time import sleep
 
 import pytest
 from ml_logger import logger
-from ml_logger.ml_logger import Color, metrify
 from ml_logger.helpers.color_helpers import percent
+from ml_logger.ml_logger import Color, metrify
 
 
 @pytest.fixture(scope='session')
@@ -111,7 +111,6 @@ def test_metrics_prefix_2(setup):
 
 
 def test_store_metrics_prefix(setup):
-    import numpy as np
     from ml_logger import logger
 
     logger.remove("metrics.pkl")
@@ -253,6 +252,11 @@ def test_hostname(setup):
 def test_split(setup):
     assert logger.split() is None, 'The first tick should be None'
     assert type(logger.split()) is float, 'Then it should return a a float in the seconds.'
+
+
+def test_start(setup):
+    assert isinstance(logger.start(), float), "should be perf_counter (float)"
+    assert isinstance(logger.split(), float), "should be time delta (float)"
 
 
 def test_ping(setup):

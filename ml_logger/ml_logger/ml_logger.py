@@ -430,11 +430,11 @@ class ML_Logger:
 
     def start(self, *keys):
         """
-        starts a timer, saved in float in seconds.
+        starts a timer, saved in float in seconds. The returned perf_counter does not have meaning
+        on its own. Only differences between two perf_counters make sense as time delta.
 
-        Automatically de-dupes the keys, but will return the same
-        number of intervals. duplicates will recieve the same
-        result.
+        Automatically de-dupes the keys, but will return the same number of intervals. duplicates
+        will receive the same result.
 
         .. code:: python
 
@@ -451,22 +451,19 @@ class ML_Logger:
         :return: float (in seconds)
         """
         keys = keys or ['default']
-        results = {k: None for k in keys}
-        new_tic = self.now()
+        new_tic = perf_counter()
         for key in set(keys):
             self.timer_cache[key] = new_tic
 
-        return results[keys[0]] \
-            if len(keys) == 1 else [results[k] for k in keys]
+        return self.timer_cache[keys[0]] if len(keys) == 1 else [self.timer_cache[k] for k in keys]
 
     def since(self, *keys):
         """
-        returns a float in seconds when 1 key is passed, or
-        a list of floats when multiple keys are passsed in.
+        returns a float in seconds when 1 key is passed, or a list of floats when multiple
+        keys are passed in. The returned value are in seconds, measured by delta in perf_counter.
 
-        Automatically de-dupes the keys, but will return the same
-        number of intervals. duplicates will recieve the same
-        result.
+        Automatically de-dupes the keys, but will return the same number of intervals. duplicates
+         will receive the same result.
 
         Note: This *is* idempotent.
 
@@ -486,7 +483,7 @@ class ML_Logger:
         """
         keys = keys or ['default']
         results = {k: None for k in keys}
-        tick = self.now()
+        tick = perf_counter()
         for key in set(keys):
             try:
                 dt = tick - self.timer_cache[key]
@@ -502,12 +499,11 @@ class ML_Logger:
     # timing functions
     def split(self, *keys):
         """
-        returns a float in seconds when 1 key is passed, or
-        a list of floats when multiple keys are passsed in.
+        returns a float in seconds when 1 key is passed, or a list of floats when multiple keys are
+        passed-in.
 
-        Automatically de-dupes the keys, but will return the same
-        number of intervals. duplicates will recieve the same
-        result.
+        Automatically de-dupes the keys, but will return the same number of intervals. duplicates
+        will receive the same result.
 
         Note: This is Not idempotent, which is why it is not a property.
 
@@ -531,7 +527,7 @@ class ML_Logger:
         for key in set(keys):
             try:
                 results[key] = new_tic - self.timer_cache[key]
-            except:
+            except KeyError as e:
                 pass
             self.timer_cache[key] = new_tic
 
