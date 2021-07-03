@@ -1,5 +1,4 @@
 import os
-import tempfile
 from collections import defaultdict
 from collections.abc import Sequence
 from contextlib import contextmanager
@@ -1086,12 +1085,12 @@ class ML_Logger:
 
         path = pJoin(*keys, path)
 
+        bucket, *object_name = path.split('/')
+        object_name = '/'.join(object_name)
         if path.endswith('/'):
             # If path ends with '/' use file_name as the object name
-            object_name = source_path
-        else:
-            *bucket, object_name = path.split('/')
-            bucket = '/'.join(bucket)
+            filename = os.path.basename(source_path)
+            object_name = pJoin(object_name, filename)
 
         # todo: consider adding exception handling -- good or bad?
         # Upload the file
@@ -1493,7 +1492,7 @@ class ML_Logger:
 
             if path.lower().startswith('s3://'):
                 tfile.seek(0)
-                return self.upload_s3(source_path=tfile.name, path=path)
+                return self.upload_s3(source_path=tfile.name, path=path[5:])
 
             target_path = pJoin(self.prefix, path)
             while tries > 0:
@@ -1547,7 +1546,7 @@ class ML_Logger:
         path = pJoin(*keys, path)
         if path.lower().startswith('s3://'):
             fn_or_buff = os.path.basename(path)
-            self.download_s3(path, fn_or_buff)
+            self.download_s3(path[5:], to=fn_or_buff)
         else:
             fn_or_buff = self.load_file(path)
         return torch.load(fn_or_buff, map_location=map_location, **kwargs)
