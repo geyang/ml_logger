@@ -325,6 +325,20 @@ def test_capture_error():
     logger.print("works!", color="green")
 
 
+def test_get_exps(setup):
+    import os
+    logger.prefix = os.path.expandvars("$HOME/ml-logger-debug")
+    all = logger.get_exps("**/parameters.pkl")
+    assert 'run.prefix' in all.columns
+
+
+def test_get_exps_without_pkl(setup):
+    import os
+    logger.prefix = os.path.expandvars("$HOME/ml-logger-debug")
+    all = logger.get_exps("**")
+    assert 'run.prefix' in all.columns
+
+
 if __name__ == "__main__":
     # setup(LOCAL_TEST_DIR)
     # test(None)

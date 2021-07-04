@@ -1847,6 +1847,24 @@ class ML_Logger:
         wd = pJoin(self.prefix, wd or "")
         return self.client.glob(query, wd=wd, recursive=recursive, start=start, stop=stop)
 
+    def get_exps(self, *prefixes, show_progress=True):
+        import pandas as pd
+        from tqdm import tqdm
+        from functools import reduce
+        from ml_logger.helpers.func_helpers import assign, dot_flatten
+        all_exps = sum([self.glob(path if path.endswith('parameters.pkl')
+                                  else pJoin(path, "parameters.pkl"))
+                        or [] for path in prefixes], [])
+
+        all_exp_params = []
+
+        for exp_prefix in tqdm(all_exps, desc="loading") if show_progress else all_exps:
+            params_data = self.load_pkl(exp_prefix)
+            params_dict = dot_flatten(reduce(assign, params_data))
+            params_dict['prefix'] = exp_prefix
+            all_exp_params.append(params_dict)
+        return pd.DataFrame(all_exp_params)
+
     def get_parameters(self, *keys, path="parameters.pkl", silent=False, **kwargs):
         """
         utility to obtain the hyperparameters as a flattened dictionary.
