@@ -772,6 +772,7 @@ class ML_Logger:
         for p in found_paths:
             abs_path = pJoin(self.prefix, p)
             self.client.delete(abs_path)
+        return found_paths
 
     def log_params(self, path="parameters.pkl", silent=False, **kwargs):
         """
