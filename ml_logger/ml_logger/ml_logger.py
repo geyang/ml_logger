@@ -759,15 +759,17 @@ class ML_Logger:
         # todo: wait for logger to finish upload in async mode.
         self.flush()
 
-    def remove(self, path):
+    def remove(self, *paths):
         """
         removes files and folders by path
 
         :param path:
         :return:
         """
-        paths = self.glob(path, wd=None) if "*" in path else [path]
-        for p in paths or []:
+        found_paths = []
+        for path in paths:
+            found_paths += self.glob(path, wd=None) if "*" in path else [path]
+        for p in found_paths:
             abs_path = pJoin(self.prefix, p)
             self.client.delete(abs_path)
 
