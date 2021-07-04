@@ -772,6 +772,7 @@ class ML_Logger:
         for p in found_paths:
             abs_path = pJoin(self.prefix, p)
             self.client.delete(abs_path)
+        return found_paths
 
     def log_params(self, path="parameters.pkl", silent=False, **kwargs):
         """
@@ -1109,8 +1110,9 @@ class ML_Logger:
         import boto3
 
         path = pJoin(*keys, path)
-        *bucket, object_name = path.split('/')
-        bucket = '/'.join(bucket)
+
+        bucket, *object_name = path.split('/')
+        object_name = '/'.join(object_name)
 
         s3 = boto3.client('s3')
         s3.download_file(bucket, object_name, to)
