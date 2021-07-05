@@ -34,8 +34,7 @@ class RUN(PrefixProto):
     script_root = Proto(cwd, env="HOME")
     script_path = None
 
-    from datetime import datetime
-    now = datetime.now().astimezone()
+    now = logger.now()
     prefix = "{username}/{project}/{now:%Y/%m-%d}/{file_stem}/{job_name}"
     job_name = "{job_prefix}/{job_postfix}"
     job_prefix = f'{now:%H.%M.%S}'
@@ -152,8 +151,8 @@ def instr(fn, *ARGS, __file=False, __silent=False, **KWARGS):
         **_,
         silent=__silent)
 
-    logger.print('taking diff, if this step takes too long, check if your '
-                 'uncommitted changes are too large.', color="green")
+    logger.print('taking diff, if this step takes too long, check if your uncommitted changes are too large.',
+                 color="green")
     logger.diff()
     if RUN.readme:
         logger.log_text(RUN.readme, "README.md", dedent=True)
@@ -181,7 +180,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, **KWARGS):
 
         logger.configure(root=ROOT, prefix=PREFIX, register_experiment=False, max_workers=10)
         logger.log_params(host=dict(hostname=logger.hostname),
-                          run=dict(status="running", startTime=logger.now(), job_id=logger.job_id))
+                          run=dict(status="running", startTime=logger.utcnow(), job_id=logger.job_id))
 
         import time
         try:
@@ -191,7 +190,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, **KWARGS):
             results = fn(*(args or ARGS), **_KWARGS)
 
             logger.log_line("========== execution is complete ==========")
-            logger.log_params(run=dict(status="completed", completeTime=logger.now()))
+            logger.log_params(run=dict(status="completed", completeTime=logger.utcnow()))
             logger.flush()
             time.sleep(3)
         except Exception as e:
@@ -199,7 +198,8 @@ def instr(fn, *ARGS, __file=False, __silent=False, **KWARGS):
             with logger.SyncContext():  # Make sure uploaded finished before termination.
                 logger.print(tb, color="red")
                 logger.log_text(tb, filename="traceback.err")
-                logger.log_params(run=dict(status="error", exitTime=logger.now()))
+                # need to add status for ec2/slurm preemption
+                logger.log_params(run=dict(status="error", exitTime=logger.utcnow()))
                 logger.flush()
             time.sleep(3)
             raise e

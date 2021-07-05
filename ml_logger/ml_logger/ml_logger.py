@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 from collections.abc import Sequence
 from contextlib import contextmanager
+from datetime import datetime
 from functools import partial
 from io import BytesIO
 from math import ceil
@@ -46,17 +47,31 @@ def now(fmt=None):
     """
     This is not idempotent--each call returns a new value. So it has to be a method
 
-    returns a datetime object if no format string is specified.
-    Otherwise returns a formated string.
+    returns a datetime object if no format string is specified. Otherwise returns a
+    formated string.
 
-    Each call returns the current time.
+    Each call returns the current time in current timezone
 
     :param fmt: formating string, i.e. "%Y-%m-%d-%H-%M-%S-%f"
     :return: OneOf[datetime, string]
     """
-    # todo: add time zone support
-    from datetime import datetime
     now = datetime.now().astimezone()
+    return now.strftime(fmt) if fmt else now
+
+
+def utcnow(fmt=None):
+    """
+    This is not idempotent--each call returns a new value. So it has to be a method
+
+    returns a datetime object if no format string is specified. Otherwise returns a
+    formated string.
+
+    Each call returns the current time in UTC
+
+    :param fmt: formating string, i.e. "%Y-%m-%d-%H-%M-%S-%f"
+    :return: OneOf[datetime, string]
+    """
+    now = datetime.utcnow()
     return now.strftime(fmt) if fmt else now
 
 
@@ -551,6 +566,10 @@ class ML_Logger:
     @staticmethod
     def now(fmt=None):
         return now(fmt)
+
+    @staticmethod
+    def utcnow(fmt=None):
+        return utcnow(fmt)
 
     def truncate(self, path, depth=-1):
         """
@@ -1847,23 +1866,28 @@ class ML_Logger:
         wd = pJoin(self.prefix, wd or "")
         return self.client.glob(query, wd=wd, recursive=recursive, start=start, stop=stop)
 
-    def get_exps(self, *prefixes, show_progress=True):
+    def get_exps(self, *prefixes, as_dataframe=True, show_progress=True):
         import pandas as pd
         from tqdm import tqdm
         from functools import reduce
         from ml_logger.helpers.func_helpers import assign, dot_flatten
-        all_exps = sum([self.glob(path if path.endswith('parameters.pkl')
-                                  else pJoin(path, "parameters.pkl"))
-                        or [] for path in prefixes], [])
+        all_prefixes = []
+        for path in tqdm(prefixes, desc="glob") if show_progress else prefixes:
+            full_path = path if path.endswith('parameters.pkl') else pJoin(path, "parameters.pkl")
+            if '*' in full_path:
+                all_prefixes += self.glob(full_path) or []
+            else:
+                all_prefixes += [full_path]
 
         all_exp_params = []
-
-        for exp_prefix in tqdm(all_exps, desc="loading") if show_progress else all_exps:
+        for exp_prefix in tqdm(all_prefixes, desc="loading") if show_progress else all_exps:
             params_data = self.load_pkl(exp_prefix)
             params_dict = dot_flatten(reduce(assign, params_data))
             params_dict['prefix'] = exp_prefix
             all_exp_params.append(params_dict)
-        return pd.DataFrame(all_exp_params)
+        if as_dataframe:
+            return pd.DataFrame(all_exp_params)
+        return all_exp_params
 
     def get_parameters(self, *keys, path="parameters.pkl", silent=False, **kwargs):
         """
