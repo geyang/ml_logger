@@ -501,7 +501,7 @@ class ML_Logger:
         for key in set(keys):
             try:
                 dt = tick - self.timer_cache[key]
-                results[key] = dt.total_seconds()
+                results[key] = dt
             except:
                 # not sure if setting an empty cache is good
                 self.timer_cache[key] = tick

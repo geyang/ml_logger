@@ -257,6 +257,7 @@ def test_split(setup):
 def test_start(setup):
     assert isinstance(logger.start(), float), "should be perf_counter (float)"
     assert isinstance(logger.split(), float), "should be time delta (float)"
+    assert isinstance(logger.since(), float), "should be time delta (float)"
 
 
 def test_ping(setup):
