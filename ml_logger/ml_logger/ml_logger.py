@@ -273,7 +273,7 @@ class ML_Logger:
                   max_workers=None,
                   buffer_size=None,
                   summary_cache_opts: dict = None,
-                  register_experiment=True,
+                  register_experiment=None,
                   silent=False,
                   ):
         """
@@ -364,15 +364,10 @@ class ML_Logger:
 
         # now register the experiment
         if register_experiment:
-            with logger.SyncContext(clean=True):  # single use SyncContext
-                self.log_params(run=self.run_info(), silent=silent)
-
-    def run_info(self, **kwargs):
-        return {
-            "createTime": self.now(),
-            "prefix": self.prefix,
-            **kwargs
-        }
+            raise DeprecationWarning("register_experiment is now set to None, and will be deprecated in the "
+                                     "next version. - Ge")
+        #     with logger.SyncContext(clean=True):  # single use SyncContext
+        #         self.mark_running(silent=silent)
 
     @staticmethod
     def fn_info(fn):
@@ -730,10 +725,16 @@ class ML_Logger:
     def diff_file(self, path, silent=False):
         raise NotImplementedError
 
+    # job host helper files
     @property
-    def job_id(self):
+    def slurm_job_id(self):
         import os
         return os.getenv("SLURM_JOB_ID", None)
+
+    @property
+    def is_preempted(self):
+        import requests
+        return requests.get("http://169.254.169.254/latest/meta-data/spot/termination-time").status_code != 200
 
     @property
     def hostname(self):
@@ -745,6 +746,37 @@ class ML_Logger:
         except subprocess.CalledProcessError as e:
             self.log_line(f"can not get obtain hostname via `{cmd}` due to exception: {e}")
             return None
+
+    # job life-cycle methods
+    def mark_created(self, run=None, **kwargs):
+        run = run or {}
+        run.update(status='created', createTime=self.utcnow())
+        self.log_params(run=run, **kwargs)
+
+    def mark_requested(self, run=None, **kwargs):
+        run = run or {}
+        run.update(status='requested', requestTime=self.utcnow())
+        self.log_params(run=run, **kwargs)
+
+    def mark_running(self, run=None, **kwargs):
+        run = run or {}
+        run.update(status='running', runTime=self.utcnow())
+        self.log_params(run=run, **kwargs)
+
+    def mark_paused(self, run=None, **kwargs):
+        run = run or {}
+        run.update(status='paused', pauseTime=self.utcnow())
+        self.log_params(run=run, **kwargs)
+
+    def mark_completed(self, run=None, **kwargs):
+        run = run or {}
+        run.update(status='completed', completionTime=self.utcnow())
+        self.log_params(run=run, **kwargs)
+
+    def mark_errored(self, run=None, **kwargs):
+        run = run or {}
+        run.update(status='errored', errorTime=self.utcnow())
+        self.log_params(run=run, **kwargs)
 
     def ping(self, status='running', interval=None):
         """

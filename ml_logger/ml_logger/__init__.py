@@ -131,7 +131,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
     # todo: there should be a better way to log these.
     # todo: we shouldn't need to log to the same directory, and the directory for the run shouldn't be fixed.
     logger.configure(root=RUN.server, prefix=RUN.PREFIX, asynchronous=False,  # use sync logger
-                     max_workers=4, register_experiment=False)
+                     max_workers=4)
     if not __dryrun:
         # # this is debatable
         # if RUN.restart:
@@ -140,13 +140,12 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
         logger.upload_file(caller_script)
 
         # the tension is in between creation vs run. Code snapshot are shared, but runs need to be unique.
-        logger.log_params(
-            run=logger.run_info(status="created", script_path=RUN.script_path, script_root=RUN.script_root),
+        logger.mark_created(
+            run=dict(script_path=RUN.script_path, script_root=RUN.script_root),
             revision=logger.rev_info(),
             fn=logger.fn_info(fn),
             args=ARGS,
-            kwargs=KWARGS,
-            silent=__silent)
+            kwargs=KWARGS)
 
         logger.print('taking diff, if this step takes too long, check if your uncommitted changes are too large.',
                      color="green")
@@ -176,9 +175,9 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
             f"ARGS: {ARGS}\n"
 
         RUN._update(**RUN_DICT)
-        logger.configure(root=RUN.server, prefix=RUN.PREFIX, register_experiment=False, max_workers=10)
-        logger.log_params(host=dict(hostname=logger.hostname),
-                          run=dict(status="running", startTime=logger.utcnow(), job_id=logger.job_id))
+        logger.configure(root=RUN.server, prefix=RUN.PREFIX, max_workers=10)
+        # todo logger.job_id is specific to slurm
+        logger.mark_running(run=dict(job_id=logger.slurm_job_id), host=dict(hostname=logger.hostname), )
 
         import time
         try:
@@ -188,7 +187,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
             results = fn(*(args or ARGS), **_KWARGS)
 
             logger.log_line("========== execution is complete ==========")
-            logger.log_params(run=dict(status="completed", completeTime=logger.utcnow()))
+            logger.mark_completed()
             logger.flush()
             time.sleep(3)
         except Exception as e:
@@ -197,7 +196,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
                 logger.print(tb, color="red")
                 logger.log_text(tb, filename="traceback.err")
                 # need to add status for ec2/slurm preemption
-                logger.log_params(run=dict(status="error", exitTime=logger.utcnow()))
+                logger.mark_errored()
                 logger.flush()
             time.sleep(3)
             raise e
