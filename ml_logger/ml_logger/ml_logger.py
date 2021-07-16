@@ -764,8 +764,10 @@ class ML_Logger:
         self.log_params(job=job, **kwargs)
 
     def job_running(self, job=None, **kwargs):
+        # todo: this is called as a ping-home.
+        # todo: resolve race between multiple workers. Use hostname/job_id
         job = job or {}
-        job.update(status='running', jobTime=self.utcnow())
+        job.update(status='running', runTime=self.utcnow())
         self.log_params(job=job, **kwargs)
 
     def job_paused(self, job=None, **kwargs):
