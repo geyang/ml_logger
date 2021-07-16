@@ -140,8 +140,8 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
         logger.upload_file(caller_script)
 
         # the tension is in between creation vs run. Code snapshot are shared, but runs need to be unique.
-        logger.mark_created(
-            run=dict(script_path=RUN.script_path, script_root=RUN.script_root),
+        logger.job_created(
+            job=dict(script_path=RUN.script_path, script_root=RUN.script_root),
             revision=logger.rev_info(),
             fn=logger.fn_info(fn),
             args=ARGS,
@@ -169,15 +169,14 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
         import traceback
         from ml_logger import logger
 
-        assert not (args and ARGS), \
-            f"can not use position argument at both thunk creation as well as run.\n" \
-            f"_args: {args}\n" \
-            f"ARGS: {ARGS}\n"
+        assert not (args and ARGS), f"can not use position argument at both thunk creation and run.\n" \
+                                    f"_args: {args}\n" \
+                                    f"ARGS: {ARGS}\n"
 
         RUN._update(**RUN_DICT)
         logger.configure(root=RUN.server, prefix=RUN.PREFIX, max_workers=10)
         # todo logger.job_id is specific to slurm
-        logger.mark_running(run=dict(job_id=logger.slurm_job_id), host=dict(hostname=logger.hostname), )
+        logger.job_started(job=dict(job_id=logger.slurm_job_id), host=dict(hostname=logger.hostname), )
 
         import time
         try:
@@ -187,7 +186,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
             results = fn(*(args or ARGS), **_KWARGS)
 
             logger.log_line("========== execution is complete ==========")
-            logger.mark_completed()
+            logger.job_completed()
             logger.flush()
             time.sleep(3)
         except Exception as e:
@@ -196,7 +195,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
                 logger.print(tb, color="red")
                 logger.log_text(tb, filename="traceback.err")
                 # need to add status for ec2/slurm preemption
-                logger.mark_errored()
+                logger.job_errored()
                 logger.flush()
             time.sleep(3)
             raise e

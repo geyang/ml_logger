@@ -367,7 +367,7 @@ class ML_Logger:
             raise DeprecationWarning("register_experiment is now set to None, and will be deprecated in the "
                                      "next version. - Ge")
         #     with logger.SyncContext(clean=True):  # single use SyncContext
-        #         self.mark_running(silent=silent)
+        #         self.job_running(silent=silent)
 
     @staticmethod
     def fn_info(fn):
@@ -748,35 +748,40 @@ class ML_Logger:
             return None
 
     # job life-cycle methods
-    def mark_created(self, run=None, **kwargs):
-        run = run or {}
-        run.update(status='created', createTime=self.utcnow())
-        self.log_params(run=run, **kwargs)
+    def job_created(self, job=None, **kwargs):
+        job = job or {}
+        job.update(status='created', createTime=self.utcnow())
+        self.log_params(job=job, **kwargs)
 
-    def mark_requested(self, run=None, **kwargs):
-        run = run or {}
-        run.update(status='requested', requestTime=self.utcnow())
-        self.log_params(run=run, **kwargs)
+    def job_requested(self, job=None, **kwargs):
+        job = job or {}
+        job.update(status='requested', requestTime=self.utcnow())
+        self.log_params(job=job, **kwargs)
 
-    def mark_running(self, run=None, **kwargs):
-        run = run or {}
-        run.update(status='running', runTime=self.utcnow())
-        self.log_params(run=run, **kwargs)
+    def job_started(self, job=None, **kwargs):
+        job = job or {}
+        job.update(status='started', startTime=self.utcnow())
+        self.log_params(job=job, **kwargs)
 
-    def mark_paused(self, run=None, **kwargs):
-        run = run or {}
-        run.update(status='paused', pauseTime=self.utcnow())
-        self.log_params(run=run, **kwargs)
+    def job_running(self, job=None, **kwargs):
+        job = job or {}
+        job.update(status='running', jobTime=self.utcnow())
+        self.log_params(job=job, **kwargs)
 
-    def mark_completed(self, run=None, **kwargs):
-        run = run or {}
-        run.update(status='completed', completionTime=self.utcnow())
-        self.log_params(run=run, **kwargs)
+    def job_paused(self, job=None, **kwargs):
+        job = job or {}
+        job.update(status='paused', pauseTime=self.utcnow())
+        self.log_params(job=job, **kwargs)
 
-    def mark_errored(self, run=None, **kwargs):
-        run = run or {}
-        run.update(status='errored', errorTime=self.utcnow())
-        self.log_params(run=run, **kwargs)
+    def job_completed(self, job=None, **kwargs):
+        job = job or {}
+        job.update(status='completed', completionTime=self.utcnow())
+        self.log_params(job=job, **kwargs)
+
+    def job_errored(self, job=None, **kwargs):
+        job = job or {}
+        job.update(status='errored', errorTime=self.utcnow())
+        self.log_params(job=job, **kwargs)
 
     def ping(self, status='running', interval=None):
         """
