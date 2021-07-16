@@ -2,6 +2,7 @@ import os
 from os.path import abspath
 
 from params_proto.neo_proto import PrefixProto, Accumulant, Proto, Flag
+
 from .caches.summary_cache import SummaryCache
 from .helpers.print_utils import PrintHelper
 from .log_client import LogClient
@@ -50,7 +51,8 @@ class RUN(PrefixProto):
         cls._update(deps, script_path=script_path, **kwargs)
         from ml_logger import logger
 
-        script_root_depth = cls.script_root.split('/').__len__()
+        sr = cls.script_root
+        script_root_depth = (sr.value if isinstance(sr, Proto) else sr).split('/').__len__()
         script_truncated = logger.truncate(script_path, depth=script_root_depth)
         cls.file_stem = logger.stem(script_truncated)
 
@@ -128,7 +130,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
 
     # todo: there should be a better way to log these.
     # todo: we shouldn't need to log to the same directory, and the directory for the run shouldn't be fixed.
-    logger.configure(root=RUN.server, prefix=PREFIX, asynchronous=False,  # use sync logger
+    logger.configure(root=RUN.server, prefix=RUN.PREFIX, asynchronous=False,  # use sync logger
                      max_workers=4, register_experiment=False)
     if not __dryrun:
         # # this is debatable
@@ -174,7 +176,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
             f"ARGS: {ARGS}\n"
 
         RUN._update(**RUN_DICT)
-        logger.configure(root=RUN.SERVER, prefix=RUN.PREFIX, register_experiment=False, max_workers=10)
+        logger.configure(root=RUN.server, prefix=RUN.PREFIX, register_experiment=False, max_workers=10)
         logger.log_params(host=dict(hostname=logger.hostname),
                           run=dict(status="running", startTime=logger.utcnow(), job_id=logger.job_id))
 
