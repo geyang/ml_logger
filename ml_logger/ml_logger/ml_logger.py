@@ -1936,12 +1936,23 @@ class ML_Logger:
 
         from functools import reduce
         from ml_logger.helpers.func_helpers import assign, dot_flatten
-        parameters = dot_flatten(reduce(assign, _))
+        parameter_dict = reduce(assign, _)
+        parameters = dot_flatten(parameter_dict)
+
+        def get_value(key):
+            if key in parameters:
+                return parameters[key]
+            elif key in parameter_dict:
+                return parameter_dict[key]
+            elif 'default' in kwargs:
+                return kwargs['default']
+            raise KeyError(f"{key} does not exist in {parameters}")
+
         if len(keys) > 1:
             # info: cast to tuple, so that we can use this as a key in dict directly.
-            return tuple(parameters.get(k, kwargs['default']) if 'default' in kwargs else parameters[k] for k in keys)
+            return tuple(get_value(k) for k in keys)
         elif len(keys) == 1:
-            return parameters.get(keys[0], kwargs['default']) if 'default' in kwargs else parameters[keys[0]]
+            return get_value(keys[0])
         else:
             return parameters
 

@@ -88,6 +88,17 @@ def test(setup):
     logger.log(step=4, some=Color(10, 'yellow'))
 
 
+def test_read_params(setup):
+    from ml_logger import logger
+
+    config = {'key_1': 10, 'key_2': 20}
+
+    logger.log_params(Config=config)
+    config = logger.read_params('Config.key_1')
+    assert config == 10
+    assert logger.read_params('Config') == {'key_1': 10, 'key_2': 20}
+
+
 def test_metrics_prefix(setup):
     from ml_logger import logger
 

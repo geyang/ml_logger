@@ -98,7 +98,7 @@ if __name__ == '__main__':
     assert RUN.job_counter == 10
 
 
-def instr(fn, *ARGS, __file=False, __silent=False, **KWARGS):
+def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
     """
     Instrumentation thunk factory for configuring the logger.
 
@@ -124,38 +124,33 @@ def instr(fn, *ARGS, __file=False, __silent=False, **KWARGS):
     # note: for scripts in the `plan2vec` module this also works -- b/c we truncate fixed depth.
     RUN(script_path=caller_script)
 
-    ROOT = RUN.server
-    PREFIX = RUN.PREFIX
+    RUN_DICT = vars(RUN)
 
     # todo: there should be a better way to log these.
     # todo: we shouldn't need to log to the same directory, and the directory for the run shouldn't be fixed.
     logger.configure(root=RUN.server, prefix=PREFIX, asynchronous=False,  # use sync logger
                      max_workers=4, register_experiment=False)
-    # # this is debatable
-    # if RUN.restart:
-    #     with logger.Sync():
-    #         logger.remove(".")
-    logger.upload_file(caller_script)
-    # the tension is in between creation vs run. Code snapshot are shared, but runs need to be unique.
-    _ = dict()
-    if ARGS:
-        _['args'] = ARGS
-    if KWARGS:
-        _['kwargs'] = KWARGS
+    if not __dryrun:
+        # # this is debatable
+        # if RUN.restart:
+        #     with logger.Sync():
+        #         logger.remove(".")
+        logger.upload_file(caller_script)
 
-    logger.log_params(
-        run=logger.run_info(status="created", script_path=RUN.script_path,
-                            script_root=RUN.script_root),
-        revision=logger.rev_info(),
-        fn=logger.fn_info(fn),
-        **_,
-        silent=__silent)
+        # the tension is in between creation vs run. Code snapshot are shared, but runs need to be unique.
+        logger.log_params(
+            run=logger.run_info(status="created", script_path=RUN.script_path, script_root=RUN.script_root),
+            revision=logger.rev_info(),
+            fn=logger.fn_info(fn),
+            args=ARGS,
+            kwargs=KWARGS,
+            silent=__silent)
 
-    logger.print('taking diff, if this step takes too long, check if your uncommitted changes are too large.',
-                 color="green")
-    logger.diff()
-    if RUN.readme:
-        logger.log_text(RUN.readme, "README.md", dedent=True)
+        logger.print('taking diff, if this step takes too long, check if your uncommitted changes are too large.',
+                     color="green")
+        logger.diff()
+        if RUN.readme:
+            logger.log_text(RUN.readme, "README.md", dedent=True)
 
     import jaynes  # now set the job name to prefix
     if jaynes.RUN.config and jaynes.RUN.mode != "local":
@@ -178,7 +173,8 @@ def instr(fn, *ARGS, __file=False, __silent=False, **KWARGS):
             f"_args: {args}\n" \
             f"ARGS: {ARGS}\n"
 
-        logger.configure(root=ROOT, prefix=PREFIX, register_experiment=False, max_workers=10)
+        RUN._update(**RUN_DICT)
+        logger.configure(root=RUN.SERVER, prefix=RUN.PREFIX, register_experiment=False, max_workers=10)
         logger.log_params(host=dict(hostname=logger.hostname),
                           run=dict(status="running", startTime=logger.utcnow(), job_id=logger.job_id))
 
