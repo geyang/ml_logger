@@ -37,6 +37,9 @@ release:
 publish: convert-rst test
 	make wheel
 	twine upload dist/*
+publish-no-test: convert-rst
+	make wheel
+	twine upload dist/*
 test:
 	python -m pytest ml_logger_tests --capture=no
 start-test-server:

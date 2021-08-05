@@ -28,6 +28,8 @@ from .log_client import LogClient
 CWD = os.environ["PWD"]
 USER = os.environ.get("USER", None)
 
+# template for the dashboard url
+ML_DASH = "http://localhost:3001/{prefix}"
 # ML_Logger defaults
 ROOT = os.environ.get("ML_LOGGER_ROOT", CWD) or CWD
 S3_ROOT = os.environ.get("ML_LOGGER_S3_ROOT", None)
@@ -100,9 +102,6 @@ def metrify(data):
         return float(data)
     else:
         return str(data)
-
-
-ML_DASH = "http://localhost:3001/{prefix}"
 
 
 @contextmanager

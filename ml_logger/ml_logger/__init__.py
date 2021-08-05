@@ -1,7 +1,7 @@
 import os
 from os.path import abspath
 
-from params_proto.neo_proto import PrefixProto, Accumulant, Proto, Flag
+from params_proto.neo_proto import PrefixProto, Accumulant, Proto
 
 from .caches.summary_cache import SummaryCache
 from .helpers.print_utils import PrintHelper
@@ -37,12 +37,13 @@ class RUN(PrefixProto):
 
     now = logger.now()
     prefix = "{username}/{project}/{now:%Y/%m-%d}/{file_stem}/{job_name}"
-    job_name = "{job_prefix}/{job_postfix}"
-    job_prefix = f'{now:%H.%M.%S}'
-    job_postfix = '{job_counter}'
+    job_name = Proto(f"{now:%H.%M.%S}",
+                     help="Default to '{now:%H.%M.%S}'. use '{now:%H.%M.%S}/{job_counter}'"
+                          " for multiple launches.")
     job_counter = Accumulant(None)
 
-    resume = Flag(help="whether starting the run from scratch, or resume previous checkpoints")
+    resume = Proto(True, help="whether starting the run from scratch, or "
+                              "resume previous checkpoints")
     readme = None
 
     # noinspection PyMissingConstructor
@@ -76,8 +77,6 @@ class RUN(PrefixProto):
         cls.JOB_NAME = data['job_name']
         cls.PREFIX = data['prefix']
         cls.JOB_NAME = data['job_name']
-        cls.JOB_PREFIX = data['job_prefix']
-        cls.JOB_POSTFIX = data['job_postfix']
 
 
 if __name__ == '__main__':
