@@ -1,4 +1,4 @@
-import os
+import os, sys
 from os.path import abspath
 
 from params_proto.neo_proto import PrefixProto, Accumulant, Proto
@@ -45,6 +45,8 @@ class RUN(PrefixProto):
     resume = Proto(True, help="whether starting the run from scratch, or "
                               "resume previous checkpoints")
     readme = None
+
+    debug = Proto("pydevd" in sys.modules, help="set to True automatically for pyCharm")
 
     # noinspection PyMissingConstructor
     @classmethod
