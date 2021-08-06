@@ -14,7 +14,6 @@ from typing import Any, Union
 import numpy as np
 from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
 from termcolor import cprint
-from waterbear import DefaultBear
 
 from .caches.key_value_cache import KeyValueCache
 from .caches.summary_cache import SummaryCache
@@ -405,7 +404,7 @@ class ML_Logger:
 
     counter = defaultdict(lambda: 0)
 
-    def every(self, n=1, key="default"):
+    def every(self, n=1, key="default", start_on=0):
         """
         returns True every n counts. Use the key to count different intervals.
 
@@ -418,13 +417,16 @@ class ML_Logger:
                     print('every tenth count!')
                 if logger.every(100, "hudred"):
                     print('every 100th count!')
+                if logger.every(10, "hudred", start_on=1):
+                    print('every 10th count starting from the first call: i =', i)
 
         :param n:
         :param key:
+        :param start: start on this call. Use `start_on=1` for tail mode [0, 10, 20] instead of [9, 19, ...]
         :return:
         """
         self.counter[key] += 1
-        return n and self.counter[key] % n == 0
+        return (self.counter[key] - start_on) % n == 0 and self.counter[key] >= start_on
 
     def count(self, key="default"):
         self.counter[key] += 1

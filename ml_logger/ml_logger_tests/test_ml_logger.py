@@ -308,6 +308,9 @@ def test_every():
     acc = sum([i for i in range(100) if logger.every(10)])
     assert acc == sum(list(range(100))[9::10])
 
+    acc = sum([i for i in range(101) if logger.every(10, 'tail', start_on=1)])
+    assert acc == sum(list(range(0, 101, 10)))
+
     i_sum, j_sum = 0, 0
     for i in range(100):
         for j in range(100):
