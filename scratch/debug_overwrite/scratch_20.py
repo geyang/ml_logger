@@ -51,7 +51,7 @@ with open('metrics.pkl', 'rb') as f:
     print(a)
 
 if __name__ == '__main__':
-    logger.configure(root="http://improbable-ai.dash.ml:8080", register_experiment=False)
+    logger.configure(root="http://improbable-ai.dash.ml:8080")
 
     df = logger.read_metrics(
         path="/geyang/dreamer_v2/2021/01-22/01_atari/train/02.13.42/atari_solaris/s-200/6/metrics.pkl")

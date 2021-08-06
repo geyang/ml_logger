@@ -403,7 +403,7 @@ class ML_Logger:
     def rev_info(self):
         return dict(hash=self.__head__, branch=self.__current_branch__)
 
-    counter = DefaultBear(lambda: 0)
+    counter = defaultdict(lambda: 0)
 
     def every(self, n=1, key="default"):
         """
