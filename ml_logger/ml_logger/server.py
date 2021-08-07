@@ -13,16 +13,19 @@ class LoggingServer:
     silent = None
 
     def abs_path(self, key):
-        log_dir = os.path.join(self.cwd, key)
-        return os.path.join("/", log_dir[1:])
+        if key.startswith('/'):
+            return os.path.join(self.root, key[1:])
+        return os.path.join(self.cwd, key)
 
-    def __init__(self, cwd="/", silent=False):
+    def __init__(self, cwd, root="/", silent=False):
         self.cwd = os.path.abspath(cwd)
+        self.root = os.path.abspath(root)
         os.makedirs(self.cwd, exist_ok=True)
+        os.makedirs(self.root, exist_ok=True)
 
         self.silent = silent
         if not silent:
-            cprint(f'logging data to {cwd}', 'green')
+            cprint(f'logging data to {root}', 'green')
 
     configure = __init__
 
@@ -109,7 +112,7 @@ class LoggingServer:
             cprint(msg, 'red')
             return sanic.response.text(msg)
         remove_entry = RemoveEntry(**req.json)
-        print("removing: {}".format(remove_entry.key))
+        print(f"removing: {remove_entry.key}")
         self.remove(remove_entry.key)
         return sanic.response.text('ok')
 
@@ -378,5 +381,5 @@ if __name__ == '__main__':
 
     v = pkg_resources.get_distribution("ml_logger").version
     print('running ml_logger.server version {}'.format(v))
-    server = LoggingServer(cwd=Params.logdir)
+    server = LoggingServer(Params.logdir, root=Params.logdir)
     server.serve(host=Params.host, port=Params.port, workers=Params.workers)

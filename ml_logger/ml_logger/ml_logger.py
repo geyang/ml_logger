@@ -343,7 +343,7 @@ class ML_Logger:
 
         if root:
             self.root = interpolate(root) or ROOT
-        if root or asynchronous is not None or max_workers is not None:
+        if self.root or asynchronous is not None or max_workers is not None:
             # note: logger.configure shouldn't be called too often. To quickly switch back
             #  and forth between synchronous and asynchronous calls, use the `SyncContext`
             #  and `AsyncContext` instead.
