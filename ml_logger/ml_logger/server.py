@@ -13,14 +13,11 @@ class LoggingServer:
     silent = None
 
     def abs_path(self, key):
-        log_dir = os.path.join(self.cwd, key)
-        return os.path.join(self.root, log_dir[1:])
+        return os.path.join(self.root, key[1:] if key.startswith('/') else key)
 
-    def __init__(self, cwd="/", root="/", silent=False):
+    def __init__(self, root="/", silent=False):
         assert os.path.isabs(root)
-        assert os.path.isabs(cwd)
         self.root = root
-        self.cwd = cwd
         os.makedirs(root, exist_ok=True)
 
         self.silent = silent
@@ -49,7 +46,7 @@ class LoggingServer:
             return sanic.response.text(msg)
         load_entry = LoadEntry(**req.json)
         print(f"streaming: {load_entry.key}")
-        path = os.path.join(self.root, load_entry.key)
+        path = self.abs_path(load_entry.key)
         return await sanic.response.file_stream(path)
 
     async def ping_handler(self, req):
