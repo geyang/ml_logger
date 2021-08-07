@@ -17,7 +17,7 @@ class LoggingServer:
         return os.path.join("/", log_dir[1:])
 
     def __init__(self, cwd="/", silent=False):
-        self.cwd = os.path.abs(cwd)
+        self.cwd = os.path.abspath(cwd)
         os.makedirs(self.cwd, exist_ok=True)
 
         self.silent = silent
