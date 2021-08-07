@@ -13,16 +13,16 @@ class LoggingServer:
     silent = None
 
     def abs_path(self, key):
-        return os.path.join(self.root, key[1:] if key.startswith('/') else key)
+        log_dir = os.path.join(self.cwd, key)
+        return os.path.join("/", log_dir[1:])
 
-    def __init__(self, root="/", silent=False):
-        assert os.path.isabs(root)
-        self.root = root
-        os.makedirs(root, exist_ok=True)
+    def __init__(self, cwd="/", silent=False):
+        self.cwd = os.path.abs(cwd)
+        os.makedirs(self.cwd, exist_ok=True)
 
         self.silent = silent
         if not silent:
-            cprint(f'logging data to {root}', 'green')
+            cprint(f'logging data to {cwd}', 'green')
 
     configure = __init__
 

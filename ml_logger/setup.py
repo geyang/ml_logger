@@ -27,7 +27,7 @@ setup(name="ml_logger",
       ],
       install_requires=[
           "boto3",
-          "cloudpickle",
+          "cloudpickle==1.3.0",
           "dill",
           "imageio",
           "imageio-ffmpeg",
