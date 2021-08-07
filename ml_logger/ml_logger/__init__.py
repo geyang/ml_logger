@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 from os.path import abspath
 
 from params_proto.neo_proto import PrefixProto, Accumulant, Proto
@@ -31,15 +32,14 @@ class RUN(PrefixProto):
     username = LOGGER_USER
     project = "scratch"  # default project name
 
-    cwd = Proto(env="CWD")
-    script_root = Proto(cwd, env="HOME")
+    script_root = Proto(os.getcwd(), env="HOME")
     script_path = None
 
     now = logger.now()
     prefix = "{username}/{project}/{now:%Y/%m-%d}/{file_stem}/{job_name}"
-    job_name = Proto(f"{now:%H.%M.%S}",
-                     help="Default to '{now:%H.%M.%S}'. use '{now:%H.%M.%S}/{job_counter}'"
-                          " for multiple launches.")
+    job_name = Proto(
+        f"{now:%H.%M.%S}",
+        help="Default to '{now:%H.%M.%S}'. use '{now:%H.%M.%S}/{job_counter}' for multiple launches.")
     job_counter = Accumulant(None)
 
     resume = Proto(True, help="whether starting the run from scratch, or "
