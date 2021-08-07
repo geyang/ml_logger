@@ -378,5 +378,5 @@ if __name__ == '__main__':
 
     v = pkg_resources.get_distribution("ml_logger").version
     print('running ml_logger.server version {}'.format(v))
-    server = LoggingServer(root=Params.logdir)
+    server = LoggingServer(cwd=Params.logdir)
     server.serve(host=Params.host, port=Params.port, workers=Params.workers)
