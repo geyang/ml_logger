@@ -186,10 +186,12 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
 
             results = fn(*(args or ARGS), **_KWARGS)
 
-            logger.log_line("========== execution is complete ==========")
-            logger.job_completed()
-            logger.flush()
+            with logger.SyncContext():  # Make sure uploaded finished before termination.
+                logger.log_line("========== execution is complete ==========")
+                logger.job_completed()
+                logger.flush()
             time.sleep(3)
+
         except Exception as e:
             tb = traceback.format_exc()
             with logger.SyncContext():  # Make sure uploaded finished before termination.
