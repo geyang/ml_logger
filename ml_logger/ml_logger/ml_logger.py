@@ -1611,7 +1611,7 @@ class ML_Logger:
             postfix = os.path.basename(path)
             with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
                 self.download_s3(path[5:], to=ntp.name)
-                return torch.load(ntp, map_location=map_location, **kwargs)
+                return torch.load(ntp.name, map_location=map_location, **kwargs)
         else:
             fn_or_buff = self.load_file(path)
             return torch.load(fn_or_buff, map_location=map_location, **kwargs)
