@@ -1605,14 +1605,16 @@ class ML_Logger:
             f.write(buf.getbuffer())
 
     def load_torch(self, *keys, path=None, map_location=None, **kwargs):
-        import torch
+        import torch, tempfile
         path = pJoin(*keys, path)
         if path.lower().startswith('s3://'):
-            fn_or_buff = os.path.basename(path)
-            self.download_s3(path[5:], to=fn_or_buff)
+            postfix = os.path.basename(path)
+            with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
+                self.download_s3(path[5:], to=ntp.name)
+                return torch.load(ntp, map_location=map_location, **kwargs)
         else:
             fn_or_buff = self.load_file(path)
-        return torch.load(fn_or_buff, map_location=map_location, **kwargs)
+            return torch.load(fn_or_buff, map_location=map_location, **kwargs)
 
     torch_load = load_torch
 
