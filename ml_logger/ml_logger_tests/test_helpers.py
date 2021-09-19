@@ -1,3 +1,6 @@
+import os
+
+
 class SomeClass:
     name = "local class"
 
@@ -25,7 +28,7 @@ def test_read_lambda():
     # verify type of values
 
 
-def test_json():
+def xtest_json():
     """This should result in strings for most of the items"""
     from ml_dash.schema.files.file_helpers import read_pickle_for_json
     data, = read_pickle_for_json("./test_data.pkl")
