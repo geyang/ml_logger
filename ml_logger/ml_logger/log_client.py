@@ -6,7 +6,7 @@ from io import BytesIO, StringIO
 from ml_logger.requests import SyncRequests
 from ml_logger.serdes import serialize, deserialize
 from ml_logger.server import LoggingServer
-from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
+from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, MoveEntry
 from requests_futures.sessions import FuturesSession
 
 
@@ -73,6 +73,7 @@ class LogClient:
             self.stream_url = os.path.join(root, "stream")
             self.ping_url = os.path.join(root, "ping")
             self.glob_url = os.path.join(root, "glob")
+            self.move_url = os.path.join(root, "move")
             # when setting sessions the first time, default to use Asynchronous Session.
             if self.session is None:
                 asynchronous = True if asynchronous is None else asynchronous
@@ -228,6 +229,14 @@ class LogClient:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
             json = RemoveEntry(key)._asdict()
             self.session.delete(self.url, json=json)
+
+    def move(self, source, target, dirs_exists_ok):
+        if self.local_server:
+            self.local_server.move(source, target, dirs_exist_ok=dirs_exists_ok)
+        else:
+            # todo: make the json serialization more robust. Not priority b/c this' client-side.
+            json = MoveEntry(source, target, dirs_exist_ok=dirs_exists_ok)._asdict()
+            self.session.post(self.move_url, json=json)
 
     def ping(self, exp_key, status, _duplex=True, burn=True):
         # todo: add configuration for early termination

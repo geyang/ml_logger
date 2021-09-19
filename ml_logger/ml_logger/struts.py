@@ -32,6 +32,12 @@ class GlobEntry(NamedTuple):
     stop: Any = None
 
 
+class MoveEntry(NamedTuple):
+    source: str
+    to: str
+    dirs_exist_ok: bool
+
+
 class PingData(NamedTuple):
     exp_key: str
     status: Any

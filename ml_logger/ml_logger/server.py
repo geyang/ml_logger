@@ -5,7 +5,7 @@ from io import BytesIO
 import dill  # done: switch to dill instead
 from ml_logger.helpers import load_from_file
 from ml_logger.serdes import deserialize, serialize
-from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry
+from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, MoveEntry
 from termcolor import cprint
 
 
@@ -38,6 +38,7 @@ class LoggingServer:
         self.app.add_route(self.ping_handler, '/ping', methods=['POST'])
         self.app.add_route(self.glob_handler, '/glob', methods=['POST'])
         self.app.add_route(self.remove_handler, '/', methods=['DELETE'])
+        self.app.add_route(self.move_handler, '/move', methods=['POST'])
         # todo: need a file serving url
         self.app.run(host=host, port=port, workers=workers, debug=Params.debug)
 
@@ -115,6 +116,17 @@ class LoggingServer:
         print(f"removing: {remove_entry.key}")
         self.remove(remove_entry.key)
         return sanic.response.text('ok')
+
+    async def move_handler(self, req):
+        import sanic
+        if not req.json:
+            msg = f'request json is empty: {req.text}'
+            cprint(msg, 'red')
+            return sanic.response.text(msg)
+        move_entry = MoveEntry(**req.json)
+        print(f"moving {move_entry.source} to {move_entry.to}")
+        self.move(move_entry.source, move_entry.to, move_entry.dirs_exist_ok)
+        return sanic.response.text(move_entry.to)
 
     async def log_handler(self, req):
         import sanic
@@ -251,6 +263,23 @@ class LoggingServer:
         except OSError as e:
             import shutil
             return shutil.rmtree(abs_path, ignore_errors=True)
+
+    def move(self, source, to, dirs_exist_ok):
+        """
+        move directories or files
+
+        :param source:
+        :param to:
+        :param dirs_exist_ok:
+        :return:
+        """
+        abs_source = self.abs_path(source)
+        abs_to = self.abs_path(to)
+        try:
+            import shutil
+            return shutil.copytree(abs_source, abs_to, dirs_exist_ok=dirs_exist_ok)
+        except FileNotFoundError as e:
+            return None
 
     def copy(self, src, target):
         import shutil
