@@ -833,10 +833,33 @@ class ML_Logger:
             self.client.delete(abs_path)
         return found_paths
 
+    def glob_s3(self, *keys, path=None, max_keys=1000, **KWargs):
+        """
+        Does not support wildcard or pagination, but we could add it in the future.
+
+        :param keys:
+        :param path:
+        :param max_keys: default is 1000 as in boto3
+        :return:
+        """
+        import boto3
+
+        path = pJoin(*keys, path)
+
+        s3_client = boto3.client('s3')
+        # list_objects_v2 supports pagination. -- Ge
+        response = s3_client.list_objects(Bucket=path, MaxKeys=max_keys, **KWargs)
+        return [file['Key'] for file in response['Contents']]
+
     def move(self, source, to):
         abs_source = pJoin(self.prefix, source)
         abs_target = pJoin(self.prefix, to)
         self.client.move(abs_source, abs_target)
+
+    def duplicate(self, source, to, dirs_exist_ok=True):
+        abs_source = pJoin(self.prefix, source)
+        abs_target = pJoin(self.prefix, to)
+        self.client.duplicate(abs_source, abs_target, dirs_exist_ok=dirs_exist_ok)
 
     def log_params(self, path="parameters.pkl", silent=False, **kwargs):
         """

@@ -6,7 +6,8 @@ from io import BytesIO, StringIO
 from ml_logger.requests import SyncRequests
 from ml_logger.serdes import serialize, deserialize
 from ml_logger.server import LoggingServer
-from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, MoveEntry
+from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, \
+    MoveEntry, CopyEntry
 from requests_futures.sessions import FuturesSession
 
 
@@ -74,6 +75,7 @@ class LogClient:
             self.ping_url = os.path.join(root, "ping")
             self.glob_url = os.path.join(root, "glob")
             self.move_url = os.path.join(root, "move")
+            self.copy_url = os.path.join(root, "copy")
             # when setting sessions the first time, default to use Asynchronous Session.
             if self.session is None:
                 asynchronous = True if asynchronous is None else asynchronous
@@ -193,7 +195,7 @@ class LogClient:
         if self.local_server:
             if source_path.startswith('/'):
                 source_path = "/" + source_path
-            return self.local_server.copy(source_path, key)
+            return self.local_server.duplicate(source_path, key)
         # proxy = os.environ.get('HTTP_PROXY')
         # c.setopt(c.PROXY, proxy)
         # logger.print('proxy:', proxy)
@@ -230,13 +232,21 @@ class LogClient:
             json = RemoveEntry(key)._asdict()
             self.session.delete(self.url, json=json)
 
-    def move(self, source, target, dirs_exists_ok):
+    def move(self, source, target):
         if self.local_server:
-            self.local_server.move(source, target, dirs_exist_ok=dirs_exists_ok)
+            self.local_server.move(source, target)
         else:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
-            json = MoveEntry(source, target, dirs_exist_ok=dirs_exists_ok)._asdict()
+            json = MoveEntry(source, target)._asdict()
             self.session.post(self.move_url, json=json)
+
+    def duplicate(self, source, target, dirs_exist_ok):
+        if self.local_server:
+            self.local_server.duplicate(source, target)
+        else:
+            # todo: make the json serialization more robust. Not priority b/c this' client-side.
+            json = CopyEntry(source, target, dirs_exist_ok)._asdict()
+            self.session.post(self.copy_url, json=json)
 
     def ping(self, exp_key, status, _duplex=True, burn=True):
         # todo: add configuration for early termination
