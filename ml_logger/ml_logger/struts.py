@@ -35,6 +35,11 @@ class GlobEntry(NamedTuple):
 class MoveEntry(NamedTuple):
     source: str
     to: str
+
+
+class CopyEntry(NamedTuple):
+    source: str
+    to: str
     dirs_exist_ok: bool
 
 

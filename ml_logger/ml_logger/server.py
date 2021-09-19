@@ -39,6 +39,7 @@ class LoggingServer:
         self.app.add_route(self.glob_handler, '/glob', methods=['POST'])
         self.app.add_route(self.remove_handler, '/', methods=['DELETE'])
         self.app.add_route(self.move_handler, '/move', methods=['POST'])
+        self.app.add_route(self.copy_handler, '/copy', methods=['POST'])
         # todo: need a file serving url
         self.app.run(host=host, port=port, workers=workers, debug=Params.debug)
 
@@ -127,6 +128,17 @@ class LoggingServer:
         print(f"moving {move_entry.source} to {move_entry.to}")
         self.move(move_entry.source, move_entry.to, move_entry.dirs_exist_ok)
         return sanic.response.text(move_entry.to)
+
+    async def copy_handler(self, req):
+        import sanic
+        if not req.json:
+            msg = f'request json is empty: {req.text}'
+            cprint(msg, 'red')
+            return sanic.response.text(msg)
+        copy_entry = CopyEntry(**req.json)
+        print(f"moving {copy_entry.source} to {copy_entry.to}")
+        self.move(copy_entry.source, copy_entry.to, copy_entry.dirs_exist_ok)
+        return sanic.response.text(copy_entry.to)
 
     async def log_handler(self, req):
         import sanic
@@ -264,7 +276,7 @@ class LoggingServer:
             import shutil
             return shutil.rmtree(abs_path, ignore_errors=True)
 
-    def move(self, source, to, dirs_exist_ok):
+    def move(self, source, to):
         """
         move directories or files
 
@@ -273,15 +285,19 @@ class LoggingServer:
         :param dirs_exist_ok:
         :return:
         """
+        import shutil
+        assert isinstance(source, str), "src needs to be a string"
+
         abs_source = self.abs_path(source)
         abs_to = self.abs_path(to)
         try:
-            import shutil
-            return shutil.copytree(abs_source, abs_to, dirs_exist_ok=dirs_exist_ok)
+            # remove that tree first
+            shutil.rmtree(abs_to)
         except FileNotFoundError as e:
-            return None
+            pass
+        return shutil.move(abs_source, abs_to)
 
-    def copy(self, src, target):
+    def duplicate(self, src, target):
         import shutil
         assert isinstance(src, str), "src needs to be a string"
 

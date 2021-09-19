@@ -88,6 +88,27 @@ def test(setup):
     logger.log(step=4, some=Color(10, 'yellow'))
 
 
+def test_remove(setup):
+    logger.log('this is a file', file="test.txt", flush=True)
+    assert 'test.txt' in logger.glob("*")
+    logger.remove('test.txt')
+
+
+def test_move(setup):
+    logger.log('this is a file', file="test.txt", flush=True)
+    logger.move('test.txt', 'test_2.txt')
+    assert 'test_2.txt' in logger.glob("*")
+    logger.remove('test_2.txt')
+
+
+def test_copy(setup):
+    logger.log('this is a file', file="test.txt", flush=True)
+    logger.duplicate('test.txt', 'test_2.txt')
+    assert 'test.txt' in logger.glob("*")
+    assert 'test_2.txt' in logger.glob("*")
+    logger.remove('test.txt', 'test_2.txt')
+
+
 def test_read_params(setup):
     from ml_logger import logger
 
