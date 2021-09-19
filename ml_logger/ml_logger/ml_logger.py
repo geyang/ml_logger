@@ -833,6 +833,11 @@ class ML_Logger:
             self.client.delete(abs_path)
         return found_paths
 
+    def move(self, source, to):
+        abs_source = pJoin(self.prefix, source)
+        abs_target = pJoin(self.prefix, to)
+        self.client.move(abs_source, abs_target)
+
     def log_params(self, path="parameters.pkl", silent=False, **kwargs):
         """
         Log namespaced parameters in a list.
