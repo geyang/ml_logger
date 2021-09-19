@@ -229,7 +229,7 @@ class ML_Logger:
         | 2. prefix="" => logs to "/tmp/some_dir"
 
         :param prefix: the prefix path
-        :param **prefixae: the rest of the prefix arguments
+        :param *prefixae: the rest of the prefix arguments
         :param root: the server host and port number
         :param user: environment $ML_LOGGER_USER
         :param access_token: environment $ML_LOGGER_ACCESS_TOKEN
