@@ -1123,15 +1123,127 @@ class ML_Logger:
         basename = [os.path.basename(file_path)] if target_path.endswith('/') else []
         self.client.log_buffer(key=pJoin(self.prefix, target_path, *basename), buf=bytes, overwrite=True)
 
-    def upload_dir(self, dir_path, target_folder='', excludes=tuple(), gzip=True, unzip=False):
-        """log a directory, or upload an entire directory."""
-        raise NotImplementedError
+    def upload_dir(self, dir_path, target, excludes=tuple(), archive='gztar', temp_dir=None):
+        """
+        upload dir to gs, s3, and ml-logger.
+
+        :param dir_path: this is the path to the dir
+        :param target: this is the target location
+        :param excludes: NotImplemented
+        :param archive: is the archive format: one of "zip", "tar", "gztar", "bztar", or "xztar".  Or any other
+            registered format.
+        :param temp_dir: NotImplemented, should allow override of temp folder in case storage limits exist.
+        :return:
+        """
+        import os, shutil, tempfile, pathlib
+
+        from pathlib import Path
+
+        if target.startswith('s3://'):
+            service = 's3'
+            target = Path(target[5:])
+        elif target.startswith('gs://'):
+            service = 'gs'
+            target = Path(target[5:])
+        elif target.startswith('file://'):
+            service = 'local'
+            target = Path(target[7:])
+        else:
+            service = 'logger'
+            target = Path(target)
+
+        dir_path = Path(dir_path).absolute()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            filename = shutil.make_archive(base_name=Path(temp_dir) / dir_path.name,
+                                           format=archive,
+                                           root_dir=dir_path,
+                                           base_dir='.')
+            if service == 's3':
+                self.upload_s3(filename, target)
+            elif service == 'gs':
+                self.upload_gs(filename, target)
+            elif service == 'local':
+                shutil.copytree(filename, target, dirs_exist_ok=True)
+            else:
+                self.upload_file(filename, target)
+
+    def download_dir(self, source_path, to, unpack='gztar'):
+        import tempfile, shutil, pathlib
+
+        if source_path.startswith('s3://'):
+            service = 's3'
+            source_path = pathlib.Path(source_path[5:])
+        elif source_path.startswith('gs://'):
+            service = 'gs'
+            source_path = pathlib.Path(source_path[5:])
+        elif source_path.startswith('file://'):
+            service = 'local'
+            source_path = pathlib.Path(source_path[7:])
+        else:
+            source_path = pathlib.Path(source_path)
+
+        to = pathlib.Path(to).absolute()
+
+        if unpack:
+            with tempfile.TemporaryDirectory() as temp_dir:
+
+                if service == 's3':
+                    self.download_s3(source_path, to=temp_dir + '/' + source_path.name)
+                elif service == 'gs':
+                    self.download_gs(source_path, to=temp_dir + '/' + source_path.name)
+                elif service == 'local':
+                    shutil.copytree(source_path, to=temp_dir + '/' + source_path.name, dirs_exist_ok=True)
+                else:
+                    self.download_file(source_path, to=temp_dir + '/' + source_path.name)
+
+                shutil.unpack_archive(temp_dir + '/' + source_path.name, to, format=unpack)
+                return
+
+        if service == 's3':
+            self.download_s3(source_path, to=to)
+        elif service == 'gs':
+            self.download_gs(source_path, to=to)
+        elif service == 'local':
+            shutil.copytree(source_path, to=to)
+        else:
+            self.download_file(source_path, to=to)
 
     @staticmethod
     def remove_s3(bucket, *keys):
         import boto3
         client = boto3.client('s3')
         return client.delete_object(Bucket=bucket, Key=pJoin(*keys))
+
+    @staticmethod
+    def upload_gs(source_path, *keys, path=None):
+        assert isinstance(source_path, str), "file has to be a filename of the string type."
+
+        from google.cloud import storage
+
+        storage_client = storage.Client()
+
+        path = pJoin(*keys, path)
+
+        bucket, *object_name = path.split('/')
+        object_name = '/'.join(object_name)
+        if path.endswith('/'):
+            # If path ends with '/' use file_name as the object name
+            filename = os.path.basename(source_path)
+            object_name = pJoin(object_name, filename)
+
+        storage_client.bucket(bucket).blob(object_name).upload_from_filename(source_path)
+
+    @staticmethod
+    def download_gs(*keys, path=None, to):
+        from google.cloud import storage
+
+        path = pJoin(*keys, path)
+
+        bucket, *object_name = path.split('/')
+        object_name = '/'.join(object_name)
+
+        storage_client = storage.Client()
+        return storage_client.bucket(bucket).blob(object_name).download_to_filename(to)
 
     @staticmethod
     def upload_s3(source_path, *keys, path=None):
@@ -1165,7 +1277,8 @@ class ML_Logger:
         #     return False
         # return True
 
-    def download_s3(self, *keys, path=None, to):
+    @staticmethod
+    def download_s3(*keys, path=None, to):
         import boto3
 
         path = pJoin(*keys, path)
@@ -1174,7 +1287,7 @@ class ML_Logger:
         object_name = '/'.join(object_name)
 
         s3 = boto3.client('s3')
-        s3.download_file(bucket, object_name, to)
+        return s3.download_file(bucket, object_name, to)
 
     def save_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None, background=1):
         """Log images as a composite of a grid. Images input as a 4-D stack.
