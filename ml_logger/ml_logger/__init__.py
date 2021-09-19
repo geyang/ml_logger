@@ -155,11 +155,17 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
             logger.log_text(RUN.readme, "README.md", dedent=True)
 
     import jaynes  # now set the job name to prefix
+
     if jaynes.RUN.config and jaynes.RUN.mode != "local":
+
+        job_name = pJoin(RUN.file_stem, RUN.JOB_NAME)
+
+        launch_args = jaynes.RUN.config['launch']
         runner_class, runner_args = jaynes.RUN.config['runner']
-        runner_args['name'] = pJoin(RUN.file_stem, RUN.JOB_NAME)
-        from jaynes import runners
-        if runner_class is runners.Docker:
+
+        launch_args['name'] = job_name[-60:].replace('/', '-')
+        runner_args['name'] = job_name
+        if runner_class is jaynes.runners.Docker:
             runner_args['name'] = runner_args['name'].replace('/', '-')
 
         del logger, jaynes, runner_args, runner_class
