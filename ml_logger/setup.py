@@ -48,4 +48,5 @@ setup(name="ml_logger",
           "termcolor",
           "typing",
           "urllib3",
+          "wcmatch"
       ])

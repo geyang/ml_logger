@@ -833,23 +833,53 @@ class ML_Logger:
             self.client.delete(abs_path)
         return found_paths
 
-    def glob_s3(self, *keys, path=None, max_keys=1000, **KWargs):
+    def glob_s3(self, query="*", wd=None, max_keys=1000, **KWargs):
         """
         Does not support wildcard or pagination, but we could add it in the future.
 
-        :param keys:
-        :param path:
+        :param query:
+        :param wd:
         :param max_keys: default is 1000 as in boto3
         :return:
         """
         import boto3
+        from wcmatch import glob
 
-        path = pJoin(*keys, path)
+        if wd:
+            bucket, *work_prefix = wd.split('/')
+            query_prefix, other = [], []
+            pt = query_prefix
+            if query:
+                for n in query.split('/'):
+                    if "*" in n:
+                        pt = other
+                    pt.append(n)
+
+            s3_prefix = '/'.join(work_prefix + query_prefix)
+            work_prefix = '/'.join(work_prefix)
+        else:
+            bucket, *query_prefix = query.split('/')
+            s3_prefix = '/'.join(query_prefix)
+            work_prefix = None
+
+        query_prefix = '/'.join(query_prefix)
+        query_prefix += "/" if query_prefix else ""
+        truncate = len(work_prefix) + 1 if work_prefix else 0
 
         s3_client = boto3.client('s3')
         # list_objects_v2 supports pagination. -- Ge
-        response = s3_client.list_objects(Bucket=path, MaxKeys=max_keys, **KWargs)
-        return [file['Key'] for file in response['Contents']]
+        response = s3_client.list_objects(Bucket=bucket, Prefix=s3_prefix,
+                                          MaxKeys=max_keys, **KWargs)
+        files = []
+        for entry in response['Contents']:
+            filename = entry['Key'][truncate:]
+            if "*" in query_prefix:
+                if glob.globmatch(query_prefix, filename):
+                    files.append(filename)
+            elif filename.startswith(query_prefix):
+                files.append(filename)
+
+        return files
 
     def move(self, source, to):
         abs_source = pJoin(self.prefix, source)
