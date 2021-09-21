@@ -886,10 +886,11 @@ class ML_Logger:
         abs_target = pJoin(self.prefix, to)
         self.client.move(abs_source, abs_target)
 
-    def duplicate(self, source, to, dirs_exist_ok=True):
+    def duplicate(self, source, to, exists_ok=True, follow_symlink=True, symlinks=False):
         abs_source = pJoin(self.prefix, source)
         abs_target = pJoin(self.prefix, to)
-        self.client.duplicate(abs_source, abs_target, dirs_exist_ok=dirs_exist_ok)
+        self.client.duplicate(abs_source, abs_target, exists_ok=exists_ok,
+                              follow_symlink=follow_symlink, symlinks=symlinks)
 
     def log_params(self, path="parameters.pkl", silent=False, **kwargs):
         """

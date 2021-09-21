@@ -240,12 +240,12 @@ class LogClient:
             json = MoveEntry(source, target)._asdict()
             self.session.post(self.move_url, json=json)
 
-    def duplicate(self, source, target, dirs_exist_ok):
+    def duplicate(self, source, target, exists_ok, follow_symlink, symlinks):
         if self.local_server:
-            self.local_server.duplicate(source, target)
+            self.local_server.duplicate(source, target, exists_ok, follow_symlink, symlinks)
         else:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
-            json = CopyEntry(source, target, dirs_exist_ok)._asdict()
+            json = CopyEntry(source, target, exists_ok, follow_symlink, symlinks)._asdict()
             self.session.post(self.copy_url, json=json)
 
     def ping(self, exp_key, status, _duplex=True, burn=True):

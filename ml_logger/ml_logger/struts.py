@@ -40,7 +40,11 @@ class MoveEntry(NamedTuple):
 class CopyEntry(NamedTuple):
     source: str
     to: str
-    dirs_exist_ok: bool
+    # for files
+    exists_ok: bool
+    follow_symlink: bool
+    # for directories
+    symlinks: bool
 
 
 class PingData(NamedTuple):

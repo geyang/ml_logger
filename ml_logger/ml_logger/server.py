@@ -5,7 +5,8 @@ from io import BytesIO
 import dill  # done: switch to dill instead
 from ml_logger.helpers import load_from_file
 from ml_logger.serdes import deserialize, serialize
-from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, MoveEntry
+from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, \
+    MoveEntry, CopyEntry
 from termcolor import cprint
 
 
@@ -126,7 +127,7 @@ class LoggingServer:
             return sanic.response.text(msg)
         move_entry = MoveEntry(**req.json)
         print(f"moving {move_entry.source} to {move_entry.to}")
-        self.move(move_entry.source, move_entry.to, move_entry.dirs_exist_ok)
+        self.move(move_entry.source, move_entry.to)
         return sanic.response.text(move_entry.to)
 
     async def copy_handler(self, req):
@@ -136,8 +137,10 @@ class LoggingServer:
             cprint(msg, 'red')
             return sanic.response.text(msg)
         copy_entry = CopyEntry(**req.json)
-        print(f"moving {copy_entry.source} to {copy_entry.to}")
-        self.move(copy_entry.source, copy_entry.to, copy_entry.dirs_exist_ok)
+        print(f"duplicating {copy_entry.source} to {copy_entry.to}")
+        self.duplicate(copy_entry.source, copy_entry.to, copy_entry.exists_ok,
+                       follow_symlink=copy_entry.follow_symlink,
+                       symlinks=copy_entry.symlinks)
         return sanic.response.text(copy_entry.to)
 
     async def log_handler(self, req):
@@ -297,16 +300,19 @@ class LoggingServer:
             pass
         return shutil.move(abs_source, abs_to)
 
-    def duplicate(self, src, target):
+    def duplicate(self, src, target, exists_ok=True, follow_symlink=True, symlinks=False):
         import shutil
         assert isinstance(src, str), "src needs to be a string"
 
         abs_target = self.abs_path(target)
         abs_src = self.abs_path(src)
-
-        os.makedirs(os.path.dirname(abs_target), exist_ok=True)
-        shutil.copyfile(abs_src, abs_target, follow_symlinks=True)
-        return target
+        try:
+            # copy directory
+            return shutil.copytree(abs_src, abs_target, symlinks=symlinks, dirs_exist_ok=exists_ok)
+        except NotADirectoryError:
+            # copy files
+            os.makedirs(os.path.dirname(abs_target), exist_ok=exists_ok)
+            return shutil.copyfile(abs_src, abs_target, follow_symlinks=follow_symlink)
 
     def save_buffer(self, key, buff):
         assert isinstance(buff, BytesIO), f"buff needs to be a BytesIO object."

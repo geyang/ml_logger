@@ -101,11 +101,19 @@ def test_move(setup):
     logger.remove('test_2.txt')
 
 
-def test_copy(setup):
+def test_copy_file(setup):
     logger.log('this is a file', file="test.txt", flush=True)
     logger.duplicate('test.txt', 'test_2.txt')
     assert 'test.txt' in logger.glob("*")
     assert 'test_2.txt' in logger.glob("*")
+    logger.remove('test.txt', 'test_2.txt')
+
+
+def test_copy_directory(setup):
+    logger.log('this is a file', file="test/test.txt", flush=True)
+    logger.duplicate('test', 'test_2')
+    assert 'test/test.txt' in logger.glob("**/*")
+    assert 'test_2/test.txt' in logger.glob("**/*")
     logger.remove('test.txt', 'test_2.txt')
 
 
