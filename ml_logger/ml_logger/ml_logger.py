@@ -863,7 +863,6 @@ class ML_Logger:
             work_prefix = None
 
         query_prefix = '/'.join(query_prefix)
-        query_prefix += "/" if query_prefix else ""
         truncate = len(work_prefix) + 1 if work_prefix else 0
 
         s3_client = boto3.client('s3')
@@ -873,6 +872,7 @@ class ML_Logger:
         files = []
         for entry in response['Contents']:
             filename = entry['Key'][truncate:]
+            print(filename)
             if "*" in query_prefix:
                 if glob.globmatch(query_prefix, filename):
                     files.append(filename)
@@ -1179,10 +1179,12 @@ class ML_Logger:
 
         from pathlib import Path
         bytes = Path(file_path).read_bytes()
+        if isinstance(target_path, Path):
+            target_path = str(target_path)
         basename = [os.path.basename(file_path)] if target_path.endswith('/') else []
         self.client.log_buffer(key=pJoin(self.prefix, target_path, *basename), buf=bytes, overwrite=True)
 
-    def upload_dir(self, dir_path, target, excludes=tuple(), archive='gztar', temp_dir=None):
+    def upload_dir(self, dir_path, target, excludes=tuple(), archive='tar', temp_dir=None):
         """
         upload dir to gs, s3, and ml-logger.
 
@@ -1226,7 +1228,7 @@ class ML_Logger:
             else:
                 self.upload_file(filename, target)
 
-    def download_dir(self, source_path, to, unpack='gztar'):
+    def download_dir(self, source_path, to, unpack='tar'):
         import tempfile, shutil, pathlib
 
         if source_path.startswith('s3://'):

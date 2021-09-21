@@ -67,12 +67,15 @@ def test_s3_glob(setup):
 
     target = "s3://" + s3_bucket + "/test_dir.tar"
     logger.upload_dir('.', target)
+
     files = logger.glob_s3(s3_bucket)
     assert 'test_dir.tar' in files
 
     files = logger.glob_s3(wd=s3_bucket)
     assert 'test_dir.tar' in files
 
+    files = logger.glob_s3(s3_bucket + "/test_dir.tar")
+    assert 'test_dir.tar' in files
 
 def test_s3_glob_prefix(setup):
     import os
