@@ -163,7 +163,8 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
         launch_args = jaynes.RUN.config['launch']
         runner_class, runner_args = jaynes.RUN.config['runner']
 
-        launch_args['name'] = job_name[-60:].replace('/', '-')
+        # gcp requires lower-case and less than 60 characters
+        launch_args['name'] = job_name[-60:].replace('/', '-').replace('_', '-').lower()
         runner_args['name'] = job_name
         if runner_class is jaynes.runners.Docker:
             runner_args['name'] = runner_args['name'].replace('/', '-')
