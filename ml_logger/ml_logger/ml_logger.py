@@ -870,7 +870,7 @@ class ML_Logger:
         response = s3_client.list_objects(Bucket=bucket, Prefix=s3_prefix,
                                           MaxKeys=max_keys, **KWargs)
         files = []
-        for entry in response['Contents']:
+        for entry in response.get('Contents', []):
             filename = entry['Key'][truncate:]
             print(filename)
             if "*" in query_prefix:
