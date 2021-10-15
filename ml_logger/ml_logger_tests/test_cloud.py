@@ -77,6 +77,8 @@ def test_s3_glob(setup):
     files = logger.glob_s3(s3_bucket + "/test_dir.tar")
     assert 'test_dir.tar' in files
 
+    files = logger.glob_s3(s3_bucket + "/this_does_not_exist")
+    assert not files
 
 def test_s3_glob_prefix(setup):
     import os
