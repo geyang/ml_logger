@@ -21,6 +21,10 @@ def setup(log_dir):
 def test_s3_upload(setup):
     import os, pathlib
 
+    profile = os.environ.get('ML_LOGGER_TEST_AWS_PROFILE', None)
+    if profile:
+        os.environ['AWS_PROFILE'] = profile
+
     s3_bucket = os.environ['ML_LOGGER_TEST_S3_BUCKET']
 
     target = "s3://" + s3_bucket + "/test_dir.tar"
@@ -29,6 +33,10 @@ def test_s3_upload(setup):
 
 def test_s3_download(setup):
     import os, glob
+
+    profile = os.environ.get('ML_LOGGER_TEST_AWS_PROFILE', None)
+    if profile:
+        os.environ['AWS_PROFILE'] = profile
 
     s3_bucket = os.environ['ML_LOGGER_TEST_S3_BUCKET']
 
@@ -63,6 +71,10 @@ def test_gs_download(setup):
 def test_s3_glob(setup):
     import os
 
+    profile = os.environ.get('ML_LOGGER_TEST_AWS_PROFILE', None)
+    if profile:
+        os.environ['AWS_PROFILE'] = profile
+
     s3_bucket = os.environ['ML_LOGGER_TEST_S3_BUCKET']
 
     target = "s3://" + s3_bucket + "/test_dir.tar"
@@ -80,8 +92,13 @@ def test_s3_glob(setup):
     files = logger.glob_s3(s3_bucket + "/this_does_not_exist")
     assert not files
 
+
 def test_s3_glob_prefix(setup):
     import os
+
+    profile = os.environ.get('ML_LOGGER_TEST_AWS_PROFILE', None)
+    if profile:
+        os.environ['AWS_PROFILE'] = profile
 
     s3_bucket = os.environ['ML_LOGGER_TEST_S3_BUCKET']
 
