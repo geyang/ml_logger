@@ -76,7 +76,6 @@ class RUN(PrefixProto):
         while "{" in data['prefix']:
             data = {k: v.format(**data) if isinstance(v, str) else v for k, v in data.items()}
 
-        cls.JOB_NAME = data['job_name']
         cls.PREFIX = data['prefix']
         cls.JOB_NAME = data['job_name']
 
