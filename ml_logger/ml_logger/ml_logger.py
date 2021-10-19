@@ -1200,6 +1200,7 @@ class ML_Logger:
 
         from pathlib import Path
 
+        target = str(target)
         if target.startswith('s3://'):
             service = 's3'
             target = Path(target[5:])
@@ -1231,6 +1232,7 @@ class ML_Logger:
     def download_dir(self, source_path, to, unpack='tar'):
         import tempfile, shutil, pathlib
 
+        source_path = str(source_path)
         if source_path.startswith('s3://'):
             service = 's3'
             source_path = pathlib.Path(source_path[5:])
@@ -1241,6 +1243,7 @@ class ML_Logger:
             service = 'local'
             source_path = pathlib.Path(source_path[7:])
         else:
+            service = 'logger'
             source_path = pathlib.Path(source_path)
 
         to = pathlib.Path(to).absolute()
@@ -1722,6 +1725,8 @@ class ML_Logger:
     def save_torch(self, obj, *keys, path=None, tries=3, backup=3.0):
         path = pJoin(*keys, path)
 
+        from pathlib import Path
+        import shutil
         import torch
         from tempfile import NamedTemporaryFile
         with NamedTemporaryFile(delete=True) as tfile:
@@ -1730,6 +1735,15 @@ class ML_Logger:
             if path.lower().startswith('s3://'):
                 tfile.seek(0)
                 return self.upload_s3(source_path=tfile.name, path=path[5:])
+            elif path.lower().startswith('file://'):
+                tfile.seek(0)
+                path = path[7:]
+                parent_dir = Path(path).resolve().parents[0]
+                if not parent_dir.is_dir():
+                    parent_dir.mkdir(parents=True, exist_ok=True)
+
+                shutil.copy(tfile.name, path)
+                return
 
             target_path = pJoin(self.prefix, path)
             while tries > 0:
@@ -1786,6 +1800,8 @@ class ML_Logger:
             with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
                 self.download_s3(path[5:], to=ntp.name)
                 return torch.load(ntp.name, map_location=map_location, **kwargs)
+        elif path.lower().startswith('file://'):
+            return torch.load(path[7:], map_location=map_location, **kwargs)
         else:
             fn_or_buff = self.load_file(path)
             return torch.load(fn_or_buff, map_location=map_location, **kwargs)
@@ -2075,7 +2091,15 @@ class ML_Logger:
         :param stop:
         :return: None if the director does not exist (internal FileNotFoundError)
         """
-        if not wd and query.startswith('/'):
+
+        if query.startswith('file://'):
+            from glob import glob
+            return glob(query[7:])
+        elif query.startswith('s3://'):
+            return self.glob_s3(query[5:], wd=wd)
+        elif query.startswith('gs://'):
+            raise NotImplementedError()
+        elif not wd and query.startswith('/'):
             return ['/' + p for p in
                     self.client.glob(query, wd="/", recursive=recursive, start=start, stop=stop)]
 
