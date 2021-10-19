@@ -2207,7 +2207,8 @@ class ML_Logger:
     read_params = get_parameters
 
     def read_metrics(self, *keys, x_key=None, path="metrics.pkl", wd=None, num_bins=None,
-                     bin_size=1, silent=False, default=None, collect="std", verbose=False):
+                     bin_size=1, silent=False, default=None, collect="std", verbose=False,
+                     ignore_errors=False):
         """
         Returns a Pandas.DataFrame object that contains metrics from all files.
 
@@ -2226,8 +2227,10 @@ class ML_Logger:
         :param kwargs: Not used besides the default argument.
         :return: pandas.DataFrame or None when no metric file is found.
         """
-        import pandas as pd
         from contextlib import ExitStack
+        from pickle import UnpicklingError
+
+        import pandas as pd
 
         if x_key:
             keys = [*keys, x_key]
@@ -2241,8 +2244,14 @@ class ML_Logger:
 
             keys, query_keys = [*meta_keys.keys()], keys
 
-        # todo: remove default from this.
-        paths = self.glob(path, wd=wd) if "*" in path else [path]
+        # apply glob for each if path is a list
+        if isinstance(path, (list, tuple)):
+            paths = []
+            for p in path:
+                paths += self.glob(p, wd=wd) if "*" in p else [p]
+        else:
+            # todo: remove default from this.
+            paths = self.glob(path, wd=wd) if "*" in path else [path]
         if verbose:
             print(*paths, sep="\n")
 
@@ -2251,13 +2260,19 @@ class ML_Logger:
 
         all_metrics = {}
         for path in paths:
-            with self.PrefixContext(wd) if wd else ExitStack():
-                if path.endswith(".jsonl"):
-                    metrics = self.load_jsonl(path)
-                elif path.endswith(".csv"):
-                    metrics = self.load_csv(path)
-                else:  # if path.endswith(".pkl"):
-                    metrics = self.load_pkl(path)
+            try:
+                with self.PrefixContext(wd) if wd else ExitStack():
+                    if path.endswith(".jsonl"):
+                        metrics = self.load_jsonl(path)
+                    elif path.endswith(".csv"):
+                        metrics = self.load_csv(path)
+                    else:  # if path.endswith(".pkl"):
+                        metrics = self.load_pkl(path)
+            except Exception as e:
+                if not silent:
+                    cprint(f'Caught {e} at {path}', color='yellow')
+                metrics = None
+
             if metrics is None:
                 if keys and keys[-1] and (
                         ".pkl" in keys[-1] or
@@ -2267,12 +2282,17 @@ class ML_Logger:
                     self.log_line('Your last key looks like a `metrics.pkl` path. Make '
                                   'sure you use a keyword argument to specify the path!',
                                   color="yellow")
+
+                # NOTE: Why return?!?!
                 if silent:
                     return
+
+                if ignore_errors:
+                    continue
                 raise FileNotFoundError(f'fails to load metric file at {path}')
 
             if verbose:
-                from IPython.core.display import display, HTML
+                from IPython.core.display import HTML, display
                 url = os.path.normpath(pJoin(wd or self.prefix, path, "../.."))
                 display(HTML(f"""<a href="http://localhost:3001{url}">{path}</a>"""))
 
