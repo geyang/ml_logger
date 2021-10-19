@@ -1735,6 +1735,9 @@ class ML_Logger:
             if path.lower().startswith('s3://'):
                 tfile.seek(0)
                 return self.upload_s3(source_path=tfile.name, path=path[5:])
+            elif path.lower().startswith('gs://'):
+                tfile.seek(0)
+                return self.upload_gs(source_path=tfile.name, path=path[5:])
             elif path.lower().startswith('file://'):
                 tfile.seek(0)
                 path = path[7:]
@@ -1799,6 +1802,11 @@ class ML_Logger:
             postfix = os.path.basename(path)
             with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
                 self.download_s3(path[5:], to=ntp.name)
+                return torch.load(ntp.name, map_location=map_location, **kwargs)
+        elif path.lower().startswith('gs://'):
+            postfix = os.path.basename(path)
+            with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
+                self.download_gs(path[5:], to=ntp.name)
                 return torch.load(ntp.name, map_location=map_location, **kwargs)
         elif path.lower().startswith('file://'):
             return torch.load(path[7:], map_location=map_location, **kwargs)
