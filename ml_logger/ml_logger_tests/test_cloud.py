@@ -106,3 +106,35 @@ def test_s3_glob_prefix(setup):
     logger.upload_dir(".", target)
     files = logger.glob_s3(wd=s3_bucket + "/prefix/prefix-2")
     assert 'test_dir.tar' in files
+
+
+def test_gs_glob(setup):
+    import os
+
+    gs_bucket = os.environ.get('ML_LOGGER_TEST_GS_BUCKET', None)
+
+    target = "gs://" + gs_bucket + "/test_dir.tar"
+    logger.upload_dir('.', target)
+
+    files = logger.glob_gs(gs_bucket)
+    assert 'test_dir.tar' in files
+
+    files = logger.glob_gs(wd=gs_bucket)
+    assert 'test_dir.tar' in files
+
+    files = logger.glob_gs(gs_bucket + "/test_dir.tar")
+    assert 'test_dir.tar' in files
+
+    files = logger.glob_gs(gs_bucket + "/this_does_not_exist")
+    assert not files
+
+
+def test_gs_glob_prefix(setup):
+    import os
+
+    gs_bucket = os.environ.get('ML_LOGGER_TEST_GS_BUCKET', None)
+
+    target = "gs://" + gs_bucket + "/prefix/prefix-2/test_dir.tar"
+    logger.upload_dir(".", target)
+    files = logger.glob_gs(wd=gs_bucket + "/prefix/prefix-2")
+    assert 'test_dir.tar' in files
