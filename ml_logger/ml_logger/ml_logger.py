@@ -1213,20 +1213,28 @@ class ML_Logger:
             service = 'logger'
             target = Path(target)
 
-        dir_path = Path(dir_path).absolute()
-        with tempfile.TemporaryDirectory() as temp_dir:
-            filename = shutil.make_archive(base_name=Path(temp_dir) / dir_path.name,
-                                           format=archive,
-                                           root_dir=dir_path,
-                                           base_dir='.')
+        if archive:
+            dir_path = Path(dir_path).absolute()
+            with tempfile.TemporaryDirectory() as temp_dir:
+                filename = shutil.make_archive(base_name=Path(temp_dir) / dir_path.name,
+                                               format=archive,
+                                               root_dir=dir_path,
+                                               base_dir='.')
             if service == 's3':
                 self.upload_s3(filename, target)
             elif service == 'gs':
                 self.upload_gs(filename, target)
             elif service == 'local':
-                shutil.copytree(filename, target, dirs_exist_ok=True)
+                shutil.copy(filename, target)
             else:
                 self.upload_file(filename, target)
+        else:
+            if service == 'local':
+                shutil.copytree(dir_path, target, dirs_exist_ok=True)
+            else:
+                raise ValueError(
+                    'You must specify an archive format or use a path prefixed with "file://".'
+                )
 
     def download_dir(self, source_path, to, unpack='tar'):
         import tempfile, shutil, pathlib
