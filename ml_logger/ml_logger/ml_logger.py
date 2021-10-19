@@ -881,6 +881,50 @@ class ML_Logger:
 
         return files
 
+    def glob_gs(self, query="", wd=None, max_results=1000, **kwargs):
+        """
+        Does not support wildcard or pagination, but we could add it in the future.
+
+        :param query:
+        :param wd:
+        :param max_keys: default is 1000 as in boto3
+        :return:
+        """
+        from google.cloud import storage
+
+        assert "*" not in query, "glob_gs does not support wildcard."
+
+        if wd:
+            bucket, *work_prefix = wd.split('/')
+            query_prefix, other = [], []
+            pt = query_prefix
+            if query:
+                for n in query.split('/'):
+                    if "*" in n:
+                        pt = other
+                    pt.append(n)
+
+            gs_prefix = '/'.join(work_prefix + query_prefix)
+            work_prefix = '/'.join(work_prefix)
+        else:
+            bucket, *query_prefix = query.split('/')
+            gs_prefix = '/'.join(query_prefix)
+            work_prefix = None
+
+        query_prefix = '/'.join(query_prefix)
+        truncate = len(work_prefix) + 1 if work_prefix else 0
+
+        gs_client = storage.Client()
+        # list_objects_v2 supports pagination. -- Ge
+        response = gs_client.list_blobs(bucket, prefix=gs_prefix, max_results=max_results, **kwargs)
+        files = []
+        for entry in response:
+            filename = entry.name[truncate:]
+            print(filename)
+            if filename.startswith(query_prefix):
+                files.append(filename)
+        return files
+
     def move(self, source, to):
         abs_source = pJoin(self.prefix, source)
         abs_target = pJoin(self.prefix, to)
