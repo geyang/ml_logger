@@ -2150,7 +2150,7 @@ class ML_Logger:
         elif query.startswith('s3://'):
             return self.glob_s3(query[5:], wd=wd)
         elif query.startswith('gs://'):
-            raise NotImplementedError()
+            raise self.glob_gs(query[5:], wd=wd)
         elif not wd and query.startswith('/'):
             return ['/' + p for p in
                     self.client.glob(query, wd="/", recursive=recursive, start=start, stop=stop)]
