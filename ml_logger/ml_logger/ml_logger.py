@@ -1265,14 +1265,14 @@ class ML_Logger:
                                                format=archive,
                                                root_dir=dir_path,
                                                base_dir='.')
-            if service == 's3':
-                self.upload_s3(filename, target)
-            elif service == 'gs':
-                self.upload_gs(filename, target)
-            elif service == 'local':
-                shutil.copy(filename, target)
-            else:
-                self.upload_file(filename, target)
+                if service == 's3':
+                    self.upload_s3(filename, target)
+                elif service == 'gs':
+                    self.upload_gs(filename, target)
+                elif service == 'local':
+                    shutil.copy(filename, target)
+                else:
+                    self.upload_file(filename, target)
         else:
             if service == 'local':
                 shutil.copytree(dir_path, target, dirs_exist_ok=True)
