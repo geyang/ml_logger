@@ -37,10 +37,21 @@ class RUN(PrefixProto):
 
     now = logger.now()
     prefix = "{username}/{project}/{now:%Y/%m-%d}/{file_stem}/{job_name}"
-    job_name = Proto(
-        f"{now:%H.%M.%S}",
-        help="Default to '{now:%H.%M.%S}'. use '{now:%H.%M.%S}/{job_counter}' for multiple launches.")
-    job_counter = Accumulant(None)
+    job_name = Proto(f"{now:%H.%M.%S}",
+                     help="""
+                     Default to '{now:%H.%M.%S}'. use '{now:%H.%M.%S}/{job_counter}' 
+                     for multiple launches. You can do so by setting: 
+                     
+                     ```python
+                     RUN.job_name += "/{job_counter}"
+                     
+                     for params in sweep:
+                        thunk = instr(main)
+                        jaynes.run(thun)
+                     jaynes.listen()
+                     ```
+                     """)
+    job_counter = Accumulant(0, help="Default to 0. Use True to increment by 1.")
 
     resume = Proto(True, help="whether starting the run from scratch, or "
                               "resume previous checkpoints")
@@ -59,17 +70,7 @@ class RUN(PrefixProto):
         script_truncated = logger.truncate(script_path, depth=script_root_depth)
         cls.file_stem = logger.stem(script_truncated)
 
-        job_counter = cls.job_counter
-        if job_counter is None:
-            pass
-        elif job_counter is False:
-            cls.job_counter = None
-        elif cls.job_counter is None:
-            cls.job_counter = 0
-        # fuck python -- bool is subtype of int. Fuck guido.
-        elif isinstance(job_counter, int) and not isinstance(job_counter, bool):
-            cls.job_counter = job_counter
-        else:
+        if isinstance(cls.job_counter, int) or isinstance(cls.job_counter, float):
             cls.job_counter += 1
 
         data = vars(cls)
