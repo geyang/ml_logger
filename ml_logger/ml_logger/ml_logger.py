@@ -1220,21 +1220,18 @@ class ML_Logger:
                                                format=archive,
                                                root_dir=dir_path,
                                                base_dir='.')
-            if service == 's3':
-                self.upload_s3(filename, target)
-            elif service == 'gs':
-                self.upload_gs(filename, target)
-            elif service == 'local':
-                shutil.copy(filename, target)
-            else:
-                self.upload_file(filename, target)
+                if service == 's3':
+                    self.upload_s3(filename, target)
+                elif service == 'gs':
+                    self.upload_gs(filename, target)
+                elif service == 'local':
+                    shutil.copy(filename, target)
+                else:
+                    self.upload_file(filename, target)
+        elif service == 'local':
+            shutil.copytree(dir_path, target, dirs_exist_ok=True)
         else:
-            if service == 'local':
-                shutil.copytree(dir_path, target, dirs_exist_ok=True)
-            else:
-                raise ValueError(
-                    'You must specify an archive format or use a path prefixed with "file://".'
-                )
+            raise NotImplementedError("Uploading directories is Not Yet Implemented. Specify archive format instead.")
 
     def download_dir(self, source_path, to, unpack='tar'):
         import tempfile, shutil, pathlib
