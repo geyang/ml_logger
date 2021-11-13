@@ -5,7 +5,7 @@ from sanic import Sanic, views
 from sanic_cors import CORS
 
 # to support HTTPS.
-views.HTTP_METHODS = views.HTTP_METHODS + ['FETCH', 'OPTIONS']
+views.HTTP_METHODS += ('FETCH', 'OPTIONS')
 
 app = Sanic("ml_dash.server")
 # CORS(app)
