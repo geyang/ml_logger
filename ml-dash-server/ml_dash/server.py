@@ -50,6 +50,8 @@ def run(logdir=None, **kwargs):
     print(vars(config.Args))
     cprint("Sanic Server Args:", 'yellow')
     print(vars(config.ServerArgs))
+    cprint("SSL Args:", 'yellow')
+    print(vars(config.SSLArgs))
 
     config.ServerArgs.update(**kwargs)
     app.run(**vars(config.ServerArgs), ssl=vars(config.SSLArgs))

@@ -28,7 +28,7 @@ CWD = os.environ["PWD"]
 USER = os.environ.get("USER", None)
 
 # template for the dashboard url
-ML_DASH = "http://localhost:3001/{prefix}"
+ML_DASH_URL = "http://app.dash.ml/{prefix}"
 # ML_Logger defaults
 ROOT = os.environ.get("ML_LOGGER_ROOT", CWD) or CWD
 S3_ROOT = os.environ.get("ML_LOGGER_S3_ROOT", None)
@@ -357,7 +357,7 @@ class ML_Logger:
         if not silent:
             if prefix:
                 from urllib.parse import quote
-                print(f"Dashboard: {ML_DASH.format(prefix=quote(self.prefix))}")
+                print(f"Dashboard: {ML_DASH_URL.format(prefix=quote(self.prefix))}")
             print(f"Log_directory: {self.root}")
 
         # now register the experiment
@@ -2291,7 +2291,7 @@ class ML_Logger:
             if verbose:
                 from IPython.core.display import display, HTML
                 url = os.path.normpath(pJoin(wd or self.prefix, path, "../.."))
-                display(HTML(f"""<a href="http://localhost:3001{url}">{path}</a>"""))
+                display(HTML(f"""<a href="{ML_DASH_URL}">{path}</a>"""))
 
             df = metrics if isinstance(metrics, pd.DataFrame) else pd.DataFrame(metrics)
             if keys:
