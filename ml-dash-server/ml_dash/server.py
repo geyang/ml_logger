@@ -52,7 +52,7 @@ def run(logdir=None, **kwargs):
     print(vars(config.ServerArgs))
 
     config.ServerArgs.update(**kwargs)
-    app.run(**vars(config.ServerArgs))
+    app.run(**vars(config.ServerArgs), ssl=vars(config.SSLArgs))
 
 
 if __name__ == "__main__":

@@ -26,6 +26,9 @@ class ServerArgs:
     host = Proto("", help="use 0.0.0.0 if you want external clients to be able to access this.")
     port = Proto(8081, help="the port")
     workers = Proto(1, help="the number of worker processes")
+    debug = False
+
+@cli_parse
+class SSLArgs:
     cert = Proto(None, dtype=str, help="the path to the SSL certificate")
     key = Proto(None, dtype=str, help="the path to the SSL key")
-    debug = False
