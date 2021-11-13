@@ -1,8 +1,11 @@
 from ml_dash.schema import schema
 from sanic_graphql import GraphQLView
 
-from sanic import Sanic
+from sanic import Sanic, views
 from sanic_cors import CORS
+
+# to support HTTPS.
+views.HTTP_METHODS = views.HTTP_METHODS + ['FETCH', 'OPTIONS']
 
 app = Sanic("ml_dash.server")
 # CORS(app)
@@ -26,6 +29,7 @@ def setup_static(app, loop):
     from os.path import expanduser
     app.static('/files', expanduser(config.Args.logdir),
                use_modified_since=True, use_content_range=True, stream_large_files=True)
+
 
 # note: currently disabled, file events API.
 # from .file_events import file_events, setup_watch_queue
