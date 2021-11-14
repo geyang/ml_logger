@@ -993,7 +993,7 @@ class ML_Logger:
             (self.log_line if silent else self.print)(*table, sep="\n")
         self.log_data(path=path, data=_kwargs)
 
-    def save_pkl(self, data, path=None, append=False, use_dill=False):
+    def save_pkl(self, data, *keys, path=None, append=False, use_dill=False):
         """Save data in pkl format
 
         Note: We use dill so that we can save lambda functions but, but we use pure
@@ -1008,6 +1008,20 @@ class ML_Logger:
             import dill as pickle
         else:
             import pickle
+
+        # Added s3/gs support
+        path = pJoin(*keys, path)
+
+        from tempfile import NamedTemporaryFile
+        with NamedTemporaryFile(delete=True) as tfile:
+            pickle.dump(data, tfile)
+            if path.lower().startswith('s3://'):
+                tfile.seek(0)
+                return self.upload_s3(source_path=tfile.name, path=path[5:])
+
+            if path.lower().startswith('gs://'):
+                tfile.seek(0)
+                return self.upload_gs(source_path=tfile.name, path=path[5:])
 
         path = path or "data.pkl"
         abs_path = pJoin(self.prefix, path)
