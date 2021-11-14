@@ -39,12 +39,12 @@ class RUN(PrefixProto):
     prefix = "{username}/{project}/{now:%Y/%m-%d}/{file_stem}/{job_name}"
     job_name = Proto(f"{now:%H.%M.%S}",
                      help="""
-                     Default to '{now:%H.%M.%S}'. use '{now:%H.%M.%S}/{job_counter}' 
-                     for multiple launches. You can do so by setting: 
-                     
+                     Default to '{now:%H.%M.%S}'. use '{now:%H.%M.%S}/{job_counter}'
+                     for multiple launches. You can do so by setting:
+
                      ```python
                      RUN.job_name += "/{job_counter}"
-                     
+
                      for params in sweep:
                         thunk = instr(main)
                         jaynes.run(thun)
@@ -61,24 +61,24 @@ class RUN(PrefixProto):
 
     # noinspection PyMissingConstructor
     @classmethod
-    def __init__(cls, deps=None, script_path=None, **kwargs):
-        cls._update(deps, script_path=script_path, **kwargs)
+    def __new__(cls, deps=None, script_path=None, **kwargs):
         from ml_logger import logger
 
         sr = cls.script_root
         script_root_depth = (sr.value if isinstance(sr, Proto) else sr).split('/').__len__()
         script_truncated = logger.truncate(script_path, depth=script_root_depth)
-        cls.file_stem = logger.stem(script_truncated)
+
+        file_stem = logger.stem(script_truncated)
 
         if isinstance(cls.job_counter, int) or isinstance(cls.job_counter, float):
             cls.job_counter += 1
 
         data = vars(cls)
+        data.update(kwargs)
         while "{" in data['prefix']:
-            data = {k: v.format(**data) if isinstance(v, str) else v for k, v in data.items()}
+            data = {k: v.format(file_stem=file_stem, **data) if isinstance(v, str) else v for k, v in data.items()}
 
-        cls.PREFIX = data['prefix']
-        cls.JOB_NAME = data['job_name']
+        return data['prefix'], data['job_name'], file_stem
 
 
 if __name__ == '__main__':
@@ -125,13 +125,16 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
 
     # need to set the deps
     # note: for scripts in the `plan2vec` module this also works -- b/c we truncate fixed depth.
-    RUN(script_path=caller_script)
+    PREFIX, JOB_NAME, FILE_STEM = RUN(script_path=caller_script)
 
     RUN_DICT = vars(RUN)
+    RUN_DICT['prefix'] = PREFIX
+    RUN_DICT['job_name'] = JOB_NAME
+    RUN_DICT['file_stem'] = FILE_STEM
 
     # todo: there should be a better way to log these.
     # todo: we shouldn't need to log to the same directory, and the directory for the run shouldn't be fixed.
-    logger.configure(root=RUN.server, prefix=RUN.PREFIX, asynchronous=False,  # use sync logger
+    logger.configure(root=RUN.server, prefix=PREFIX, asynchronous=False,  # use sync logger
                      max_workers=4)
     if not __dryrun:
         # # this is debatable
@@ -158,14 +161,12 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
 
     if jaynes.RUN.config and jaynes.RUN.mode != "local":
 
-        job_name = pJoin(RUN.file_stem, RUN.JOB_NAME)
-
         launch_args = jaynes.RUN.config['launch']
         runner_class, runner_args = jaynes.RUN.config['runner']
 
         # gcp requires lower-case and less than 60 characters
-        launch_args['name'] = job_name[-60:].replace('/', '-').replace('_', '-').lower()
-        runner_args['name'] = job_name
+        launch_args['name'] = PREFIX[-60:].replace('/', '-').replace('_', '-').lower()
+        runner_args['name'] = PREFIX
         if runner_class is jaynes.runners.Docker:
             runner_args['name'] = runner_args['name'].replace('/', '-')
 
@@ -182,7 +183,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
                                     f"ARGS: {ARGS}\n"
 
         RUN._update(**RUN_DICT)
-        logger.configure(root=RUN.server, prefix=RUN.PREFIX, max_workers=10)
+        logger.configure(root=RUN.server, prefix=PREFIX, max_workers=10)
         # todo logger.job_id is specific to slurm
         logger.job_started(job=dict(job_id=logger.slurm_job_id), host=dict(hostname=logger.hostname), )
 
