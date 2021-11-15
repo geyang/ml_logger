@@ -1,5 +1,5 @@
 """
-# Tests for ml-logger.
+# AWS S3 Tests
 """
 from os.path import join as pathJoin
 
@@ -47,27 +47,6 @@ def test_s3_download(setup):
     logger.remove("test_dir_download")
 
 
-def test_gs_upload(setup):
-    import os, pathlib
-
-    gs_bucket = os.environ['ML_LOGGER_TEST_GS_BUCKET']
-
-    target = "gs://" + gs_bucket + "/test_dir.tar"
-    logger.upload_dir(pathlib.Path(__file__).absolute().parent, target)
-
-
-def test_gs_download(setup):
-    import os, glob
-
-    gs_bucket = os.environ['ML_LOGGER_TEST_GS_BUCKET']
-
-    source = "gs://" + gs_bucket + "/test_dir.tar"
-    local_prefix = '/tmp/test_dir_download'
-    logger.download_dir(source, to=local_prefix)
-    assert local_prefix + '/test_cloud.py' in glob.glob(local_prefix + "/*")
-    logger.remove("test_dir_download")
-
-
 def test_s3_glob(setup):
     import os
 
@@ -108,33 +87,15 @@ def test_s3_glob_prefix(setup):
     assert 'test_dir.tar' in files
 
 
-def test_gs_glob(setup):
+def test_gs_upload_download_pkl(setup):
     import os
 
-    gs_bucket = os.environ.get('ML_LOGGER_TEST_GS_BUCKET', None)
+    example_data = {'a': 1, 'b': 2}
 
-    target = "gs://" + gs_bucket + "/test_dir.tar"
-    logger.upload_dir('.', target)
+    gs_bucket = os.environ.get('ML_LOGGER_TEST_S3_BUCKET', None)
+    target = "s3://" + gs_bucket + "/prefix/prefix-2/example_data.pkl"
 
-    files = logger.glob_gs(gs_bucket)
-    assert 'test_dir.tar' in files
-
-    files = logger.glob_gs(wd=gs_bucket)
-    assert 'test_dir.tar' in files
-
-    files = logger.glob_gs(gs_bucket + "/test_dir.tar")
-    assert 'test_dir.tar' in files
-
-    files = logger.glob_gs(gs_bucket + "/this_does_not_exist")
-    assert not files
-
-
-def test_gs_glob_prefix(setup):
-    import os
-
-    gs_bucket = os.environ.get('ML_LOGGER_TEST_GS_BUCKET', None)
-
-    target = "gs://" + gs_bucket + "/prefix/prefix-2/test_dir.tar"
-    logger.upload_dir(".", target)
-    files = logger.glob_gs(wd=gs_bucket + "/prefix/prefix-2")
-    assert 'test_dir.tar' in files
+    logger.save_pkl(example_data, target)
+    downloaded_data, = logger.load_pkl(target)
+    assert downloaded_data['a'] == 1
+    assert downloaded_data['b'] == 2
