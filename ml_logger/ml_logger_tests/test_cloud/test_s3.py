@@ -87,13 +87,30 @@ def test_s3_glob_prefix(setup):
     assert 'test_dir.tar' in files
 
 
-def test_gs_upload_download_torch(setup):
+def test_s3_remove(setup):
     import os
 
     example_data = {'a': 1, 'b': 2}
 
-    gs_bucket = os.environ.get('ML_LOGGER_TEST_S3_BUCKET', None)
-    target = "s3://" + gs_bucket + "/prefix/prefix-2/example_data.pt"
+    s3_bucket = os.environ.get('ML_LOGGER_TEST_S3_BUCKET', None)
+    target = "s3://" + s3_bucket + "/prefix/prefix-2/example_data.pt"
+
+    logger.save_torch(example_data, target)
+    file, = logger.glob_s3(target[5:])
+    logger.remove_s3(s3_bucket, file)
+    assert not logger.glob_s3(target[5:])
+
+
+def test_s3_upload_download_torch(setup):
+    import os
+
+    example_data = {'a': 1, 'b': 2}
+
+    s3_bucket = os.environ.get('ML_LOGGER_TEST_S3_BUCKET', None)
+    file = "prefix/prefix-2/example_data.pt"
+    target = "s3://" + s3_bucket + "/" + file
+
+    logger.remove_s3(s3_bucket, file)
 
     logger.save_torch(example_data, target)
     downloaded_data = logger.load_torch(target)

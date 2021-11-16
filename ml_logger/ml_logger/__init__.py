@@ -145,7 +145,8 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
 
         # the tension is in between creation vs run. Code snapshot are shared, but runs need to be unique.
         logger.job_created(
-            job=dict(script_path=RUN.script_path, script_root=RUN.script_root),
+            job=dict(script_path=RUN.script_path, script_root=RUN.script_root, counter=RUN.job_counter,
+                     prefix=RUN.prefix, name=RUN.job_name),
             revision=logger.rev_info(),
             fn=logger.fn_info(fn),
             args=ARGS,
