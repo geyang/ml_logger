@@ -1907,6 +1907,26 @@ class ML_Logger:
             a random float in [1, 1.5).
         :return: a tuple of each one of the data chunck logged into the file.
         """
+        import pickle
+
+        # Added s3/gs support
+        path = pJoin(*keys)
+
+        from tempfile import NamedTemporaryFile
+        if path.lower().startswith('s3://'):
+            postfix = os.path.basename(path)
+            with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
+                self.download_s3(path[5:], to=ntp.name)
+                ntp.seek(0)
+                return list(load_from_pickle_file(ntp))
+
+        if path.lower().startswith('gs://'):
+            postfix = os.path.basename(path)
+            with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
+                self.download_gs(path[5:], to=ntp.name)
+                ntp.seek(0)
+                return list(load_from_pickle_file(ntp))
+
         path = pJoin(self.prefix, *keys)
         while tries > 1:
             try:
