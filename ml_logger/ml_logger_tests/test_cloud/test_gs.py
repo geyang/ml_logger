@@ -71,7 +71,7 @@ def test_gs_glob_prefix(setup):
     assert 'test_dir.tar' in files
 
 
-def test_gs_upload_download_pkl(setup):
+def test_gs_upload_download_torch(setup):
     import os
 
     example_data = {'a': 1, 'b': 2}
