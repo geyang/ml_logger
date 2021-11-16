@@ -71,13 +71,31 @@ def test_gs_glob_prefix(setup):
     assert 'test_dir.tar' in files
 
 
+def test_gs_remove(setup):
+    import os
+
+    example_data = {'a': 1, 'b': 2}
+
+    gs_bucket = os.environ.get('ML_LOGGER_TEST_GS_BUCKET', None)
+    target = "gs://" + gs_bucket + "/prefix/prefix-2/example_data.pt"
+    print(target)
+
+    logger.save_torch(example_data, target)
+    file, = logger.glob_gs(target[5:])
+    logger.remove_gs(gs_bucket, file)
+    assert not logger.glob_gs(target[5:])
+
+
 def test_gs_upload_download_torch(setup):
     import os
 
     example_data = {'a': 1, 'b': 2}
 
     gs_bucket = os.environ.get('ML_LOGGER_TEST_GS_BUCKET', None)
-    target = "gs://" + gs_bucket + "/prefix/prefix-2/example_data.pkl"
+    file = "prefix/prefix-2/example_data.pkl"
+    target = "gs://" + gs_bucket + "/" + file
+
+    logger.remove_gs(gs_bucket, file)
 
     logger.save_torch(example_data, target)
     downloaded_data = logger.load_torch(target)
