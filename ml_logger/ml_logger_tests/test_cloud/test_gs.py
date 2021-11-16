@@ -79,7 +79,7 @@ def test_gs_upload_download_pkl(setup):
     gs_bucket = os.environ.get('ML_LOGGER_TEST_GS_BUCKET', None)
     target = "gs://" + gs_bucket + "/prefix/prefix-2/example_data.pkl"
 
-    logger.save_pkl(example_data, target)
-    downloaded_data, = logger.load_pkl(target)
+    logger.save_torch(example_data, target)
+    downloaded_data = logger.load_torch(target)
     assert downloaded_data['a'] == 1
     assert downloaded_data['b'] == 2
