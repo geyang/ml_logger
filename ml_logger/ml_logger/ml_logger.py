@@ -1339,6 +1339,18 @@ class ML_Logger:
         return client.delete_object(Bucket=bucket, Key=pJoin(*keys))
 
     @staticmethod
+    def remove_gs(*keys, path=None):
+        from google.cloud import storage
+
+        storage_client = storage.Client()
+
+        path = pJoin(*keys, path)
+
+        bucket, *object_name = path.split('/')
+        object_name = '/'.join(object_name)
+        return storage_client.bucket(bucket).delete_blob(object_name)
+
+    @staticmethod
     def upload_gs(source_path, *keys, path=None):
         assert isinstance(source_path, str), "file has to be a filename of the string type."
 
