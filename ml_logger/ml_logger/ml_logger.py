@@ -1254,7 +1254,7 @@ class ML_Logger:
         :param temp_dir: NotImplemented, should allow override of temp folder in case storage limits exist.
         :return:
         """
-        import os, shutil, tempfile, pathlib
+        import shutil, tempfile
 
         from pathlib import Path
 
@@ -1919,12 +1919,10 @@ class ML_Logger:
             a random float in [1, 1.5).
         :return: a tuple of each one of the data chunck logged into the file.
         """
-        import pickle
 
         # Added s3/gs support
         path = pJoin(*keys)
 
-        from tempfile import NamedTemporaryFile
         if path.lower().startswith('s3://'):
             postfix = os.path.basename(path)
             with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
@@ -1956,6 +1954,8 @@ class ML_Logger:
         # last one does not catch.
         with BytesIO() as buf:
             chunks = self.client.read(path, start, stop)
+            if chunks is None:
+                return None
             for chunk in chunks:
                 buf.write(chunk)
             buf.seek(0)
@@ -2209,7 +2209,7 @@ class ML_Logger:
             return pd.DataFrame(all_exp_params)
         return all_exp_params
 
-    def get_parameters(self, *keys, path="parameters.pkl", silent=False, **kwargs):
+    def get_parameters(self, *keys, path="parameters.pkl", not_exist_ok=False, **kwargs):
         """
         utility to obtain the hyperparameters as a flattened dictionary.
 
@@ -2246,17 +2246,17 @@ class ML_Logger:
         :return:
         """
         _ = self.load_pkl(self.glob(path)[0] if "*" in path else path)
+
         if _ is None:
             if keys and keys[-1] and "parameters.pkl" in keys[-1]:
                 self.print('Your last key looks like a `parameters.pkl` path. Make '
                            'sure you use a keyword argument to specify the path!', color="yellow")
-            if silent:
-                return
-            raise FileNotFoundError(f'the parameter file is not found at {path}')
+            if not not_exist_ok:
+                raise FileNotFoundError(f"the parameter file is not found at '{path}'")
 
         from functools import reduce
         from ml_logger.helpers.func_helpers import assign, dot_flatten
-        parameter_dict = reduce(assign, _)
+        parameter_dict = reduce(assign, _) if _ else {}
         parameters = dot_flatten(parameter_dict)
 
         def get_value(key):
