@@ -66,7 +66,7 @@ class RUN(PrefixProto):
 
         sr = cls.script_root
         script_root_depth = (sr.value if isinstance(sr, Proto) else sr).split('/').__len__()
-        script_truncated = logger.truncate(script_path, depth=script_root_depth)
+        script_truncated = logger.truncate(os.abspath(script_path), depth=script_root_depth)
 
         file_stem = logger.stem(script_truncated)
 

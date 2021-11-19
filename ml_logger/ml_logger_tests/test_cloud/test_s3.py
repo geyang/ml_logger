@@ -43,7 +43,7 @@ def test_s3_download(setup):
     source = "s3://" + s3_bucket + "/test_dir.tar"
     local_prefix = '/tmp/test_dir_download'
     logger.download_dir(source, to=local_prefix)
-    assert local_prefix + '/test_cloud.py' in glob.glob(local_prefix + "/*")
+    assert local_prefix + '/test_s3.py' in glob.glob(local_prefix + "/*")
     logger.remove("test_dir_download")
 
 

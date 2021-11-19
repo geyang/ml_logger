@@ -35,7 +35,7 @@ def test_gs_download(setup):
     source = "gs://" + gs_bucket + "/test_dir.tar"
     local_prefix = '/tmp/test_dir_download'
     logger.download_dir(source, to=local_prefix)
-    assert local_prefix + '/test_cloud.py' in glob.glob(local_prefix + "/*")
+    assert local_prefix + '/test_gs.py' in glob.glob(local_prefix + "/*")
     logger.remove("test_dir_download")
 
 
