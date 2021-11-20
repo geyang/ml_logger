@@ -235,32 +235,44 @@ def is_stale(time_str, threshold=5.):
     return minutes_since > threshold
 
 
-def needs_relaunch(prefix, stale_limit=5., silent=False, *args):
+def needs_relaunch(prefix, stale_limit=5., silent=False, *args, **kwargs):
+    """
+
+    :param prefix: the prefix for the experiment entry.
+    :param stale_limit: the stale limit in minutes. Shared for all job status.
+    :param silent: default to False. When truful, silences the printout.
+    :param args: extended parameters for printing.
+    :return: bool needs relaunch
+    """
     with logger.Prefix(prefix):
         status, request_time, request_id, region, run_time, start_time, create_time = \
             logger.read_params('job.status', 'job.requestTime', 'job.request_id', 'job.region', 'job.runTime',
                                'job.startTime', 'job.createTime', default=None)
-    if status == "completed":
+    stale = relaunch = False
+    if status is None:
+        s = colored("not exist", 'red'), f"https://app.dash.ml/{prefix}"
+        relaunch = True
+    elif status == "completed":
         s = colored(status, 'green'), f"https://app.dash.ml/{prefix}"
     elif status == "created":
-        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}", \
-            colored("is stale", "red") if is_stale(create_time, stale_limit) else None
+        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}"
+        stale = is_stale(create_time, stale_limit)
     elif status == "requested":
-        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}", \
-            colored("is stale", "red") if is_stale(request_time, stale_limit) else None
+        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}"
+        stale = is_stale(request_time, stale_limit)
     elif status == "started":
-        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}", \
-            colored("is stale", "red") if is_stale(start_time, stale_limit) else None
+        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}"
+        stale = is_stale(start_time, stale_limit)
     elif status == "errored":
         s = colored(status, 'red'), f"https://app.dash.ml/{prefix}"
+        relaunch = True
     elif status == "running":
-        s = colored(status, 'maganta'), f"https://app.dash.ml/{prefix}", \
-            colored("is stale", "red") if is_stale(run_time, stale_limit) else None
+        s = colored(status, 'maganta'), f"https://app.dash.ml/{prefix}"
+        stale = is_stale(run_time, stale_limit)
     else:
         s = status,
 
     if not silent:
-        print(*s, *[a for a in args if a])
+        print(*s, colored("is stale", "red") if stale else None, *[a for a in args if a], **kwargs)
 
-    if s[-1] == 'is stale':
-        return True
+    return stale or relaunch
