@@ -235,19 +235,24 @@ def is_stale(time_str, threshold=5.):
     return minutes_since > threshold
 
 
-def needs_relaunch(prefix, stale_limit=5., silent=False, *args, **kwargs):
+def needs_relaunch(prefix, stale_limit=5., silent=False, not_exist_ok=False, *args, **kwargs):
     """
 
     :param prefix: the prefix for the experiment entry.
     :param stale_limit: the stale limit in minutes. Shared for all job status.
     :param silent: default to False. When truful, silences the printout.
+    :param not_exist_ok: default to False b/c this error message is helpful.
     :param args: extended parameters for printing.
     :return: bool needs relaunch
     """
+    # make sure that the prefix context is set to absolute path
+    if not prefix.startswith('/'):
+        prefix = "/" + prefix
+       
     with logger.Prefix(prefix):
         status, request_time, request_id, region, run_time, start_time, create_time = \
             logger.read_params('job.status', 'job.requestTime', 'job.request_id', 'job.region', 'job.runTime',
-                               'job.startTime', 'job.createTime', default=None)
+                               'job.startTime', 'job.createTime', default=None, not_exist_ok=not_exist_ok)
     stale = relaunch = False
     if status is None:
         s = colored("not exist", 'red'), f"https://app.dash.ml/{prefix}"
@@ -267,7 +272,7 @@ def needs_relaunch(prefix, stale_limit=5., silent=False, *args, **kwargs):
         s = colored(status, 'red'), f"https://app.dash.ml/{prefix}"
         relaunch = True
     elif status == "running":
-        s = colored(status, 'maganta'), f"https://app.dash.ml/{prefix}"
+        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}"
         stale = is_stale(run_time, stale_limit)
     else:
         s = status,
