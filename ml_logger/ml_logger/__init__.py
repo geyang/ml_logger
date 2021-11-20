@@ -3,6 +3,7 @@ import sys
 from os.path import abspath
 
 from params_proto.neo_proto import PrefixProto, Accumulant, Proto
+from termcolor import colored
 
 from .caches.summary_cache import SummaryCache
 from .helpers.print_utils import PrintHelper
@@ -114,7 +115,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
     """
     import inspect
     from termcolor import cprint
-    from ml_logger import logger, ROOT, USER, pJoin
+    from ml_logger import logger, pJoin
 
     if __file:
         caller_script = pJoin(os.getcwd(), __file)
@@ -215,3 +216,51 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
         return results
 
     return thunk
+
+
+def is_stale(time_str, threshold=5.):
+    """Helper function for time lapsed
+
+    :param time_str: the runTime string from logger job.runTime
+    :param threshold: in minutes
+    :return: boolean value whether time has passed.
+    """
+    if time_str is None:
+        return False
+
+    from datetime import datetime
+
+    time_elapsed = logger.utcnow() - datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S.%f")
+    minutes_since = time_elapsed.total_seconds() / 60.
+    return minutes_since > threshold
+
+
+def needs_relaunch(prefix, stale_limit=5., silent=False, *args):
+    with logger.Prefix(prefix):
+        status, request_time, request_id, region, run_time, start_time, create_time = \
+            logger.read_params('job.status', 'job.requestTime', 'job.request_id', 'job.region', 'job.runTime',
+                               'job.startTime', 'job.createTime', default=None)
+    if status == "completed":
+        s = colored(status, 'green'), f"https://app.dash.ml/{prefix}"
+    elif status == "created":
+        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}", \
+            colored("is stale", "red") if is_stale(create_time, stale_limit) else None
+    elif status == "requested":
+        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}", \
+            colored("is stale", "red") if is_stale(request_time, stale_limit) else None
+    elif status == "started":
+        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}", \
+            colored("is stale", "red") if is_stale(start_time, stale_limit) else None
+    elif status == "errored":
+        s = colored(status, 'red'), f"https://app.dash.ml/{prefix}"
+    elif status == "running":
+        s = colored(status, 'maganta'), f"https://app.dash.ml/{prefix}", \
+            colored("is stale", "red") if is_stale(run_time, stale_limit) else None
+    else:
+        s = status,
+
+    if not silent:
+        print(*s, *[a for a in args if a])
+
+    if s[-1] == 'is stale':
+        return True
