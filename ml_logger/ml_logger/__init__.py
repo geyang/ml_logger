@@ -102,13 +102,14 @@ if __name__ == '__main__':
     assert RUN.job_counter == 10
 
 
-def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
+def instr(fn, *ARGS, __file=False, __silent=False, __create_job=True, **KWARGS):
     """
     Instrumentation thunk factory for configuring the logger.
 
     :param fn: function to be called
     :param *ARGS: position arguments for the call
     :param __file__: console mode, by-pass file related logging
+    :param __create_job: bool default to True, set to False when you are relaunching
     :param __silent: do not print
     :param **KWARGS: keyword arguments for the call
     :return: a thunk that can be called without parameters
@@ -137,7 +138,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
     # todo: we shouldn't need to log to the same directory, and the directory for the run shouldn't be fixed.
     logger.configure(root=RUN.server, prefix=PREFIX, asynchronous=False,  # use sync logger
                      max_workers=4)
-    if not __dryrun:
+    if __create_job:
         # # this is debatable
         # if RUN.restart:
         #     with logger.Sync():
@@ -153,8 +154,8 @@ def instr(fn, *ARGS, __file=False, __silent=False, __dryrun=False, **KWARGS):
             args=ARGS,
             kwargs=KWARGS)
 
-        logger.print('taking diff, if this step takes too long, check if your uncommitted changes are too large.',
-                     color="green")
+        logger.print('taking diff, if this step takes too long, check if your uncommitted changes are '
+                     'too large.', color="green")
         logger.diff()
         if RUN.readme:
             logger.log_text(RUN.readme, "README.md", dedent=True)
@@ -248,31 +249,31 @@ def needs_relaunch(prefix, stale_limit=5., silent=False, not_exist_ok=False, *ar
     # make sure that the prefix context is set to absolute path
     if not prefix.startswith('/'):
         prefix = "/" + prefix
-       
+
     with logger.Prefix(prefix):
         status, request_time, request_id, region, run_time, start_time, create_time = \
             logger.read_params('job.status', 'job.requestTime', 'job.request_id', 'job.region', 'job.runTime',
                                'job.startTime', 'job.createTime', default=None, not_exist_ok=not_exist_ok)
     stale = relaunch = False
     if status is None:
-        s = colored("not exist", 'red'), f"https://app.dash.ml/{prefix}"
+        s = colored("not exist", 'red'), f"https://app.dash.ml{prefix}"
         relaunch = True
     elif status == "completed":
-        s = colored(status, 'green'), f"https://app.dash.ml/{prefix}"
+        s = colored(status, 'green'), f"https://app.dash.ml{prefix}"
     elif status == "created":
-        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}"
+        s = colored(status, 'yellow'), f"https://app.dash.ml{prefix}"
         stale = is_stale(create_time, stale_limit)
     elif status == "requested":
-        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}"
+        s = colored(status, 'yellow'), f"https://app.dash.ml{prefix}"
         stale = is_stale(request_time, stale_limit)
     elif status == "started":
-        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}"
+        s = colored(status, 'yellow'), f"https://app.dash.ml{prefix}"
         stale = is_stale(start_time, stale_limit)
     elif status == "errored":
-        s = colored(status, 'red'), f"https://app.dash.ml/{prefix}"
+        s = colored(status, 'red'), f"https://app.dash.ml{prefix}"
         relaunch = True
     elif status == "running":
-        s = colored(status, 'yellow'), f"https://app.dash.ml/{prefix}"
+        s = colored(status, 'yellow'), f"https://app.dash.ml{prefix}"
         stale = is_stale(run_time, stale_limit)
     else:
         s = status,
@@ -281,3 +282,19 @@ def needs_relaunch(prefix, stale_limit=5., silent=False, not_exist_ok=False, *ar
         print(*s, colored("is stale", "red") if stale else None, *[a for a in args if a], **kwargs)
 
     return stale or relaunch
+
+
+def memoize(f):
+    l = ML_Logger(".cache", root=os.getcwd())
+    c_path = f"{f.__module__}.{f.__name__}.pkl"
+    cache = l.load_pkl(c_path)
+    memo = cache[0] if cache else {}
+
+    def wrapper(*args, **kwargs):
+        key = (*args, *kwargs.keys(), *kwargs.values())
+        if key not in memo:
+            memo[key] = f(*args, **kwargs)
+            l.save_pkl(memo, c_path)
+        return memo[key]
+
+    return wrapper
