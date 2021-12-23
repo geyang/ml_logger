@@ -12,9 +12,9 @@ from time import perf_counter, sleep
 from typing import Any, Union
 
 import numpy as np
-from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
 from termcolor import cprint
 
+from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
 from .caches.key_value_cache import KeyValueCache
 from .caches.summary_cache import SummaryCache
 from .full_duplex import Duplex
@@ -422,7 +422,7 @@ class ML_Logger:
 
         :param n:
         :param key:
-        :param start: start on this call. Use `start_on=1` for tail mode [0, 10, 20] instead of [9, 19, ...]
+        :param start_on: start on this call. Use `start_on=1` for tail mode [0, 10, 20] instead of [9, 19, ...]
         :return:
         """
         self.counter[key] += 1
@@ -2279,23 +2279,23 @@ class ML_Logger:
     read_params = get_parameters
 
     def read_metrics(self, *keys, x_key=None, path="metrics.pkl", wd=None, num_bins=None,
-                     bin_size=1, silent=False, default=None, collect="std", verbose=False):
+                     bin_size=1, dropna=False, silent=False, default=None, verbose=False):
         """
         Returns a Pandas.DataFrame object that contains metrics from all files.
 
+        :param dropna: if True, drop NaN values.
         :param keys: if non passed, returns the entire dataframe. If 1 key is passed,
                      return that column. If multiple keys are passed, return  individual columns.
 
                      If you want to get the joined table for multiple keys, directly filter after
                      this call.
 
-        :param bin: binOption(xKey, n, steps)
+        :param num_bins: the number of bins
+        :param bin_size: the size of each bin
         :param path: can contain glob patterns, will return concatenated dataframe from
                      all paths found with the pattern.
-        :param silent:
+        :param silent: silent the
         :param default: Default value for columns. Not widely used.
-        :param collect: One of [ "std", True, False ]
-        :param kwargs: Not used besides the default argument.
         :return: pandas.DataFrame or None when no metric file is found.
         """
         import pandas as pd
@@ -2342,11 +2342,6 @@ class ML_Logger:
                 if silent:
                     return
                 raise FileNotFoundError(f'fails to load metric file at {path}')
-
-            if verbose:
-                from IPython.core.display import display, HTML
-                url = os.path.normpath(pJoin(wd or self.prefix, path, "../.."))
-                display(HTML(f"""<a href="{ML_DASH_URL}">{path}</a>"""))
 
             df = metrics if isinstance(metrics, pd.DataFrame) else pd.DataFrame(metrics)
             if keys:
@@ -2397,10 +2392,6 @@ class ML_Logger:
         new_df = {}
         for k, aggs in meta_keys.items():
             new_df[k] = grouped[k].apply(lambda items: np.array(items))
-            # new_df[k + "@min"] = grouped[k].min()
-            # new_df[k + "@max"] = grouped[k].max()
-            # new_df[k + "@std"] = grouped[k].std()
-            # new_df[k + "@mean"] = grouped[k].mean()
             new_df[k + "@median"] = grouped[k].quantile(0.5)
             for reduce in aggs:
                 if reduce.endswith("%"):
@@ -2410,6 +2401,8 @@ class ML_Logger:
                     new_df[k + "@" + reduce] = grouped[k].agg(reduce)
 
         df = pd.DataFrame(new_df)
+        if dropna:
+            df = df.dropna()
 
         # apply bin, min@x, mean@y, etc.
         if len(query_keys) > 1:

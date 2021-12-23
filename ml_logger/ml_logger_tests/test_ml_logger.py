@@ -136,7 +136,7 @@ def test_metrics_prefix(setup):
     with logger.Prefix(metrics="evaluate/", sep=""):
         logger.log(loss=0.5, flush=True)
 
-    assert logger.read_metrics("evaluate/loss", )[0] == 0.5
+    assert logger.read_metrics("evaluate/loss")[0] == 0.5
 
 
 def test_metrics_prefix_2(setup):
@@ -147,7 +147,7 @@ def test_metrics_prefix_2(setup):
     with logger.Prefix(metrics="evaluate"):
         logger.log(loss=1, flush=True)
 
-    assert logger.read_metrics("evaluate/loss", )[0] == 1.0
+    assert logger.read_metrics("evaluate/loss")[0] == 1.0
 
 
 def test_store_metrics_prefix(setup):
