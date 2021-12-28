@@ -162,18 +162,15 @@ def instr(fn, *ARGS, __file=False, __silent=False, __create_job=True, **KWARGS):
 
     import jaynes  # now set the job name to prefix
 
-    if jaynes.RUN.config and jaynes.RUN.mode != "local":
-
-        launch_args = jaynes.RUN.config['launch']
-        runner_class, runner_args = jaynes.RUN.config['runner']
+    if jaynes.RUN.mode != "local":
+        assert jaynes.Jaynes.launcher, "Make sure you call jaynes.config first."
 
         # gcp requires lower-case and less than 60 characters
-        launch_args['name'] = PREFIX[-60:].replace('/', '-').replace('_', '-').lower()
-        runner_args['name'] = PREFIX
-        if runner_class is jaynes.runners.Docker:
-            runner_args['name'] = runner_args['name'].replace('/', '-')
+        jaynes.Jaynes.config(
+            launch={'name': PREFIX[-60:].replace('/', '-').replace('_', '-').lower()},
+            runner={'name': PREFIX.replace('/', '-')})
 
-        del logger, jaynes, runner_args, runner_class
+        del logger, jaynes
         if not __file:
             cprint(f'Set up job name', "green")
 
