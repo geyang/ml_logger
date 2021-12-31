@@ -185,7 +185,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __create_job=True, **KWARGS):
 
         RUN._update(**RUN_DICT)
         if RUN.CUDA_VISIBLE_DEVICES is not None:
-            pprint(f'setting CUDA_VISIBLE_DEVICES={RUN.CUDA_VISIBLE_DEVICES}', 'yellow', sys.stderr)
+            cprint(f'setting CUDA_VISIBLE_DEVICES={RUN.CUDA_VISIBLE_DEVICES}', 'yellow', sys.stderr)
             os.environ['CUDA_VISIBLE_DEVICES'] = RUN.CUDA_VISIBLE_DEVICES
 
         logger.configure(root=RUN.server, prefix=PREFIX, max_workers=10)
