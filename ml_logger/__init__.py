@@ -59,6 +59,7 @@ class RUN(PrefixProto):
     readme = None
 
     debug = Proto("pydevd" in sys.modules, help="set to True automatically for pyCharm")
+    CUDA_VISIBLE_DEVICES = None
 
     # noinspection PyMissingConstructor
     @classmethod
@@ -166,9 +167,9 @@ def instr(fn, *ARGS, __file=False, __silent=False, __create_job=True, **KWARGS):
         assert jaynes.Jaynes.launcher, "Make sure you call jaynes.config first."
 
         # gcp requires lower-case and less than 60 characters
-        jaynes.Jaynes.config(
-            launch={'name': PREFIX[-60:].replace('/', '-').replace('_', '-').lower()},
-            runner={'name': PREFIX.replace('/', '-')})
+        jaynes.Jaynes.config(jaynes.Jaynes.mode,
+                             launch={'name': PREFIX[-60:].replace('/', '-').replace('_', '-').lower()},
+                             runner={'name': PREFIX.replace('/', '-')})
 
         del logger, jaynes
         if not __file:
@@ -183,6 +184,10 @@ def instr(fn, *ARGS, __file=False, __silent=False, __create_job=True, **KWARGS):
                                     f"ARGS: {ARGS}\n"
 
         RUN._update(**RUN_DICT)
+        if RUN.CUDA_VISIBLE_DEVICES is not None:
+            pprint(f'setting CUDA_VISIBLE_DEVICES={RUN.CUDA_VISIBLE_DEVICES}', 'yellow', sys.stderr)
+            os.environ['CUDA_VISIBLE_DEVICES'] = RUN.CUDA_VISIBLE_DEVICES
+
         logger.configure(root=RUN.server, prefix=PREFIX, max_workers=10)
         # todo logger.job_id is specific to slurm
         logger.job_started(job=dict(job_id=logger.slurm_job_id), host=dict(hostname=logger.hostname), )
