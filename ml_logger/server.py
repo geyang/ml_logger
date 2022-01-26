@@ -293,11 +293,13 @@ class LoggingServer:
 
         abs_source = self.abs_path(source)
         abs_to = self.abs_path(to)
-        try:
-            # remove that tree first
-            shutil.rmtree(abs_to)
-        except FileNotFoundError as e:
-            pass
+        if abs_to == abs_source:
+            return None
+        # try:
+        #     # remove that tree first
+        #     shutil.rmtree(abs_to)
+        # except FileNotFoundError as e:
+        #     pass
         return shutil.move(abs_source, abs_to)
 
     def duplicate(self, src, target, exists_ok=True, follow_symlink=True, symlinks=False):

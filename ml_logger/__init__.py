@@ -63,7 +63,7 @@ class RUN(PrefixProto):
 
     # noinspection PyMissingConstructor
     @classmethod
-    def __new__(cls, deps=None, script_path=None, **kwargs):
+    def __new__(cls, deps=None, script_path=None, __count=True, **kwargs):
         from ml_logger import logger
 
         sr = cls.script_root
@@ -72,7 +72,7 @@ class RUN(PrefixProto):
 
         file_stem = logger.stem(script_truncated)
 
-        if isinstance(cls.job_counter, int) or isinstance(cls.job_counter, float):
+        if __count and (isinstance(cls.job_counter, int) or isinstance(cls.job_counter, float)):
             cls.job_counter += 1
 
         data = vars(cls)
@@ -103,16 +103,17 @@ if __name__ == '__main__':
     assert RUN.job_counter == 10
 
 
-def instr(fn, *ARGS, __file=False, __silent=False, __create_job=True, **KWARGS):
+def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=False, **KWARGS):
     """
     Instrumentation thunk factory for configuring the logger.
 
     :param fn: function to be called
-    :param *ARGS: position arguments for the call
-    :param __file__: console mode, by-pass file related logging
-    :param __create_job: bool default to True, set to False when you are relaunching
-    :param __silent: do not print
-    :param **KWARGS: keyword arguments for the call
+    :param ARGS: position arguments for the call
+    :param __file: str, console mode, by-pass file related logging
+    :param __create_job: bool, default to True, set to False when you are relaunching
+    :param __count: bool, increase the RUN.job_counter by 1 on each `instr` call.
+    :param __silent: bool, do not print
+    :param KWARGS: keyword arguments for the call
     :return: a thunk that can be called without parameters
     """
     import inspect
@@ -128,7 +129,7 @@ def instr(fn, *ARGS, __file=False, __silent=False, __create_job=True, **KWARGS):
 
     # need to set the deps
     # note: for scripts in the `plan2vec` module this also works -- b/c we truncate fixed depth.
-    PREFIX, JOB_NAME, FILE_STEM = RUN(script_path=caller_script)
+    PREFIX, JOB_NAME, FILE_STEM = RUN(script_path=caller_script, _RUN__count=__count)
 
     RUN_DICT = vars(RUN)
     RUN_DICT['prefix'] = PREFIX
