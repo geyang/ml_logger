@@ -1,5 +1,5 @@
 from os import path
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open(path.join(path.abspath(path.dirname(__file__)), 'README'), encoding='utf-8') as f:
     long_description = f.read()
@@ -20,11 +20,7 @@ setup(name="ml_logger",
           "Intended Audience :: Science/Research",
           "Programming Language :: Python :: 3"
       ],
-      packages=[
-          "ml_logger",
-          "ml_logger.caches",
-          "ml_logger.helpers",  # ml_dash is now in a different package
-      ],
+      packages=find_packages(),
       install_requires=[
           "boto3",
           "cloudpickle==1.3.0",
