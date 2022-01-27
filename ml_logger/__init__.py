@@ -169,7 +169,8 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
 
         # gcp requires lower-case and less than 60 characters
         jaynes.Jaynes.config(jaynes.Jaynes.mode,
-                             launch={'name': PREFIX[-60:].replace('/', '-').replace('_', '-').lower()},
+                             launch={'name': USER + "-" + PREFIX[-61 + len(USER):].replace('/', '-')
+                             .replace('_', '-').lower()},
                              runner={'name': PREFIX.replace('/', '-')})
 
         del logger, jaynes
@@ -179,10 +180,6 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
     def thunk(*args, **kwargs):
         import traceback
         from ml_logger import logger
-
-        assert not (args and ARGS), f"can not use position argument at both thunk creation and run.\n" \
-                                    f"_args: {args}\n" \
-                                    f"ARGS: {ARGS}\n"
 
         RUN._update(**RUN_DICT)
         if RUN.CUDA_VISIBLE_DEVICES is not None:
@@ -195,6 +192,10 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
 
         import time
         try:
+            assert not (args and ARGS), f"can not use position argument at both thunk creation and run.\n" \
+                                        f"_args: {args}\n" \
+                                        f"ARGS: {ARGS}\n"
+
             _KWARGS = {**KWARGS}
             _KWARGS.update(**kwargs)
 
