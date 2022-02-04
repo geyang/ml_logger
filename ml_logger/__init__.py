@@ -168,9 +168,9 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
         assert jaynes.Jaynes.launcher, "Make sure you call jaynes.config first."
 
         # gcp requires lower-case and less than 60 characters
+        launch_name = USER + "-" + PREFIX[-61 + len(USER):].replace('/', '-').replace('_', '-').lower()
         jaynes.Jaynes.config(jaynes.Jaynes.mode,
-                             launch={'name': USER + "-" + PREFIX[-61 + len(USER):].replace('/', '-')
-                             .replace('_', '-').lower()},
+                             launch={'name': launch_name},
                              runner={'name': PREFIX.replace('/', '-')})
 
         del logger, jaynes
