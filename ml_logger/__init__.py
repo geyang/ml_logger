@@ -164,7 +164,7 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
 
     import jaynes  # now set the job name to prefix
 
-    if jaynes.RUN.mode != "local":
+    if jaynes.Jaynes.mode != "local":
         assert jaynes.Jaynes.launcher, "Make sure you call jaynes.config first."
 
         # gcp requires lower-case and less than 60 characters
