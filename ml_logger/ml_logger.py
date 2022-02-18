@@ -12,9 +12,9 @@ from time import perf_counter, sleep
 from typing import Any, Union
 
 import numpy as np
+from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
 from termcolor import cprint
 
-from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
 from .caches.key_value_cache import KeyValueCache
 from .caches.summary_cache import SummaryCache
 from .full_duplex import Duplex
@@ -356,8 +356,7 @@ class ML_Logger:
 
         if not silent:
             if prefix:
-                from urllib.parse import quote
-                print(f"Dashboard: {ML_DASH_URL.format(prefix=quote(self.prefix))}")
+                print(f"Dashboard: {self.get_dash_url()}")
             print(f"Log_directory: {self.root}")
 
         # now register the experiment
@@ -366,6 +365,18 @@ class ML_Logger:
                                      "next version. - Ge")
         #     with logger.SyncContext(clean=True):  # single use SyncContext
         #         self.job_running(silent=silent)
+
+    def get_dash_url(self, path=None):
+        if path is None:
+            path = self.prefix
+        else:
+            path = os.path.join(self.prefix, path)
+
+        if path.startswith("/"):
+            hydrated = ML_DASH_URL.format(prefix=path[1:])
+        else:
+            hydrated = ML_DASH_URL.format(prefix=path)
+        return hydrated
 
     @staticmethod
     def fn_info(fn):
@@ -1919,6 +1930,7 @@ class ML_Logger:
             a random float in [1, 1.5).
         :return: a tuple of each one of the data chunck logged into the file.
         """
+        import tempfile
 
         # Added s3/gs support
         path = pJoin(*keys)

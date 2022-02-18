@@ -169,9 +169,10 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
 
         # gcp requires lower-case and less than 60 characters
         launch_name = USER + "-" + PREFIX[-61 + len(USER):].replace('/', '-').replace('_', '-').lower()
+        runner_name = launch_name
         jaynes.Jaynes.config(jaynes.Jaynes.mode,
                              launch={'name': launch_name},
-                             runner={'name': PREFIX.replace('/', '-')})
+                             runner={'name': runner_name})
 
         del logger, jaynes
         if not __file:
