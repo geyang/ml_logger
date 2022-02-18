@@ -1,4 +1,17 @@
-import os
+import pytest
+
+from ml_logger import logger
+
+
+@pytest.fixture(scope='session')
+def log_dir(request):
+    return request.config.getoption('--logdir')
+
+
+@pytest.fixture(scope="session")
+def setup(log_dir):
+    logger.configure('main_test_script', root=log_dir)
+    logger.remove('')
 
 
 class SomeClass:
@@ -6,26 +19,22 @@ class SomeClass:
 
 
 def some_func():
-    pass
+    return 5
 
 
-def test_pkl_lambda():
-    from ml_logger import logger
-
+def test_pkl_lambda(setup):
     config = dict(lmb_fn=lambda x: x * 2,
                   some_fn=some_func,
                   local_cls=SomeClass,
                   local_obj=SomeClass())
     logger.remove('test_data.pkl')
-    logger.save_pkl(config, "test_data.pkl", use_dill=True)
 
+    with logger.Sync():
+        logger.save_pkl(config, "test_data.pkl", use_dill=True)
 
-def test_read_lambda():
-    """veryfy that the object is correct"""
-    from ml_logger import logger
-    data, = logger.load_pkl("./test_data.pkl")
-    print(*[f"{k}: {type(v)} - {str(v)}" for k, v in data.items()], sep="\n")
-    # verify type of values
+    loaded_config, = logger.load_pkl("test_data.pkl")
+    assert loaded_config['lmb_fn'](2) == 4
+    assert loaded_config['some_fn']() is 5
 
 
 def xtest_json():

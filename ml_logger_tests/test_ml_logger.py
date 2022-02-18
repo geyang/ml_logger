@@ -25,6 +25,7 @@ from os.path import join as pathJoin
 from time import sleep
 
 import pytest
+
 from ml_logger import logger
 from ml_logger.helpers.color_helpers import percent
 from ml_logger.ml_logger import Color, metrify
@@ -38,7 +39,15 @@ def log_dir(request):
 @pytest.fixture(scope="session")
 def setup(log_dir):
     logger.configure('main_test_script', root=log_dir)
+    print('cleaning this directory')
     logger.remove('')
+    print(f"logging to {pathJoin(logger.root, logger.prefix)}")
+
+
+@pytest.fixture(scope="session")
+def setup_no_clean(log_dir):
+    logger.configure('main_test_script', root=log_dir)
+
     print(f"logging to {pathJoin(logger.root, logger.prefix)}")
 
 
@@ -369,18 +378,22 @@ def test_capture_error():
     logger.print("works!", color="green")
 
 
-def test_get_exps(setup):
-    import os
-    logger.prefix = os.path.expandvars("$HOME/ml-logger-debug")
-    all = logger.get_exps("**/parameters.pkl")
-    assert 'run.prefix' in all.columns
+def test_job_status(setup):
+    logger.job_started()
+    logger.job_running()
+    logger.job_completed()
+    logger.job_errored()
 
 
-def test_get_exps_without_pkl(setup):
-    import os
-    logger.prefix = os.path.expandvars("$HOME/ml-logger-debug")
+def test_get_exps(setup_no_clean):
+    with logger.Prefix('..'):
+        all = logger.get_exps("**/parameters.pkl")
+        assert 'job.status' in all.columns
+
+
+def test_get_exps_without_pkl(setup_no_clean):
     all = logger.get_exps("**")
-    assert 'run.prefix' in all.columns
+    assert 'job.status' in all.columns
 
 
 if __name__ == "__main__":

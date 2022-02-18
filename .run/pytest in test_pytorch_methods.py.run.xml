@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="pytest in /Users/ge/mit/model-free-baselines/ml_logger/ml_logger_tests/test_pytorch_methods.py" type="tests" factoryName="py.test" nameIsGenerated="true">
+  <configuration default="false" name="pytest in /Users/ge/dash-ml/ml_logger/ml_logger/ml_logger_tests/test_pytorch_methods.py" type="tests" factoryName="py.test" nameIsGenerated="true">
     <module name="ml_logger" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
