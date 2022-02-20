@@ -170,9 +170,11 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
         # gcp requires lower-case and less than 60 characters
         launch_name = USER + "-" + PREFIX[-61 + len(USER):].replace('/', '-').replace('_', '-').lower()
         runner_name = launch_name
+        extended_envs = jaynes.Jaynes.runner_config[1]['envs'] + f" CUDA_VISIBLE_DEVICES={RUN.CUDA_VISIBLE_DEVICES}"
+
         jaynes.Jaynes.config(jaynes.Jaynes.mode,
                              launch={'name': launch_name},
-                             runner={'name': runner_name})
+                             runner={'name': runner_name, 'envs': extended_envs})
 
         del logger, jaynes
         if not __file:
