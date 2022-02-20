@@ -186,8 +186,9 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
 
         RUN._update(**RUN_DICT)
         if RUN.CUDA_VISIBLE_DEVICES is not None:
-            cprint(f'setting CUDA_VISIBLE_DEVICES={RUN.CUDA_VISIBLE_DEVICES}', 'yellow', file=sys.stderr)
-            os.environ['CUDA_VISIBLE_DEVICES'] = RUN.CUDA_VISIBLE_DEVICES
+            visibility = os.environ.get('CUDA_VISIBLE_DEVICES', None)
+            assert RUN.CUDA_VISIBLE_DEVICES == visibility, \
+                f"CUDA_VISIBLE_DEVICES={visibility}. Expected {RUN.CUDA_VISIBLE_DEVICES}"
 
         logger.configure(root=RUN.server, prefix=PREFIX, max_workers=10)
         # todo logger.job_id is specific to slurm
