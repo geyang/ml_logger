@@ -12,9 +12,9 @@ from time import perf_counter, sleep
 from typing import Any, Union
 
 import numpy as np
-from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
 from termcolor import cprint
 
+from ml_logger.helpers import load_from_pickle_file, load_from_jsonl_file
 from .caches.key_value_cache import KeyValueCache
 from .caches.summary_cache import SummaryCache
 from .full_duplex import Duplex
@@ -1548,7 +1548,7 @@ class ML_Logger:
     # def VideoContext(self, fig = None)
     #     yield blah
 
-    def save_pyplot(self, path="plot.png", fig=None, format=None, **kwargs):
+    def save_pyplot(self, path="plot.png", fig=None, format=None, close=None, **kwargs):
         """
         Saves matplotlib figure. The interface of this method emulates `matplotlib.pyplot.savefig`
             method.
@@ -1582,6 +1582,11 @@ class ML_Logger:
 
         path = pJoin(self.prefix, path)
         self.client.log_buffer(path, buf.read(), overwrite=True)
+
+        if close:
+            import matplotlib.pyplot as plt
+            plt.close(fig)
+
         return path
 
     def savefig(self, key, fig=None, format=None, **kwargs):
