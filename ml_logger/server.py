@@ -362,11 +362,11 @@ class LoggingServer:
                     f.write(data)
         elif dtype.startswith("text"):
             try:
-                with open(abs_path, write_mode + "+") as f:
+                with open(abs_path, write_mode + "+", encoding="utf-8") as f:
                     f.write(data)
             except FileNotFoundError:
                 os.makedirs(parent_dir, exist_ok=True)
-                with open(abs_path, write_mode + "+") as f:
+                with open(abs_path, write_mode + "+", encoding="utf-8") as f:
                     f.write(data)
         elif dtype.startswith("yaml"):
             import ruamel.yaml
