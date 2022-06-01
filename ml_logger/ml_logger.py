@@ -28,7 +28,7 @@ CWD = os.environ["PWD"]
 USER = os.environ.get("ML_LOGGER_USER", None)
 if USER is None:
     # raise a warning during online usage, if the user is not set.
-    raise Warning("ML_LOGGER_USER is not set. This is required for online usage.")
+    cprint("ML_LOGGER_USER is not set. This is required for online usage.", "red")
     USER = os.environ.get("USER", None)
 
 # template for the dashboard url
