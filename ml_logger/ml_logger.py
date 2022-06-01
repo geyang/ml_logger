@@ -25,7 +25,11 @@ from .log_client import LogClient
 
 # environment defaults
 CWD = os.environ["PWD"]
-USER = os.environ.get("USER", None)
+USER = os.environ.get("ML_LOGGER_USER", None)
+if USER is None:
+    # raise a warning during online usage, if the user is not set.
+    raise Warning("ML_LOGGER_USER is not set. This is required for online usage.")
+    USER = os.environ.get("USER", None)
 
 # template for the dashboard url
 ML_DASH_URL = "http://app.dash.ml/{prefix}"
