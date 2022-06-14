@@ -67,7 +67,7 @@ class LogClient:
             self.local_server = LoggingServer(cwd=root[6:], silent=True)
         elif os.path.isabs(root):
             self.local_server = LoggingServer(cwd=root, silent=True)
-        elif root.startswith('http://'):
+        elif root.startswith('http://') or root.startswith('https://'):
             self.local_server = None  # remove local server to use sessions.
             self.url = root
             self.access_token = access_token
@@ -82,7 +82,7 @@ class LogClient:
                 self.set_session(asynchronous, max_workers)
         else:
             # todo: add https://, and s3://
-            raise TypeError('log url need to begin with `/`, `file://` or `http://`.')
+            raise TypeError('log url need to begin with `/`, `file://`, `http://` or https://.')
 
     configure = __init__
 
