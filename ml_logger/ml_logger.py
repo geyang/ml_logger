@@ -441,6 +441,8 @@ class ML_Logger:
         :return:
         """
         self.counter[key] += 1
+        if n is None:
+            return False
         return (self.counter[key] - start_on) % n == 0 and self.counter[key] >= start_on
 
     def count(self, key="default"):
