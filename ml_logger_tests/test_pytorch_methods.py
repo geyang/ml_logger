@@ -77,6 +77,15 @@ def test_load_module(setup):
     logger.load_module(demo_module, "modules/test_module.pkl")
 
 
+def test_jit_save(setup):
+    logger.torch_jit_save(demo_module, "modules/test_module.pth")
+
+
+def test_jit_load(setup):
+    test_jit_save(setup)
+    demo_module = logger.torch_jit_load("modules/test_module.pth")
+
+
 if __name__ == "__main__":
     setup(LOCAL_TEST_DIR)
     test_module(setup)

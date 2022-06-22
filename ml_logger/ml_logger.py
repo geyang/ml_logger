@@ -1847,6 +1847,38 @@ class ML_Logger:
 
     torch_save = save_torch
 
+    def torch_jit_save(self, obj, *keys, path=None, tries=3, backup=3.0):
+        path = pJoin(*keys, path)
+
+        import torch
+        from tempfile import NamedTemporaryFile
+
+        traced = torch.jit.script(obj)
+
+        with NamedTemporaryFile(delete=False) as tfile:
+            traced.save(tfile.name)
+
+            if path.lower().startswith('s3://'):
+                tfile.seek(0)
+                return self.upload_s3(source_path=tfile.name, path=path[5:])
+
+            if path.lower().startswith('gs://'):
+                tfile.seek(0)
+                return self.upload_gs(source_path=tfile.name, path=path[5:])
+
+            target_path = pJoin(self.prefix, path)
+            while tries > 0:
+                tries -= 1
+                tfile.seek(0)
+                try:
+                    self.client.save_file(source_path=tfile.name, key=target_path)
+                except Exception as e:
+                    if tries == 0:
+                        raise e
+                    dt = random() * backup
+                    self.print(f"{tries} left, saving to {target_path} again. Backup for {dt:0.3f} sec...")
+                    sleep(dt)
+
     def load_file(self, *keys, path=None):
         """ return the binary stream, most versatile.
 
@@ -1897,6 +1929,25 @@ class ML_Logger:
             return torch.load(fn_or_buff, map_location=map_location, **kwargs)
 
     torch_load = load_torch
+
+    def torch_jit_load(self, *keys, path=None, map_location=None, **kwargs):
+        import torch, tempfile
+
+        path = pJoin(*keys, path)
+
+        if path.lower().startswith('s3://'):
+            postfix = os.path.basename(path)
+            with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
+                self.download_s3(path[5:], to=ntp.name)
+                return torch.jit.load(ntp.name, map_location=map_location, **kwargs)
+        elif path.lower().startswith('gs://'):
+            postfix = os.path.basename(path)
+            with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
+                self.download_gs(path[5:], to=ntp.name)
+                return torch.jit.load(ntp.name, map_location=map_location, **kwargs)
+        else:
+            fn_or_buff = self.load_file(path)
+            return torch.jit.load(fn_or_buff, map_location=map_location, **kwargs)
 
     def load_pkl(self, *keys, start=None, stop=None, tries=1, delay=1):
         """

@@ -168,7 +168,8 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
         assert jaynes.Jaynes.launcher, "Make sure you call jaynes.config first."
 
         # gcp requires lower-case and less than 60 characters
-        launch_name = USER + "-" + PREFIX[-61 + len(USER):].replace('/', '-').replace('_', '-').lower()
+        # fixme: change all non alpha-numeric and non "-" characters to "-".
+        launch_name = USER + "-" + PREFIX[-61 + len(USER):].replace('/', '-').replace('_', '-').replace('.', '-').lower()
         runner_name = launch_name
 
         if RUN.CUDA_VISIBLE_DEVICES is not None:
