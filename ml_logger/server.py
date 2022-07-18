@@ -415,24 +415,28 @@ class LoggingServer:
                 os.makedirs(parent_dir, exist_ok=True)
                 im.save(abs_path)
 
+    # def exec(self, command, options: ShellOptions = None):
+    #     import system
+    #     return system.call(command, **options)
+
 
 if __name__ == '__main__':
-    from params_proto import cli_parse, Proto, BoolFlag
+    from params_proto import ParamsProto, Proto, Flag
 
 
-    @cli_parse
-    class Params:
-        logdir = Proto("/tmp/logging-server", help="The directory for saving the logs")
+    class Params(ParamsProto):
+        logdir: str = Proto("/tmp/logging-server", help="The directory for saving the logs")
         port = Proto(8081, help="port for the logging server")
-        host = Proto("127.0.0.1", help="IP address for running the server. Default only allows localhost from making "
-                                       "requests. If you want to allow all ip, set this to '0.0.0.0'.")
+        host = Proto("127.0.0.1", help="IP address for running the server. Default only allows localhost from "
+                                       "making requests. If you want to allow all ip, set this to '0.0.0.0'.")
         workers = Proto(1, help="Number of workers to run in parallel")
-        debug = BoolFlag(False, help='boolean flag for printing out debug traces')
+        debug = Flag(help='boolean flag for printing out debug traces')
 
 
     import pkg_resources
 
     v = pkg_resources.get_distribution("ml_logger").version
-    print('running ml_logger.server version {}'.format(v))
+
+    print(f"running ml_logger.server version {v}")
     server = LoggingServer(Params.logdir, root=Params.logdir)
     server.serve(host=Params.host, port=Params.port, workers=Params.workers)

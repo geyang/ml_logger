@@ -2,7 +2,7 @@ import os
 import sys
 from os.path import abspath
 
-from params_proto.neo_proto import PrefixProto, Accumulant, Proto
+from params_proto import PrefixProto, Accumulant, Proto
 from termcolor import colored
 
 from .caches.summary_cache import SummaryCache
@@ -38,7 +38,7 @@ class RUN(PrefixProto):
 
     now = logger.now()
     prefix = "{username}/{project}/{now:%Y/%m-%d}/{file_stem}/{job_name}"
-    job_name = Proto(f"{now:%H.%M.%S}",
+    job_name = Proto(f"{now:%H.%M.%S}/{{job_counter}}",
                      help="""
                      Default to '{now:%H.%M.%S}'. use '{now:%H.%M.%S}/{job_counter}'
                      for multiple launches. You can do so by setting:
@@ -162,29 +162,37 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
         if RUN.readme:
             logger.log_text(RUN.readme, "README.md", dedent=True)
 
-    import jaynes  # now set the job name to prefix
+    try:
+        import jaynes  # now set the job name to prefix
 
-    if jaynes.Jaynes.mode != "local":
-        assert jaynes.Jaynes.launcher, "Make sure you call jaynes.config first."
+        if jaynes.Jaynes.mode not in [False, 'local']:
+            assert jaynes.Jaynes.launcher, "Make sure you call jaynes.config first."
 
-        # gcp requires lower-case and less than 60 characters
-        # fixme: change all non alpha-numeric and non "-" characters to "-".
-        launch_name = USER + "-" + PREFIX[-61 + len(USER):].replace('/', '-').replace('_', '-').replace('.', '-').lower()
-        runner_name = launch_name
+            # gcp requires lower-case and less than 60 characters
+            # fixme: change all non alpha-numeric and non "-" characters to "-".
+            launch_name = USER + "-" + PREFIX[-61 + len(USER):].replace('/', '-').replace('_', '-') \
+                .replace('.', '-').lower()
+            runner_name = launch_name
 
-        if RUN.CUDA_VISIBLE_DEVICES is not None:
-            extended_envs = jaynes.Jaynes.runner_config[1]['envs'] + f" CUDA_VISIBLE_DEVICES={RUN.CUDA_VISIBLE_DEVICES}"
-            jaynes.Jaynes.config(jaynes.Jaynes.mode,
-                                 launch={'name': launch_name},
-                                 runner={'name': runner_name, 'envs': extended_envs})
-        else:
-            jaynes.Jaynes.config(jaynes.Jaynes.mode,
-                                 launch={'name': launch_name},
-                                 runner={'name': runner_name})
+            if RUN.CUDA_VISIBLE_DEVICES is not None:
+                extended_envs = jaynes.Jaynes.runner_config[1][
+                                    'envs'] + f" CUDA_VISIBLE_DEVICES={RUN.CUDA_VISIBLE_DEVICES}"
+                jaynes.Jaynes.config(jaynes.Jaynes.mode,
+                                     launch={'name': launch_name},
+                                     runner={'name': runner_name, 'envs': extended_envs})
+            else:
+                jaynes.Jaynes.config(jaynes.Jaynes.mode,
+                                     launch={'name': launch_name},
+                                     runner={'name': runner_name})
 
-        del logger, jaynes
-        if not __file:
-            cprint(f'Set up job name', "green")
+            del jaynes
+            if not __file:
+                cprint(f'Set up job name', "green")
+
+    except ModuleNotFoundError:
+        pass
+
+    del logger
 
     def thunk(*args, **kwargs):
         import traceback

@@ -144,6 +144,14 @@ class LogClient:
             json = LogEntry(key, serialize(data), dtype, options)._asdict()
             self.session.post(self.url, json=json)
 
+    # def _shell(self, command, options: ShellOptions=None):
+    #     if self.local_server:
+    #         self.local_server.exec_shell(command, options)
+    #     else:
+    #         # todo: make the json serialization more robust. Not priority b/c this' client-side.
+    #         json = ShellEntry(command, options)._asdict()
+    #         self.session.post(self.shell_url, json=json)
+
     def stream_download(self, path):
         buf = BytesIO()
         if self.local_server:
@@ -314,3 +322,6 @@ class LogClient:
         # defaults to overwrite for binary data.
         self._log(key, buf, dtype="byte", options=LogOptions(**options))
         # self._multipart(key, buf, options=LogOptions(**options))
+
+    # def exec_shell(self, command, **options):
+    #     self.

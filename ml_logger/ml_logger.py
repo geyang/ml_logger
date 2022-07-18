@@ -1554,7 +1554,7 @@ class ML_Logger:
     # def VideoContext(self, fig = None)
     #     yield blah
 
-    def save_pyplot(self, path="plot.png", fig=None, format=None, close=None, **kwargs):
+    def save_pyplot(self, path="plot.png", fig=None, format=None, close=True, **kwargs):
         """
         Saves matplotlib figure. The interface of this method emulates `matplotlib.pyplot.savefig`
             method.
