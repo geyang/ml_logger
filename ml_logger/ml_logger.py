@@ -1470,19 +1470,19 @@ class ML_Logger:
             from matplotlib import cm
             map_fn = cm.get_cmap(cmap or 'Greys')
             # todo: this needs to happen for each individual imagedata
-            if normalize is None:
+            if normalize is None or normalize is False:
                 pass
             elif normalize == 'grid':
                 stack = (stack - np.nanmin(stack)) / (np.nanmax(stack) - np.nanmin(stack) or 1)
-            elif isinstance(normalize, Sequence):
-                low, high = normalize
-                low = np.nanmin(stack) if low is None else low
-                high = np.nanmax(stack) if high is None else high
-                stack = (stack - low) / (high - low or 1)
             elif normalize is True or normalize == 'individual':
                 r = np.nanmax(stack, axis=(-2, -1)) - np.nanmin(stack, axis=(-2, -1))
                 stack = (stack - np.nanmin(stack, axis=(1, 2))[:, None, None]) / \
                         np.select([r != 0], [r], 1)[:, None, None]
+            elif isinstance(normalize, Sequence) and not isinstance(normalize, str):
+                low, high = normalize
+                low = np.nanmin(stack) if low is None else low
+                high = np.nanmax(stack) if high is None else high
+                stack = (stack - low) / (high - low or 1)
             else:
                 raise NotImplementedError(f'for normalize = {normalize}')
             stack = (map_fn(stack) * 255).astype(np.uint8)
