@@ -1034,11 +1034,13 @@ class ML_Logger:
             pickle.dump(data, tfile)
             if path.lower().startswith('s3://'):
                 tfile.seek(0)
-                return self.upload_s3(source_path=tfile.name, path=path[5:])
+                self.upload_s3(source_path=tfile.name, path=path[5:])
+                return path
 
-            if path.lower().startswith('gs://'):
+            elif path.lower().startswith('gs://'):
                 tfile.seek(0)
-                return self.upload_gs(source_path=tfile.name, path=path[5:])
+                self.upload_gs(source_path=tfile.name, path=path[5:])
+                return path
 
         path = path or "data.pkl"
         abs_path = pJoin(self.prefix, path)
@@ -1365,7 +1367,8 @@ class ML_Logger:
 
         bucket, *object_name = path.split('/')
         object_name = '/'.join(object_name)
-        return storage_client.bucket(bucket).delete_blob(object_name)
+        storage_client.bucket(bucket).delete_blob(object_name)
+        return path
 
     @staticmethod
     def upload_gs(source_path, *keys, path=None):
@@ -1385,6 +1388,7 @@ class ML_Logger:
             object_name = pJoin(object_name, filename)
 
         storage_client.bucket(bucket).blob(object_name).upload_from_filename(source_path)
+        return path
 
     @staticmethod
     def download_gs(*keys, path=None, to):
@@ -1425,10 +1429,11 @@ class ML_Logger:
         # from botocore.exceptions import ClientError
         # try:
         response = s3_client.upload_file(source_path, bucket, object_name)
-        return response
+        # return response
         # except ClientError as e:
         #     return False
         # return True
+        return path
 
     @staticmethod
     def download_s3(*keys, path=None, to):
@@ -1467,10 +1472,6 @@ class ML_Logger:
             # todo: this needs to happen for each individual imagedata
             if normalize is None:
                 pass
-            elif normalize == 'individual':
-                r = np.nanmax(stack, axis=(1, 2)) - np.nanmin(stack, axis=(1, 2))
-                stack = (stack - np.nanmin(stack, axis=(1, 2))[:, None, None]) / \
-                        np.select([r != 0], [r], 1)[:, None, None]
             elif normalize == 'grid':
                 stack = (stack - np.nanmin(stack)) / (np.nanmax(stack) - np.nanmin(stack) or 1)
             elif isinstance(normalize, Sequence):
@@ -1478,6 +1479,10 @@ class ML_Logger:
                 low = np.nanmin(stack) if low is None else low
                 high = np.nanmax(stack) if high is None else high
                 stack = (stack - low) / (high - low or 1)
+            elif normalize is True or normalize == 'individual':
+                r = np.nanmax(stack, axis=(-2, -1)) - np.nanmin(stack, axis=(-2, -1))
+                stack = (stack - np.nanmin(stack, axis=(1, 2))[:, None, None]) / \
+                        np.select([r != 0], [r], 1)[:, None, None]
             else:
                 raise NotImplementedError(f'for normalize = {normalize}')
             stack = (map_fn(stack) * 255).astype(np.uint8)
@@ -1501,6 +1506,7 @@ class ML_Logger:
                 composite[i * h: i * h + h, j * w: j * w + w] = stack[k]
 
         self.client.send_image(key=pJoin(self.prefix, key), data=composite)
+        return key
 
     def save_image(self, image, key: str, cmap=None, normalize=None):
         """Log a single image.
@@ -1826,11 +1832,13 @@ class ML_Logger:
 
             if path.lower().startswith('s3://'):
                 tfile.seek(0)
-                return self.upload_s3(source_path=tfile.name, path=path[5:])
+                self.upload_s3(source_path=tfile.name, path=path[5:])
+                return path
 
             if path.lower().startswith('gs://'):
                 tfile.seek(0)
-                return self.upload_gs(source_path=tfile.name, path=path[5:])
+                self.upload_gs(source_path=tfile.name, path=path[5:])
+                return path
 
             target_path = pJoin(self.prefix, path)
             while tries > 0:
@@ -1838,6 +1846,7 @@ class ML_Logger:
                 tfile.seek(0)
                 try:
                     self.client.save_file(source_path=tfile.name, key=target_path)
+                    return path
                 except Exception as e:
                     if tries == 0:
                         raise e
@@ -1860,11 +1869,13 @@ class ML_Logger:
 
             if path.lower().startswith('s3://'):
                 tfile.seek(0)
-                return self.upload_s3(source_path=tfile.name, path=path[5:])
+                self.upload_s3(source_path=tfile.name, path=path[5:])
+                return path
 
             if path.lower().startswith('gs://'):
                 tfile.seek(0)
-                return self.upload_gs(source_path=tfile.name, path=path[5:])
+                self.upload_gs(source_path=tfile.name, path=path[5:])
+                return path
 
             target_path = pJoin(self.prefix, path)
             while tries > 0:
@@ -1872,6 +1883,7 @@ class ML_Logger:
                 tfile.seek(0)
                 try:
                     self.client.save_file(source_path=tfile.name, key=target_path)
+                    return path
                 except Exception as e:
                     if tries == 0:
                         raise e
