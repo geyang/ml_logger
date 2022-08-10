@@ -1447,8 +1447,8 @@ class ML_Logger:
         s3 = boto3.client('s3')
         return s3.download_file(bucket, object_name, to)
 
-    def save_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None, value_range=(0, 1),
-                    background=1):
+    def save_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None,
+                    value_range=(0, 1), background=1):
         """Log images as a composite of a grid. Images input as a 4-D stack.
 
         :param stack: Size(n, w, h, c)
@@ -1473,15 +1473,15 @@ class ML_Logger:
             from matplotlib import cm
             map_fn = cm.get_cmap(cmap or 'Greys')
 
-            if normalize is None or normalize is False:
+            if normalize in [None, False]:
                 pass
             else:
                 if normalize == 'grid':
                     low = np.nammin(stack)
                     high = np.nanmax(stack)
                 elif normalize in [True, 'individual']:
-                    low = np.nammin(stack, axis=(1, 2))[None, ...]
-                    high = np.nammax(stack, axis=(1, 2))[None, ...]
+                    low = np.nanmin(stack, axis=(1, 2))[None, ...]
+                    high = np.nanmax(stack, axis=(1, 2))[None, ...]
                 elif isinstance(normalize, Sequence) and not isinstance(normalize, str):
                     low, high = normalize
                 else:
@@ -1491,7 +1491,7 @@ class ML_Logger:
                 stack = (stack - low) / (r if r.all() else 1)
                 stack = stack * (value_high - value_low) + value_low
 
-            stack = stack.clip(value_low, value_high) * 255
+            stack = (map_fn(stack.clip(value_low, value_high)) * 255).astype(np.uint8)
             stack = stack.astype(np.uint8)
 
         elif len(stack.shape) == 4:

@@ -199,25 +199,37 @@ def test_yaml(setup):
 
 def test_image(setup):
     import scipy.misc
-    import numpy as np
 
-    image_bw = scipy.misc.face(gray=True)[::4, ::4]
     face_rgba = scipy.misc.face()
-    face_rgb = face_rgba[::4, ::4, :3]
 
-    # zero_rgb = np.zeros((64, 64, 3), dtype=np.uint8)
-
-    # logger.save_image(image_bw, "bw_face.png", normalize='individual')
-    path = logger.save_image(face_rgba / 255, 'rgb.png', normalize='grid')
-    path = logger.save_image(face_rgba / 1000, f'rgba_face_{100}.png', normalize=False)
+    logger.save_image(face_rgba / 255, 'rgb.png', normalize='grid')
+    logger.save_image(face_rgba / 1000, f'rgba_face_{100}.png', normalize=False)
     path = logger.save_image(face_rgba / 1000, f'rgba_face_{100}_normalized.png', normalize="individual")
     print(f"files:/{logger.root}/{logger.prefix}/{path}")
 
-    # image_zero = np.zeros((64, 64, 1), dtype=np.uint8)
-    # logger.save_image(image_zero, f"bw_{100}.png")
 
-    # logger.save_image(image_zero[:, :, 0].astype(np.float32), "black_white_individual.png", normalize='individual')
-    # logger.save_image(np.ones([64, 64]), "black_white_grid.png", normalize='grid')
+def test_image_cmap(setup):
+    import scipy.misc
+    import numpy as np
+
+    face_bw = scipy.misc.face().mean(axis=-1)
+    # the image dtype can not be uint8 --- in that case no cmap is applied
+    logger.save_image(face_bw, f"face_bw_cmap.png", cmap="cool", normalize=True)
+    logger.save_image(face_bw.astype(np.uint8), f"face_bw_no_cmap.png")
+
+
+def test_image_zero_norm(setup):
+    import numpy as np
+
+    image_zero = np.zeros((64, 64, 1))
+    logger.save_image(image_zero, f"zero_{100}.png", normalize="grid")
+
+
+def test_image_normalization(setup):
+    import numpy as np
+
+    image_zero = np.zeros((64, 64, 1))
+    logger.save_image(image_zero, f"zero_{100}.png", normalize="grid")
 
 
 def test_pyplot(setup):
