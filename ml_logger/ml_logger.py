@@ -1447,7 +1447,8 @@ class ML_Logger:
         s3 = boto3.client('s3')
         return s3.download_file(bucket, object_name, to)
 
-    def save_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None, background=1):
+    def save_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None, value_range=(0, 1),
+                    background=1):
         """Log images as a composite of a grid. Images input as a 4-D stack.
 
         :param stack: Size(n, w, h, c)
@@ -1464,35 +1465,63 @@ class ML_Logger:
         n_cols = n_cols or len(stack)
         n_rows = n_rows or ceil(len(stack) / n_cols)
 
+        value_low, value_high = value_range
+
         if np.issubdtype(stack.dtype, np.uint8):
-            pass
+            print("normalization is not applied to unit8 images")
         elif len(stack.shape) == 3:
             from matplotlib import cm
             map_fn = cm.get_cmap(cmap or 'Greys')
-            # todo: this needs to happen for each individual imagedata
+
             if normalize is None or normalize is False:
                 pass
-            elif normalize == 'grid':
-                stack = (stack - np.nanmin(stack)) / (np.nanmax(stack) - np.nanmin(stack) or 1)
-            elif normalize is True or normalize == 'individual':
-                r = np.nanmax(stack, axis=(-2, -1)) - np.nanmin(stack, axis=(-2, -1))
-                stack = (stack - np.nanmin(stack, axis=(1, 2))[:, None, None]) / \
-                        np.select([r != 0], [r], 1)[:, None, None]
-            elif isinstance(normalize, Sequence) and not isinstance(normalize, str):
-                low, high = normalize
-                low = np.nanmin(stack) if low is None else low
-                high = np.nanmax(stack) if high is None else high
-                stack = (stack - low) / (high - low or 1)
             else:
-                raise NotImplementedError(f'for normalize = {normalize}')
-            stack = (map_fn(stack) * 255).astype(np.uint8)
+                if normalize == 'grid':
+                    low = np.nammin(stack)
+                    high = np.nanmax(stack)
+                elif normalize in [True, 'individual']:
+                    low = np.nammin(stack, axis=(1, 2))[None, ...]
+                    high = np.nammax(stack, axis=(1, 2))[None, ...]
+                elif isinstance(normalize, Sequence) and not isinstance(normalize, str):
+                    low, high = normalize
+                else:
+                    raise NotImplementedError(f'for normalize = {normalize}')
+
+                r = np.array(high - low)
+                stack = (stack - low) / (r if r.all() else 1)
+                stack = stack * (value_high - value_low) + value_low
+
+            stack = stack.clip(value_low, value_high) * 255
+            stack = stack.astype(np.uint8)
+
         elif len(stack.shape) == 4:
             assert cmap is None, "color map is not used for rgb(a) images."
-            stack = (stack * 255).astype(np.uint8)
+
+            if normalize in [None, False]:
+                pass
+            else:
+                if normalize == 'grid':
+                    low = np.nanmin(stack, axis=(0, 1, 2))
+                    high = np.nanmax(stack, axis=(0, 1, 2))
+                elif normalize in [True, 'individual']:
+                    low = np.nanmin(stack, axis=(1, 2))[None, ...]
+                    high = np.nanmax(stack, axis=(1, 2))[None, ...]
+                elif isinstance(normalize, Sequence) and not isinstance(normalize, str):
+                    low, high = normalize
+                else:
+                    raise NotImplementedError(f'for normalize = {normalize}')
+
+                r = np.array(high - low)
+                stack = (stack - low) / (r if r.all() else 1)
+                stack = stack * (value_high - value_low) + value_low
+
+            stack = stack.clip(value_low, value_high) * 255
+            stack = stack.astype(np.uint8)
         else:
             raise RuntimeError(f"{stack.shape} is not supported. `len(shape)` should be 3 "
                                f"for gray scale  and 4 for RGB(A).")
 
+        # this needs to be updated
         assert np.issubdtype(stack.dtype, np.uint8), "the image type need to be unsigned 8-bit."
         n, h, w, *c = stack.shape
         # todo: add color background -- need to decide on which library to use.
@@ -1515,7 +1544,7 @@ class ML_Logger:
         :param key: example: "figures/some_fig_name.png", the file key to which the
             image is saved.
         """
-        self.save_images([image], key, n_rows=1, n_cols=1, cmap=cmap, normalize=normalize)
+        return self.save_images([image], key, n_rows=1, n_cols=1, cmap=cmap, normalize=normalize)
 
     def save_video(self, frame_stack, key, format=None, fps=20, **imageio_kwargs):
         """

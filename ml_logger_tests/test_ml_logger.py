@@ -201,19 +201,23 @@ def test_image(setup):
     import scipy.misc
     import numpy as np
 
-    image_bw = np.zeros((64, 64, 1), dtype=np.uint8)
-    image_bw_2 = scipy.misc.face(gray=True)[::4, ::4]
-    image_rgb = np.zeros((64, 64, 3), dtype=np.uint8)
-    image_rgba = scipy.misc.face()[::4, ::4, :]
-    logger.save_image(image_bw, "black_white.png")
-    logger.save_image(image_bw_2, "bw_face.png")
-    logger.save_image(image_rgb, 'rgb.png')
-    logger.save_image(image_rgba, f'rgba_face_{100}.png')
-    logger.save_image(image_bw, f"bw_{100}.png")
-    logger.save_image(image_rgba, f"rbga_{100}.png")
+    image_bw = scipy.misc.face(gray=True)[::4, ::4]
+    face_rgba = scipy.misc.face()
+    face_rgb = face_rgba[::4, ::4, :3]
 
-    logger.save_image(image_bw[:, :, 0].astype(np.float32), "black_white_individual.png", normalize='individual')
-    logger.save_image(np.ones([64, 64]), "black_white_grid.png", normalize='grid')
+    # zero_rgb = np.zeros((64, 64, 3), dtype=np.uint8)
+
+    # logger.save_image(image_bw, "bw_face.png", normalize='individual')
+    path = logger.save_image(face_rgba / 255, 'rgb.png', normalize='grid')
+    path = logger.save_image(face_rgba / 1000, f'rgba_face_{100}.png', normalize=False)
+    path = logger.save_image(face_rgba / 1000, f'rgba_face_{100}_normalized.png', normalize="individual")
+    print(f"files:/{logger.root}/{logger.prefix}/{path}")
+
+    # image_zero = np.zeros((64, 64, 1), dtype=np.uint8)
+    # logger.save_image(image_zero, f"bw_{100}.png")
+
+    # logger.save_image(image_zero[:, :, 0].astype(np.float32), "black_white_individual.png", normalize='individual')
+    # logger.save_image(np.ones([64, 64]), "black_white_grid.png", normalize='grid')
 
 
 def test_pyplot(setup):
