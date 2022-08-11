@@ -43,6 +43,7 @@ class LoggingServer:
         self.app.add_route(self.remove_handler, '/', methods=['DELETE'])
         self.app.add_route(self.move_handler, '/move', methods=['POST'])
         self.app.add_route(self.copy_handler, '/copy', methods=['POST'])
+        self.app.add_route(self.make_video_handler, '/make_video', methods=['POST'])
         # todo: need a file serving url
         self.app.run(host=host, port=port, workers=workers, debug=Params.debug)
 
@@ -172,16 +173,17 @@ class LoggingServer:
         self.log(log_entry.key, data, log_entry.type, options)
         return sanic.response.text('ok')
 
-    async def save_video_handler(self, req):
+    async def make_video_handler(self, req):
         import sanic
         if not req.json:
             msg = f'request json is empty: {req.text}'
             cprint(msg, 'red')
-            return sanic.response.text(msg)
+            return sanic.response.json({"message": msg})
         entry = MakeVideoEntry(**req.json)
-        print(f"making video to {entry.key}")
-        self.make_video(file_list=entry.file_list, query=entry.glob, wd=entry.wd, key=entry.key, options=entry.options)
-        return sanic.response.text(entry.key)
+        print(f"making video to {entry.key}, {entry}")
+        result = self.make_video(files=entry.files, key=entry.key, wd=entry.wd, order=entry.order,
+                                  options=entry.options)
+        return sanic.response.json({"result": result})
 
     def glob(self, query, wd, recursive: bool, start, stop):
         """
@@ -434,24 +436,28 @@ class LoggingServer:
         abs_key = self.abs_path(key)
         abs_wd = self.abs_path(wd)
 
+        if isinstance(files, str):
+            files = self.glob(files, wd=wd, recursive=True, start=None, stop=None)
+            if order is "ascending":
+                files = sorted(files)
+            elif order is "descending":
+                files = sorted(files)[::-1]
+
+        if not files:
+            return
+
         try:
             writer = imageio.get_writer(abs_key, **options)
         except FileNotFoundError as e:
             os.makedirs(os.path.dirname(abs_key), exist_ok=True)
             writer = imageio.get_writer(abs_key, **options)
 
-        if isinstance(files, str):
-            files = self.glob(files, wd=abs_wd, recursive=True, start=None, stop=None)
-            if order is "ascending":
-                files = sorted(files)
-            elif order is "descending":
-                files = sorted(files)[::-1]
-
         for fname in files:
             img = imageio.imread(os.path.join(abs_wd, fname))
             writer.append_data(img)
 
         writer.close()
+        return key
 
     # def exec(self, command, options: ShellOptions = None):
     #     import system

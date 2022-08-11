@@ -247,6 +247,9 @@ def test_make_video(setup):
     # This one makes the video according to the random order given by glob
     logger.make_video(file_list, key="videos/face_move_list.mp4")
 
+    # this should not reaise an error
+    path = logger.make_video("no_exist_*.png", key="videos/not_exist.mp4")
+    assert path is None
 
 def test_pyplot(setup):
     import scipy.misc

@@ -334,7 +334,7 @@ class LogClient:
             return self.local_server.make_video(files=files, key=key, wd=wd, order=order, options=options)
         else:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
-            json = MakeVideoEntry(files=files, key=key, wd=wd, order=order, **options)._asdict()
+            json = MakeVideoEntry(files=files, key=key, wd=wd, order=order, options=options)._asdict()
             res = self.session.post(self.make_video_url, json=json).result()
-            return res.json()
+            return res.json()['result']
 

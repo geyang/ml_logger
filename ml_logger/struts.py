@@ -56,7 +56,6 @@ class PingData(NamedTuple):
 class MakeVideoEntry(NamedTuple):
     files: str
     key: str
-    glob: str = None
     wd: str = None
     order: str = None
     options: Any = None
