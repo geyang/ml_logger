@@ -1585,6 +1585,12 @@ class ML_Logger:
             ntp.seek(0)
             self.client.log_buffer(key=filename, buf=ntp.read(), overwrite=True)
 
+    def make_video(self, files, key, wd=None, order='ascending', **imageio_kwargs):
+        work_directory = pJoin(self.prefix, wd)
+        filename = pJoin(self.prefix, key)
+        self.client.make_video(files, key=filename, wd=work_directory, order=order, **imageio_kwargs)
+        return key
+
     # todo: incremental save pyplot to video.
     # def VideoContext(self, fig = None)
     #     yield blah

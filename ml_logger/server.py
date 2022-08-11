@@ -3,10 +3,12 @@ from datetime import datetime
 from io import BytesIO
 
 import dill  # done: switch to dill instead
+from typing import Sequence, Union
+
 from ml_logger.helpers import load_from_file
 from ml_logger.serdes import deserialize, serialize
 from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, \
-    MoveEntry, CopyEntry
+    MoveEntry, CopyEntry, MakeVideoEntry
 from termcolor import cprint
 
 
@@ -170,7 +172,18 @@ class LoggingServer:
         self.log(log_entry.key, data, log_entry.type, options)
         return sanic.response.text('ok')
 
-    def glob(self, query, wd, recursive, start, stop):
+    async def save_video_handler(self, req):
+        import sanic
+        if not req.json:
+            msg = f'request json is empty: {req.text}'
+            cprint(msg, 'red')
+            return sanic.response.text(msg)
+        entry = MakeVideoEntry(**req.json)
+        print(f"making video to {entry.key}")
+        self.make_video(file_list=entry.file_list, query=entry.glob, wd=entry.wd, key=entry.key, options=entry.options)
+        return sanic.response.text(entry.key)
+
+    def glob(self, query, wd, recursive: bool, start, stop):
         """
         Glob under the work directory. (so that the wd is not included in the file paths that are returned.)
 
@@ -414,6 +427,31 @@ class LoggingServer:
             except FileNotFoundError:
                 os.makedirs(parent_dir, exist_ok=True)
                 im.save(abs_path)
+
+    def make_video(self, files: Union[str, Sequence], key, wd, order: str, options=None):
+        import imageio
+
+        abs_key = self.abs_path(key)
+        abs_wd = self.abs_path(wd)
+
+        try:
+            writer = imageio.get_writer(abs_key, **options)
+        except FileNotFoundError as e:
+            os.makedirs(os.path.dirname(abs_key), exist_ok=True)
+            writer = imageio.get_writer(abs_key, **options)
+
+        if isinstance(files, str):
+            files = self.glob(files, wd=abs_wd, recursive=True, start=None, stop=None)
+            if order is "ascending":
+                files = sorted(files)
+            elif order is "descending":
+                files = sorted(files)[::-1]
+
+        for fname in files:
+            img = imageio.imread(os.path.join(abs_wd, fname))
+            writer.append_data(img)
+
+        writer.close()
 
     # def exec(self, command, options: ShellOptions = None):
     #     import system

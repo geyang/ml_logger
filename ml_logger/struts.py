@@ -53,6 +53,15 @@ class PingData(NamedTuple):
     burn: bool = False
 
 
+class MakeVideoEntry(NamedTuple):
+    files: str
+    key: str
+    glob: str = None
+    wd: str = None
+    order: str = None
+    options: Any = None
+
+
 Signal = namedtuple("Signal", ['exp_key', 'signal'])
 
 import numpy as np

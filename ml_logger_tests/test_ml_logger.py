@@ -232,6 +232,22 @@ def test_image_normalization(setup):
     logger.save_image(image_zero, f"zero_{100}.png", normalize="grid")
 
 
+def test_make_video(setup):
+    import scipy.misc
+
+    face = scipy.misc.face()
+    h, w, _ = face.shape
+    for i in range(10):
+        logger.save_image(face[i:h - 100 + i, i:w - 100 + i], f"face_{i:04d}.png")
+
+    file_list = logger.glob("face_*.png")
+    # This one makes the video according to ascending order
+    logger.make_video("face_*", key="videos/face_move_glob.mp4")
+    logger.make_video("face_*", order='descending', key="videos/face_move_glob_descending.mp4")
+    # This one makes the video according to the random order given by glob
+    logger.make_video(file_list, key="videos/face_move_list.mp4")
+
+
 def test_pyplot(setup):
     import scipy.misc
     import matplotlib

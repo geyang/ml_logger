@@ -7,7 +7,7 @@ from ml_logger.requests import SyncRequests
 from ml_logger.serdes import serialize, deserialize
 from ml_logger.server import LoggingServer
 from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, \
-    MoveEntry, CopyEntry
+    MoveEntry, CopyEntry, MakeVideoEntry
 from requests_futures.sessions import FuturesSession
 
 
@@ -76,6 +76,7 @@ class LogClient:
             self.glob_url = os.path.join(root, "glob")
             self.move_url = os.path.join(root, "move")
             self.copy_url = os.path.join(root, "copy")
+            self.make_video_url = os.path.join(root, "make_video")
             # when setting sessions the first time, default to use Asynchronous Session.
             if self.session is None:
                 asynchronous = True if asynchronous is None else asynchronous
@@ -325,3 +326,15 @@ class LogClient:
 
     # def exec_shell(self, command, **options):
     #     self.
+
+    # def read_image(self, key):
+
+    def make_video(self, files, key, wd, order, **options):
+        if self.local_server:
+            return self.local_server.make_video(files=files, key=key, wd=wd, order=order, options=options)
+        else:
+            # todo: make the json serialization more robust. Not priority b/c this' client-side.
+            json = MakeVideoEntry(files=files, key=key, wd=wd, order=order, **options)._asdict()
+            res = self.session.post(self.make_video_url, json=json).result()
+            return res.json()
+
