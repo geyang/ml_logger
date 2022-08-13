@@ -234,6 +234,7 @@ def test_image_normalization(setup):
 
 def test_make_video(setup):
     import scipy.misc
+    from time import sleep
 
     face = scipy.misc.face()
     h, w, _ = face.shape
@@ -242,8 +243,8 @@ def test_make_video(setup):
 
     file_list = logger.glob("face_*.png")
     # This one makes the video according to ascending order
-    logger.make_video("face_*", key="videos/face_move_glob.mp4")
-    logger.make_video("face_*", order='descending', key="videos/face_move_glob_descending.mp4")
+    logger.make_video("face_*.png", key="videos/face_move_glob.mp4")
+    logger.make_video("face_*.png", order='descending', key="videos/face_move_glob_descending.mp4")
     # This one makes the video according to the random order given by glob
     logger.make_video(file_list, key="videos/face_move_list.mp4")
 

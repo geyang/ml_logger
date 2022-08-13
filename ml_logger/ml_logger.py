@@ -1586,8 +1586,9 @@ class ML_Logger:
             ntp.seek(0)
             self.client.log_buffer(key=filename, buf=ntp.read(), overwrite=True)
 
-    def make_video(self, files, key, wd=".", order='ascending', **imageio_kwargs):
+    def make_video(self, files, key, wd=None, order='ascending', **imageio_kwargs):
         filename = pJoin(self.prefix, key)
+        wd = pJoin(self.prefix, wd or "")
         return self.client.make_video(files, key=filename, wd=wd, order=order, **imageio_kwargs)
 
     # todo: incremental save pyplot to video.
@@ -2277,7 +2278,7 @@ class ML_Logger:
         """
         Globs files under the work directory (`wd`). Note that `wd` affects the file paths
         being returned. The default is the current logging prefix. Use absolute path (with
-        a leanding slash (`/`) to escape the logging prefix. Use two leanding slashes for
+        a leading slash (`/`) to escape the logging prefix. Use two leading slashes for
         the absolute path in the host for the logging server.
 
         .. code:: python

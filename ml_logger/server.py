@@ -434,7 +434,7 @@ class LoggingServer:
         import imageio
 
         abs_key = self.abs_path(key)
-        abs_wd = self.abs_path(wd)
+        abs_wd = self.abs_path(wd or "")
 
         if isinstance(files, str):
             files = self.glob(files, wd=wd, recursive=True, start=None, stop=None)
