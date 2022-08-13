@@ -26,7 +26,7 @@ RemoveEntry = namedtuple("RemoveEntry", ['key'])
 
 class GlobEntry(NamedTuple):
     query: str
-    wd: Any = None
+    wd: str = "."
     recursive: bool = True
     start: Any = None
     stop: Any = None
@@ -56,7 +56,7 @@ class PingData(NamedTuple):
 class MakeVideoEntry(NamedTuple):
     files: str
     key: str
-    wd: str = None
+    wd: str = "."
     order: str = None
     options: Any = None
 

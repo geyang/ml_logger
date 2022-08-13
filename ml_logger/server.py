@@ -15,10 +15,10 @@ from termcolor import cprint
 class LoggingServer:
     silent = None
 
-    def abs_path(self, key):
+    def abs_path(self, key: str):
         if key.startswith('/'):
-            return os.path.join(self.root, key[1:])
-        return os.path.join(self.cwd, key)
+            return os.path.join(self.root, key[1:]).replace("/./", "/")
+        return os.path.join(self.cwd, key).replace("/./", "/")
 
     def __init__(self, cwd, root="/", silent=False):
         self.cwd = os.path.abspath(cwd)
