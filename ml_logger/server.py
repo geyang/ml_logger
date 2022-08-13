@@ -182,7 +182,7 @@ class LoggingServer:
         entry = MakeVideoEntry(**req.json)
         print(f"making video to {entry.key}, {entry}")
         result = self.make_video(files=entry.files, key=entry.key, wd=entry.wd, order=entry.order,
-                                  options=entry.options)
+                                 options=entry.options)
         return sanic.response.json({"result": result})
 
     def glob(self, query, wd, recursive: bool, start, stop):
@@ -438,10 +438,10 @@ class LoggingServer:
 
         if isinstance(files, str):
             files = self.glob(files, wd=wd, recursive=True, start=None, stop=None)
-            if order is "ascending":
-                files = sorted(files)
-            elif order is "descending":
+            if order in ["descending", -1]:
                 files = sorted(files)[::-1]
+            elif order in ["ascending", 1]:
+                files = sorted(files)
 
         if not files:
             return

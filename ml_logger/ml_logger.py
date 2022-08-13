@@ -1470,6 +1470,7 @@ class ML_Logger:
         if np.issubdtype(stack.dtype, np.uint8):
             print("normalization is not applied to unit8 images")
         elif len(stack.shape) == 3:
+            # todo: change to always set shape to len(4), and check if dim[1] is 1.
             from matplotlib import cm
             map_fn = cm.get_cmap(cmap or 'Greys')
 
@@ -1586,9 +1587,8 @@ class ML_Logger:
             self.client.log_buffer(key=filename, buf=ntp.read(), overwrite=True)
 
     def make_video(self, files, key, wd=None, order='ascending', **imageio_kwargs):
-        work_directory = pJoin(self.prefix, wd)
         filename = pJoin(self.prefix, key)
-        return self.client.make_video(files, key=filename, wd=work_directory, order=order, **imageio_kwargs)
+        return self.client.make_video(files, key=filename, wd=wd, order=order, **imageio_kwargs)
 
     # todo: incremental save pyplot to video.
     # def VideoContext(self, fig = None)
