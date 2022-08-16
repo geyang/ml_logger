@@ -38,20 +38,19 @@ class RUN(PrefixProto):
 
     now = logger.now()
     prefix = "{username}/{project}/{now:%Y/%m-%d}/{file_stem}/{job_name}"
-    job_name = Proto(f"{now:%H.%M.%S}/{{job_counter}}",
-                     help="""
-                     Default to '{now:%H.%M.%S}'. use '{now:%H.%M.%S}/{job_counter}'
-                     for multiple launches. You can do so by setting:
+    job_name = Proto(f"{now:%H.%M.%S}/{{job_counter}}", help="""
+        Default to '{now:%H.%M.%S}'. use '{now:%H.%M.%S}/{job_counter}'
+        for multiple launches. You can do so by setting:
 
-                     ```python
-                     RUN.job_name += "/{job_counter}"
+        ```python
+        RUN.job_name += "/{job_counter}"
 
-                     for params in sweep:
-                        thunk = instr(main)
-                        jaynes.run(thun)
-                     jaynes.listen()
-                     ```
-                     """)
+        for params in sweep:
+           thunk = instr(main)
+           jaynes.run(thun)
+        jaynes.listen()
+        ```
+        """)
     job_counter = Accumulant(0, help="Default to 0. Use True to increment by 1.")
 
     resume = Proto(True, help="whether starting the run from scratch, or "
@@ -149,8 +148,8 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
 
         # the tension is in between creation vs run. Code snapshot are shared, but runs need to be unique.
         logger.job_created(
-            job=dict(script_path=RUN.script_path, script_root=RUN.script_root, counter=RUN.job_counter,
-                     prefix=RUN.prefix, name=RUN.job_name),
+            job=dict(script_path=RUN.script_path, script_root=RUN.script_root,
+                     counter=RUN.job_counter, prefix=RUN.prefix, name=RUN.job_name),
             revision=logger.rev_info(),
             fn=logger.fn_info(fn),
             args=ARGS,
