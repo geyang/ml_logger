@@ -2,7 +2,7 @@ import os
 import sys
 from os.path import abspath
 
-from params_proto import PrefixProto, Accumulant, Proto
+from params_proto import PrefixProto, Accumulant, Proto, Flag
 from termcolor import colored
 
 from .caches.summary_cache import SummaryCache
@@ -57,7 +57,7 @@ class RUN(PrefixProto):
                               "resume previous checkpoints")
     readme = None
 
-    debug = Proto("pydevd" in sys.modules, help="set to True automatically for pyCharm")
+    debug = Flag("pydevd" in sys.modules, help="set to True automatically for pyCharm")
     CUDA_VISIBLE_DEVICES = None
 
     # noinspection PyMissingConstructor
