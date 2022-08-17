@@ -57,7 +57,7 @@ class RUN(PrefixProto):
                               "resume previous checkpoints")
     readme = None
 
-    debug = Flag("pydevd" in sys.modules, help="set to True automatically for pyCharm")
+    debug = Flag(default="pydevd" in sys.modules, help="set to True automatically for pyCharm")
     CUDA_VISIBLE_DEVICES = None
 
     # noinspection PyMissingConstructor
