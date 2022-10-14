@@ -1861,6 +1861,11 @@ class ML_Logger:
         path = pJoin(*keys, path)
 
         import torch
+
+        if path.lower().startswith("file://"):
+            torch.save(obj, path[7:])
+            return path
+
         from tempfile import NamedTemporaryFile
         with NamedTemporaryFile(delete=True) as tfile:
             torch.save(obj, tfile)
@@ -1895,9 +1900,14 @@ class ML_Logger:
         path = pJoin(*keys, path)
 
         import torch
-        from tempfile import NamedTemporaryFile
 
         traced = torch.jit.script(obj)
+
+        if path.lower().startswith("file://"):
+            traced.save(path[7:])
+            return path
+
+        from tempfile import NamedTemporaryFile
 
         with NamedTemporaryFile(delete=False) as tfile:
             traced.save(tfile.name)
@@ -1961,7 +1971,9 @@ class ML_Logger:
     def load_torch(self, *keys, path=None, map_location=None, **kwargs):
         import torch, tempfile
         path = pJoin(*keys, path)
-        if path.lower().startswith('s3://'):
+        if path.lower().startswith('file://'):
+            return torch.load(path[7:], map_location=map_location, **kwargs)
+        elif path.lower().startswith('s3://'):
             postfix = os.path.basename(path)
             with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
                 self.download_s3(path[5:], to=ntp.name)
@@ -1982,7 +1994,9 @@ class ML_Logger:
 
         path = pJoin(*keys, path)
 
-        if path.lower().startswith('s3://'):
+        if path.lower().startswith('file://'):
+            return torch.jit.load(path[7:], map_location=map_location, **kwargs)
+        elif path.lower().startswith('s3://'):
             postfix = os.path.basename(path)
             with tempfile.NamedTemporaryFile(suffix=f'.{postfix}') as ntp:
                 self.download_s3(path[5:], to=ntp.name)
@@ -2043,6 +2057,9 @@ class ML_Logger:
 
         # Added s3/gs support
         path = pJoin(*keys)
+
+        if path.lower().startswith('file://'):
+            return list(load_from_pickle_file(path[7:]))
 
         if path.lower().startswith('s3://'):
             postfix = os.path.basename(path)
