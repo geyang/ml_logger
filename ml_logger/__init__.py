@@ -102,7 +102,7 @@ if __name__ == '__main__':
     assert RUN.job_counter == 10
 
 
-def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=False, **KWARGS):
+def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __diff=True, __silent=False, **KWARGS):
     """
     Instrumentation thunk factory for configuring the logger.
 
@@ -155,9 +155,11 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __silent=Fal
             args=ARGS,
             kwargs=KWARGS)
 
-        logger.print('taking diff, if this step takes too long, check if your uncommitted changes are '
-                     'too large.', color="green")
-        logger.diff()
+        if __diff:
+            logger.print('taking diff, if this step takes too long, check if your uncommitted changes are '
+                         'too large.', color="green")
+            logger.diff()
+
         if RUN.readme:
             logger.log_text(RUN.readme, "README.md", dedent=True)
 
