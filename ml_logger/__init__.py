@@ -111,6 +111,7 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __diff=True,
     :param __file: str, console mode, by-pass file related logging
     :param __create_job: bool, default to True, set to False when you are relaunching
     :param __count: bool, increase the RUN.job_counter by 1 on each `instr` call.
+    :param __diff: bool, default to true, when off skips the git diff step.
     :param __silent: bool, do not print
     :param KWARGS: keyword arguments for the call
     :return: a thunk that can be called without parameters

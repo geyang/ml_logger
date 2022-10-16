@@ -1179,7 +1179,7 @@ class ML_Logger:
         if key_values:
             with self.Prefix(metrics=_prefix):
                 if self.metrics_prefix:
-                    key_values = {self.metrics_prefix + k: v for k, v in key_values}
+                    key_values = {self.metrics_prefix + k: v for k, v in key_values.items()}
             summary.update(key_values)
 
         with self.Prefix(metrics=False):
