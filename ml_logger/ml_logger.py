@@ -24,7 +24,7 @@ from .helpers.print_utils import PrintHelper
 from .log_client import LogClient
 
 # environment defaults
-CWD = os.environ["PWD"]
+CWD = os.getcwd()
 USER = os.environ.get("ML_LOGGER_USER", None)
 if USER is None:
     # raise a warning during online usage, if the user is not set.
@@ -207,6 +207,41 @@ class ML_Logger:
     PrefixContext = Prefix
     SyncContext = Sync
     AsyncContext = Async
+
+    @contextmanager
+    def memoize(self, f):
+        """
+        Memoize the function, using current ml-logger root and prefix as hash prefix
+        """
+        from hashlib import md5
+
+        # should also include root.
+        hash = md5(self.root + self.prefix)
+
+        c_path = f"{hash}.{f.__module__}.{f.__name__}.pkl"
+        l = ML_Logger(".cache", root=os.getcwd())
+        cache = l.load_pkl(c_path)
+        memo = cache[0] if cache else {}
+
+        def wrapper(*args, **kwargs):
+            key = (*args, *kwargs.keys(), *kwargs.values())
+            if key not in memo:
+                memo[key] = f(*args, **kwargs)
+                l.save_pkl(memo, c_path)
+            return memo[key]
+
+        return wrapper
+
+    def release(self, f):
+        """release the cache corresponding to function f"""
+        from hashlib import md5
+
+        # should also include root.
+        hash = md5(self.root + self.prefix)
+
+        c_path = f"{hash}.{f.__module__}.{f.__name__}.pkl"
+        l = ML_Logger(".cache", root=os.getcwd())
+        return l.remove(c_path)
 
     def __repr__(self):
         return f'Logger(log_directory="{self.root}",' + "\n" + \

@@ -308,9 +308,35 @@ def needs_relaunch(prefix, stale_limit=5., silent=False, not_exist_ok=False, *ar
     return stale or relaunch
 
 
-def memoize(f):
-    l = ML_Logger(".cache", root=os.getcwd())
+def memoize(f_or_ctx):
+
+    if not callable(f_or_ctx):
+        ctx = f_or_ctx
+
+        import hashlib
+        hash = hashlib.md5(ctx)
+
+        def inner(f):
+            c_path = f"{hash}.{f.__module__}.{f.__name__}.pkl"
+            l = ML_Logger(".cache", root=os.getcwd())
+            cache = l.load_pkl(c_path)
+            memo = cache[0] if cache else {}
+
+            def wrapper(*args, **kwargs):
+                key = (*args, *kwargs.keys(), *kwargs.values())
+                if key not in memo:
+                    memo[key] = f(*args, **kwargs)
+                    l.save_pkl(memo, c_path)
+                return memo[key]
+
+            return wrapper
+
+        return inner
+
+    f = f_or_ctx
     c_path = f"{f.__module__}.{f.__name__}.pkl"
+
+    l = ML_Logger(".cache", root=os.getcwd())
     cache = l.load_pkl(c_path)
     memo = cache[0] if cache else {}
 
