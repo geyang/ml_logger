@@ -216,7 +216,8 @@ class ML_Logger:
         from hashlib import md5
 
         # should also include root.
-        hash = md5(self.root + self.prefix)
+        prefix = pJoin(self.root, self.prefix)
+        hash = md5(prefix.encode("utf-8")).hexdigest()
 
         c_path = f"{hash}.{f.__module__}.{f.__name__}.pkl"
         l = ML_Logger(".cache", root=os.getcwd())
