@@ -56,7 +56,7 @@ def post(p=''):
     path = os.path.join(config.Args.logdir, p)
     info = {}
     if os.path.isdir(path):
-        files = request.files.getlist('files[]')
+        files = request.command.getlist('files[]')
         for file in files:
             try:
                 filename = secure_filename(file.filename)

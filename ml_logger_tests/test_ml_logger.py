@@ -5,7 +5,7 @@
 
 To test with a live server, first run (in a separate console)
 ```
-python -m ml_logger.server --log-dir /tmp/ml-logger-debug
+python -m ml_logger.server --logdir /tmp/ml-logger-debug
 ```
 or do:
 ```bash
@@ -14,7 +14,7 @@ make start-test-server
 
 Then run this test script with the option:
 ```bash
-python -m pytest tests --capture=no --log-dir http://0.0.0.0:8081
+python -m pytest tests --capture=no --logdir http://0.0.0.0:8081
 ```
 or do
 ```bash
@@ -238,8 +238,9 @@ def test_make_video(setup):
 
     face = scipy.misc.face()
     h, w, _ = face.shape
-    for i in range(10):
-        logger.save_image(face[i:h - 100 + i, i:w - 100 + i], f"face_{i:04d}.png")
+    with logger.Sync():
+        for i in range(10):
+            logger.save_image(face[i:h - 100 + i, i:w - 100 + i], f"face_{i:04d}.png")
 
     file_list = logger.glob("face_*.png")
     # This one makes the video according to ascending order
@@ -430,6 +431,11 @@ def test_get_exps(setup_no_clean):
 def test_get_exps_without_pkl(setup_no_clean):
     all = logger.get_exps("**")
     assert 'job.status' in all.columns
+
+
+def test_shell(setup):
+    stdout, stderr, code = logger.shell("ls")
+    assert code == 0, "return code should be 0"
 
 
 if __name__ == "__main__":

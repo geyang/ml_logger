@@ -1358,7 +1358,13 @@ class ML_Logger:
             service = 'local'
             source_path = pathlib.Path(source_path[7:])
         else:
+            service = None
             source_path = pathlib.Path(source_path)
+
+        # if self.glob("**/*", wd=source_path):
+        #     with self.Sync():
+        #         # use sync context to make sure it finishes.
+        #         self.make_archive(source_path, unpack=unpack)
 
         to = pathlib.Path(to).absolute()
 
@@ -1625,6 +1631,24 @@ class ML_Logger:
         filename = pJoin(self.prefix, key)
         wd = pJoin(self.prefix, wd or "")
         return self.client.make_video(files, key=filename, wd=wd, order=order, **imageio_kwargs)
+
+    def make_archive(self, base_name=None, format="tar", root_dir=None, base_dir=None, **archive_kwargs):
+        # base_dir = base_dir
+        base_name = pJoin(self.prefix, base_name)
+        # if root_dir:
+        root_dir = pJoin(self.prefix, root_dir)
+        return self.client.make_archive(root_dir=root_dir, base_name=base_name, base_dir=base_dir,
+                                        format=format, **archive_kwargs)
+
+    def shell(self, command, wd=None):
+        """
+        call shell on the remote server
+
+        :param command:
+        :param wd:
+        :return: stdout, stderr, returncode
+        """
+        return self.client.shell(command, wd=wd)
 
     # todo: incremental save pyplot to video.
     # def VideoContext(self, fig = None)

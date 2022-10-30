@@ -7,8 +7,8 @@ from typing import Sequence, Union
 
 from ml_logger.helpers import load_from_file
 from ml_logger.serdes import deserialize, serialize
-from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, \
-    MoveEntry, CopyEntry, MakeVideoEntry
+from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, \
+    PingData, GlobEntry, MoveEntry, CopyEntry, MakeVideoEntry, ArchiveEntry, ShellEntry
 from termcolor import cprint
 
 
@@ -20,13 +20,15 @@ class LoggingServer:
             return os.path.join(self.root, key[1:]).replace("/./", "/")
         return os.path.join(self.cwd, key).replace("/./", "/")
 
-    def __init__(self, cwd, root="/", silent=False):
+    def __init__(self, cwd, root="/", allow_shell=False, silent=False):
         self.cwd = os.path.abspath(cwd)
         self.root = os.path.abspath(root)
         os.makedirs(self.cwd, exist_ok=True)
         os.makedirs(self.root, exist_ok=True)
 
         self.silent = silent
+        self.allow_shell = allow_shell
+
         if not silent:
             cprint(f'logging data to {root}', 'green')
 
@@ -44,6 +46,8 @@ class LoggingServer:
         self.app.add_route(self.move_handler, '/move', methods=['POST'])
         self.app.add_route(self.copy_handler, '/copy', methods=['POST'])
         self.app.add_route(self.make_video_handler, '/make_video', methods=['POST'])
+        self.app.add_route(self.make_archive_handler, '/make_archive', methods=['POST'])
+        self.app.add_route(self.shell_handler, '/shell', methods=['POST'])
         # todo: need a file serving url
         self.app.run(host=host, port=port, workers=workers, debug=Params.debug)
 
@@ -179,10 +183,36 @@ class LoggingServer:
             msg = f'request json is empty: {req.text}'
             cprint(msg, 'red')
             return sanic.response.json({"message": msg})
+
         entry = MakeVideoEntry(**req.json)
         print(f"making video to {entry.key}, {entry}")
         result = self.make_video(files=entry.files, key=entry.key, wd=entry.wd, order=entry.order,
                                  options=entry.options)
+        return sanic.response.json({"result": result})
+
+    async def make_archive_handler(self, req):
+        import sanic
+        if not req.json:
+            msg = f'request json is empty: {req.text}'
+            cprint(msg, 'red')
+            return sanic.response.json({"message": msg})
+
+        entry = ArchiveEntry(**req.json)
+        print(f"making archive to {entry.root_dir}, {entry.base_name}")
+        result = self.make_archive(base_name=entry.base_name, format=entry.format, root_dir=entry.root_dir,
+                                   base_dir=entry.base_dir, options=entry.options)
+        return sanic.response.json({"result": result})
+
+    async def shell_handler(self, req):
+        import sanic
+        if not req.json:
+            msg = f'request json is empty: {req.text}'
+            cprint(msg, 'red')
+            return sanic.response.json({"message": msg})
+
+        entry = ShellEntry(**req.json)
+        print(f"executing shell command {entry}")
+        result = self.shell(command=entry.command, wd=entry.wd, options=entry.options)
         return sanic.response.json({"result": result})
 
     def glob(self, query, wd, recursive: bool, start, stop):
@@ -459,9 +489,35 @@ class LoggingServer:
         writer.close()
         return key
 
-    # def exec(self, command, options: ShellOptions = None):
-    #     import system
-    #     return system.call(command, **options)
+    def make_archive(self, base_name, format, root_dir, base_dir, options=None):
+        import shutil
+        shutil.make_archive(
+            base_name=self.abs_path(base_name),
+            format=format,
+            root_dir=self.abs_path(root_dir),
+            base_dir=base_dir,
+            **options
+        )
+        return base_name
+
+    def shell(self, command, wd, options=None):
+        """
+        Logger server root path is exposed through $ROOT environment variable.
+        The current work direction is exposed through $PWD environment variable.
+
+        :param command:
+        :param wd:
+        :param options:
+        :return:
+        """
+        import subprocess
+        if not self.allow_shell:
+            return "", "shell commands are disabled. using --shell flag to turn it on.", 1
+
+        abs_wd = self.abs_path(wd) if wd else None
+        out = subprocess.run(command, **options, shell=True, capture_output=True, cwd=abs_wd, env={
+            "ROOT": self.root, "PWD": self.cwd})
+        return out.stdout.decode("utf-8"), out.stderr.decode("utf-8"), out.returncode
 
 
 if __name__ == '__main__':
@@ -475,6 +531,7 @@ if __name__ == '__main__':
                                        "making requests. If you want to allow all ip, set this to '0.0.0.0'.")
         workers = Proto(1, help="Number of workers to run in parallel")
         debug = Flag(help='boolean flag for printing out debug traces')
+        shell = Flat(help='boolean flag for allowing shell commands to be executed on the server.')
 
 
     import pkg_resources
@@ -482,5 +539,5 @@ if __name__ == '__main__':
     v = pkg_resources.get_distribution("ml_logger").version
 
     print(f"running ml_logger.server version {v}")
-    server = LoggingServer(Params.logdir, root=Params.logdir)
+    server = LoggingServer(Params.logdir, root=Params.logdir, allow_shell=Params.shell)
     server.serve(host=Params.host, port=Params.port, workers=Params.workers)

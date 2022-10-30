@@ -7,7 +7,7 @@ from ml_logger.requests import SyncRequests
 from ml_logger.serdes import serialize, deserialize
 from ml_logger.server import LoggingServer
 from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, \
-    MoveEntry, CopyEntry, MakeVideoEntry
+    MoveEntry, CopyEntry, MakeVideoEntry, ArchiveEntry, ShellEntry
 from requests_futures.sessions import FuturesSession
 
 
@@ -77,6 +77,8 @@ class LogClient:
             self.move_url = os.path.join(root, "move")
             self.copy_url = os.path.join(root, "copy")
             self.make_video_url = os.path.join(root, "make_video")
+            self.tar_url = os.path.join(root, "make_archive")
+            self.shell_url = os.path.join(root, "shell")
             # when setting sessions the first time, default to use Asynchronous Session.
             if self.session is None:
                 asynchronous = True if asynchronous is None else asynchronous
@@ -338,3 +340,23 @@ class LogClient:
             res = self.session.post(self.make_video_url, json=json).result()
             return res.json()['result']
 
+    def make_archive(self, base_name, format="tar", root_dir=None, base_dir=None, **options):
+        if self.local_server:
+            return self.local_server.make_archive(
+                base_name=base_name, format=format, root_dir=root_dir, base_dir=base_dir,
+                options=options)
+        else:
+            # todo: make the json serialization more robust. Not priority b/c this' client-side.
+            json = ArchiveEntry(base_name=base_name, root_dir=root_dir, base_dir=base_dir,
+                                format=format, options=options)._asdict()
+            res = self.session.post(self.tar_url, json=json).result()
+            return res.json()['result']
+
+    def shell(self, command, wd, **options):
+        if self.local_server:
+            return self.local_server.shell(command, wd, options=options)
+        else:
+            # todo: make the json serialization more robust. Not priority b/c this' client-side.
+            json = ShellEntry(command=command, wd=wd, options=options)._asdict()
+            res = self.session.post(self.shell_url, json=json).result()
+            return res.json()['result']

@@ -61,6 +61,20 @@ class MakeVideoEntry(NamedTuple):
     options: Any = None
 
 
+class ArchiveEntry(NamedTuple):
+    base_name: str
+    root_dir: str
+    base_dir: str
+    format: str = "tar"
+    options: Any = None
+
+
+class ShellEntry(NamedTuple):
+    command: str
+    wd: str = "."
+    options: Any = None
+
+
 Signal = namedtuple("Signal", ['exp_key', 'signal'])
 
 import numpy as np

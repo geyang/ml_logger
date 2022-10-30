@@ -29,7 +29,7 @@ run (in a separate console)
 
 .. code-block:: bash
 
-   python -m ml_logger.server --log-dir /tmp/ml-logger-debug
+   python -m ml_logger.server --logdir /tmp/ml-logger-debug
 
 alternatively do:
 
@@ -41,7 +41,7 @@ Then run this test script with the option:
 
 .. code-block:: bash
 
-   python -m pytest tests --capture=no --log-dir http://0.0.0.0:8081
+   python -m pytest tests --capture=no --logdir http://0.0.0.0:8081
 
 or do
 

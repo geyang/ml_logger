@@ -58,7 +58,7 @@ for i in range(1):
 
 **Skip this if you just want to log locally.** When training in parallel, you want to kickstart an logging server (Instrument Server). To do so, run:
 ```bash
-python -m ml_logger.server --log-dir /home/yourname/ml-logger-debug --host 0.0.0.0 --port 8081
+python -m ml_logger.server --logdir /home/yourname/ml-logger-debug --host 0.0.0.0 --port 8081
 ```
 The logging server uses the `sanic` framework, which means defaults to `sanic`, such as maximum request size are carried over. 
 
@@ -127,7 +127,7 @@ make test
 
 To test with a live server, first run (in a separate console)
 ```
-python -m ml_logger.server --log-dir /tmp/ml-logger-debug
+python -m ml_logger.server --logdir /tmp/ml-logger-debug
 ```
 or do:
 ```bash
@@ -136,7 +136,7 @@ make start-test-server
 
 Then run this test script with the option:
 ```bash
-python -m pytest tests --capture=no --log-dir http://0.0.0.0:8081
+python -m pytest tests --capture=no --logdir http://0.0.0.0:8081
 ```
 or do
 ```bash
