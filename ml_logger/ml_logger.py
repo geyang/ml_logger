@@ -1633,9 +1633,17 @@ class ML_Logger:
         return self.client.make_video(files, key=filename, wd=wd, order=order, **imageio_kwargs)
 
     def make_archive(self, base_name=None, format="tar", root_dir=None, base_dir=None, **archive_kwargs):
-        # base_dir = base_dir
+        """
+        Make an archive of the files in the current working directory.
+
+        :param base_name: Do NOT include the suffix ".tar" This should be the root directory that you want to include
+        :param format: One of ["tar", "zip", "gztar", "bztar", "xztar"]
+        :param root_dir: Should be the same as base_name
+        :param base_dir: Should often be relative and empty.
+        :param archive_kwargs: keyword arguments for shutil.make_archive
+        :return:
+        """
         base_name = pJoin(self.prefix, base_name)
-        # if root_dir:
         root_dir = pJoin(self.prefix, root_dir)
         return self.client.make_archive(root_dir=root_dir, base_name=base_name, base_dir=base_dir,
                                         format=format, **archive_kwargs)
