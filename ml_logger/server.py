@@ -531,7 +531,7 @@ if __name__ == '__main__':
                                        "making requests. If you want to allow all ip, set this to '0.0.0.0'.")
         workers = Proto(1, help="Number of workers to run in parallel")
         debug = Flag(help='boolean flag for printing out debug traces')
-        shell = Flat(help='boolean flag for allowing shell commands to be executed on the server.')
+        shell = Flag(help='boolean flag for allowing shell commands to be executed on the server.')
 
 
     import pkg_resources
