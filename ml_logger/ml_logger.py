@@ -1640,7 +1640,7 @@ class ML_Logger:
         return self.client.make_archive(root_dir=root_dir, base_name=base_name, base_dir=base_dir,
                                         format=format, **archive_kwargs)
 
-    def shell(self, command, wd=None):
+    def shell(self, command, wd=""):
         """
         call shell on the remote server
 
@@ -1648,6 +1648,7 @@ class ML_Logger:
         :param wd:
         :return: stdout, stderr, returncode
         """
+        wd = pJoin(self.prefix, wd)
         return self.client.shell(command, wd=wd)
 
     # todo: incremental save pyplot to video.

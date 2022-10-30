@@ -500,7 +500,7 @@ class LoggingServer:
         )
         return base_name
 
-    def shell(self, command, wd, options=None):
+    def shell(self, command, wd="", options=None):
         """
         Logger server root path is exposed through $ROOT environment variable.
         The current work direction is exposed through $PWD environment variable.
@@ -514,7 +514,7 @@ class LoggingServer:
         if not self.allow_shell:
             return "", "shell commands are disabled. using --shell flag to turn it on.", 1
 
-        abs_wd = self.abs_path(wd) if wd else None
+        abs_wd = self.abs_path(wd)
         out = subprocess.run(command, **options, shell=True, capture_output=True, cwd=abs_wd, env={
             "ROOT": self.root, "PWD": self.cwd})
         return out.stdout.decode("utf-8"), out.stderr.decode("utf-8"), out.returncode

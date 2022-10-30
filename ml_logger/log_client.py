@@ -326,9 +326,6 @@ class LogClient:
         self._log(key, buf, dtype="byte", options=LogOptions(**options))
         # self._multipart(key, buf, options=LogOptions(**options))
 
-    # def exec_shell(self, command, **options):
-    #     self.
-
     # def read_image(self, key):
 
     def make_video(self, files, key, wd, order, **options):
