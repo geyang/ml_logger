@@ -244,8 +244,8 @@ class ML_Logger:
         return l.remove(c_path)
 
     def __repr__(self):
-        return f'Logger(log_directory="{self.root}",' + "\n" + \
-               f'       prefix="{self.prefix}")'
+        return f'ML_Logger(root="{self.root}",' + "\n" + \
+               f'          prefix="{self.prefix}")'
 
     # noinspection PyInitNewSignature
     # todo: use prefixes as opposed to prefix. (add *prefixae after prefix=None)
@@ -1370,7 +1370,6 @@ class ML_Logger:
 
         if unpack:
             with tempfile.TemporaryDirectory() as temp_dir:
-
                 if service == 's3':
                     self.download_s3(source_path, to=temp_dir + '/' + source_path.name)
                 elif service == 'gs':
