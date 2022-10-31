@@ -54,6 +54,7 @@ def test_download_dir(setup_no_clean):
 
     with logger.Sync():
         logger.make_archive("target", root_dir="target")
+
     logger.download_dir("target.tar", "/tmp/target")
     downloaded = glob.glob("/tmp/target/**/*.*", recursive=True)
     assert "/tmp/target/test_file_utils.py" in downloaded, "the file should exist"

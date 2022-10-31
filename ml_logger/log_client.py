@@ -72,6 +72,7 @@ class LogClient:
             self.url = root
             self.access_token = access_token
             self.stream_url = os.path.join(root, "stream")
+            self.files_url = os.path.join(root, "files")
             self.ping_url = os.path.join(root, "ping")
             self.glob_url = os.path.join(root, "glob")
             self.move_url = os.path.join(root, "move")
@@ -164,14 +165,19 @@ class LogClient:
             return buf
         else:
             from requests_toolbelt.downloadutils import stream
-
-            json = LoadEntry(path, "byte")._asdict()
-            # note: reading stuff from the server is always synchronous.
-            #  with (future) sessions, this is forced by the result call.
-            r = self.session.get(self.stream_url, json=json, stream=True)
-            assert stream.stream_response_to_file(r.result(), path=buf) is None
+            full_url = os.path.join(self.files_url, path)
+            r = self.session.get(full_url, stream=True)
+            stream.stream_response_to_file(r.result(), path=buf)
             buf.seek(0)
             return buf
+
+            # json = LoadEntry(path, "byte")._asdict()
+            # # note: reading stuff from the server is always synchronous.
+            # #  with (future) sessions, this is forced by the result call.
+            # r = self.session.get(self.stream_url, json=json, stream=True)
+            # assert stream.stream_response_to_file(r.result(), path=buf) is None
+            # buf.seek(0)
+            # return buf
 
     def save_buffer(self, buffer, key):
         # proxy = os.environ.get('HTTP_PROXY')

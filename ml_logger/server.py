@@ -40,6 +40,8 @@ class LoggingServer:
         self.app.add_route(self.log_handler, '/', methods=['POST'])
         self.app.add_route(self.read_handler, '/', methods=['GET'])
         self.app.add_route(self.stream_handler, '/stream', methods=['GET'])
+        # done: need a file serving url
+        self.app.static('/files', self.root, stream_large_files=True)
         self.app.add_route(self.ping_handler, '/ping', methods=['POST'])
         self.app.add_route(self.glob_handler, '/glob', methods=['POST'])
         self.app.add_route(self.remove_handler, '/', methods=['DELETE'])
@@ -48,7 +50,7 @@ class LoggingServer:
         self.app.add_route(self.make_video_handler, '/make_video', methods=['POST'])
         self.app.add_route(self.make_archive_handler, '/make_archive', methods=['POST'])
         self.app.add_route(self.shell_handler, '/shell', methods=['POST'])
-        # todo: need a file serving url
+
         self.app.run(host=host, port=port, workers=workers, debug=Params.debug)
 
     async def stream_handler(self, req):
