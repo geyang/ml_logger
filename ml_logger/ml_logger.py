@@ -208,19 +208,18 @@ class ML_Logger:
     SyncContext = Sync
     AsyncContext = Async
 
-    @contextmanager
-    def memoize(self, f):
+    def memoize(self, f, cache_dir=".cache", ctx=None):
         """
         Memoize the function, using current ml-logger root and prefix as hash prefix
         """
         from hashlib import md5
 
         # should also include root.
-        prefix = pJoin(self.root, self.prefix)
+        prefix = pJoin(self.root, self.prefix, *(ctx or []))
         hash = md5(prefix.encode("utf-8")).hexdigest()
 
         c_path = f"{hash}.{f.__module__}.{f.__name__}.pkl"
-        l = ML_Logger(".cache", root=os.getcwd())
+        l = ML_Logger(cache_dir, root=os.getcwd())
         cache = l.load_pkl(c_path)
         memo = cache[0] if cache else {}
 
