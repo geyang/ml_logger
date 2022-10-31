@@ -2025,8 +2025,11 @@ class ML_Logger:
         return self.client.stream_download(path)
 
     def download_file(self, *keys, path=None, to, relative=False):
-        buf = self.load_file(*keys)
+
         path = pJoin(*keys, path)
+
+        buf = self.load_file(path)
+
         if relative:
             to = pJoin(to, path)
         elif to.endswith('/'):

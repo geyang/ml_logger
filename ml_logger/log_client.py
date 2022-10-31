@@ -165,7 +165,9 @@ class LogClient:
             return buf
         else:
             from requests_toolbelt.downloadutils import stream
-            full_url = os.path.join(self.files_url, path)
+            # remove leading slash in the path
+            full_url = os.path.join(self.files_url, path[1:] if path.startswith('/') else path)
+
             r = self.session.get(full_url, stream=True)
             stream.stream_response_to_file(r.result(), path=buf)
             buf.seek(0)
