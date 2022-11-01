@@ -7,7 +7,7 @@ from typing import Sequence, Union
 
 from ml_logger.helpers import load_from_file
 from ml_logger.serdes import deserialize, serialize
-from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, \
+from ml_logger.structs import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, \
     PingData, GlobEntry, MoveEntry, CopyEntry, MakeVideoEntry, ArchiveEntry, ShellEntry
 from termcolor import cprint
 

@@ -79,4 +79,4 @@ Signal = namedtuple("Signal", ['exp_key', 'signal'])
 
 import numpy as np
 
-ALLOWED_TYPES = (np.uint8,)  # ONLY uint8 is supported.
+ALLOWED_TYPES = (np.uint8, np.uint16)  # ONLY uint8 and uint16 is supported.
