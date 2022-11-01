@@ -22,6 +22,7 @@ from .helpers.color_helpers import Color
 from .helpers.default_set import DefaultSet
 from .helpers.print_utils import PrintHelper
 from .log_client import LogClient
+from .structs import ALLOWED_TYPES
 
 # environment defaults
 CWD = os.getcwd()
@@ -1488,7 +1489,7 @@ class ML_Logger:
         return s3.download_file(bucket, object_name, to)
 
     def save_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None,
-                    value_range=(0, 1), background=1):
+                    value_range=(0, 1), background=1, dtype=np.uint8):
         """Log images as a composite of a grid. Images input as a 4-D stack.
 
         :param stack: Size(n, w, h, c)
@@ -1498,8 +1499,15 @@ class ML_Logger:
         :param cmap: OneOf([str, matplotlib.cm.ColorMap])
         :param normalize: defaul None. OneOf[None, 'individual', 'row', 'column', 'grid']. Only 'grid' and
                           'individual' are implemented.
+        :param dtype: dtype to use for the saved image.
         :return: None
         """
+        # Check dtype is supported by ml-logger
+        assert (
+            dtype in ALLOWED_TYPES,
+            f"Unsupported dtype: {dtype}. Supported types: {ALLOWED_TYPES}"
+        )
+
         stack = stack if hasattr(stack, 'dtype') else np.stack(stack)
 
         n_cols = n_cols or len(stack)
@@ -1507,8 +1515,8 @@ class ML_Logger:
 
         value_low, value_high = value_range
 
-        if np.issubdtype(stack.dtype, np.uint8):
-            assert not normalize, "normalization is not applicable to unit8 images"
+        if np.issubdtype(stack.dtype, dtype):
+            assert not normalize, f"normalization is not applicable to {dtype} images"
         elif len(stack.shape) == 3:
             # todo: change to always set shape to len(4), and check if dim[1] is 1.
             from matplotlib import cm
@@ -1532,9 +1540,10 @@ class ML_Logger:
                 stack = (stack - low) / (r if r.all() else 1)
                 stack = stack * (value_high - value_low) + value_low
 
-            stack = (map_fn(stack.clip(value_low, value_high)) * 255).astype(np.uint8)
-            stack = stack.astype(np.uint8)
-
+            # Clip values after applying cmap
+            dtype_max_val = np.iinfo(dtype).max
+            stack = (map_fn(stack.clip(value_low, value_high)) * dtype_max_val)
+            stack = stack.astype(dtype)
         elif len(stack.shape) == 4:
             assert cmap is None, "color map is not used for rgb(a) images."
 
@@ -1556,17 +1565,24 @@ class ML_Logger:
                 stack = (stack - low) / (r if r.all() else 1)
                 stack = stack * (value_high - value_low) + value_low
 
-            stack = stack.clip(value_low, value_high) * 255
-            stack = stack.astype(np.uint8)
+            # Clip values
+            dtype_max_val = np.iinfo(dtype).max
+            stack = stack.clip(value_low, value_high) * dtype_max_val
+            stack = stack.astype(dtype)
         else:
-            raise RuntimeError(f"{stack.shape} is not supported. `len(shape)` should be 3 "
-                               f"for gray scale  and 4 for RGB(A).")
+            raise RuntimeError(
+                f"{stack.shape} is not supported. `len(shape)` should be 3 "
+                "for grayscale, and 4 for RGB(A)."
+            )
 
         # this needs to be updated
-        assert np.issubdtype(stack.dtype, np.uint8), "the image type need to be unsigned 8-bit."
+        assert (
+            any(np.issubdtype(stack.dtype, t) for t in ALLOWED_TYPES),
+            f"the image type need to be one of {ALLOWED_TYPES}"
+        )
         n, h, w, *c = stack.shape
         # todo: add color background -- need to decide on which library to use.
-        composite = np.full([h * n_rows, w * n_cols, *c], background, dtype='uint8')
+        composite = np.full([h * n_rows, w * n_cols, *c], background, dtype=dtype)
         for i in range(n_rows):
             for j in range(n_cols):
                 k = i * n_cols + j
@@ -1578,14 +1594,14 @@ class ML_Logger:
         self.client.send_image(key=pJoin(self.prefix, key), data=composite)
         return key
 
-    def save_image(self, image, key: str, cmap=None, normalize=None):
+    def save_image(self, image, key: str, cmap=None, normalize=None, dtype=np.uint8):
         """Log a single image.
 
         :param image: numpy object Size(w, h, 3)
         :param key: example: "figures/some_fig_name.png", the file key to which the
             image is saved.
         """
-        return self.save_images([image], key, n_rows=1, n_cols=1, cmap=cmap, normalize=normalize)
+        return self.save_images([image], key, n_rows=1, n_cols=1, cmap=cmap, normalize=normalize, dtype=dtype)
 
     def save_video(self, frame_stack, key, format=None, fps=20, **imageio_kwargs):
         """

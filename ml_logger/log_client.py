@@ -6,7 +6,7 @@ from io import BytesIO, StringIO
 from ml_logger.requests import SyncRequests
 from ml_logger.serdes import serialize, deserialize
 from ml_logger.server import LoggingServer
-from ml_logger.struts import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, \
+from ml_logger.structs import ALLOWED_TYPES, LogEntry, LogOptions, LoadEntry, RemoveEntry, PingData, GlobEntry, \
     MoveEntry, CopyEntry, MakeVideoEntry, ArchiveEntry, ShellEntry
 from requests_futures.sessions import FuturesSession
 
