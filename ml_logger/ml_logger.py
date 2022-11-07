@@ -1594,14 +1594,14 @@ class ML_Logger:
         self.client.send_image(key=pJoin(self.prefix, key), data=composite)
         return key
 
-    def save_image(self, image, key: str, cmap=None, normalize=None):
+    def save_image(self, image, key: str, cmap=None, normalize=None, dtype=np.uint8):
         """Log a single image.
 
         :param image: numpy object Size(w, h, 3)
         :param key: example: "figures/some_fig_name.png", the file key to which the
             image is saved.
         """
-        return self.save_images([image], key, n_rows=1, n_cols=1, cmap=cmap, normalize=normalize)
+        return self.save_images([image], key, n_rows=1, n_cols=1, cmap=cmap, normalize=normalize, dtype=dtype)
 
     def save_video(self, frame_stack, key, format=None, fps=20, **imageio_kwargs):
         """
