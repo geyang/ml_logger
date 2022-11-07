@@ -1515,13 +1515,8 @@ class ML_Logger:
 
         value_low, value_high = value_range
 
-        if np.issubdtype(stack.dtype, np.uint8):
-            # FIXME: figure out what's going on here
-            assert not normalize, "normalization is not applicable to uint8 images"
-            assert (
-               stack.dtype == dtype,
-               f"stack dtype ({stack.dtype}) and save dtype ({dtype}) do not match"
-            )
+        if np.issubdtype(stack.dtype, dtype):
+            assert not normalize, f"normalization is not applicable to {dtype} images"
         elif len(stack.shape) == 3:
             # todo: change to always set shape to len(4), and check if dim[1] is 1.
             from matplotlib import cm
