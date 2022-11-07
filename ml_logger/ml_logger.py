@@ -1572,7 +1572,7 @@ class ML_Logger:
         else:
             raise RuntimeError(
                 f"{stack.shape} is not supported. `len(shape)` should be 3 "
-                "for grayscale or depth, and 4 for RGB(A)."
+                "for grayscale, and 4 for RGB(A)."
             )
 
         # this needs to be updated
