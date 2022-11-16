@@ -64,9 +64,9 @@ class LogClient:
             self.set_session(asynchronous, max_workers)
 
         if root.startswith("file://"):
-            self.local_server = LoggingServer(cwd=root[6:], silent=True)
+            self.local_server = LoggingServer(cwd=root[6:], silent=True, allow_shell=True)
         elif os.path.isabs(root):
-            self.local_server = LoggingServer(cwd=root, silent=True)
+            self.local_server = LoggingServer(cwd=root, silent=True, allow_shell=True)
         elif root.startswith('http://') or root.startswith('https://'):
             self.local_server = None  # remove local server to use sessions.
             self.url = root

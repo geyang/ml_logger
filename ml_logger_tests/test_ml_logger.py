@@ -253,6 +253,7 @@ def test_make_video(setup):
     path = logger.make_video("no_exist_*.png", key="videos/not_exist.mp4")
     assert path is None
 
+
 def test_pyplot(setup):
     import scipy.misc
     import matplotlib
@@ -434,6 +435,11 @@ def test_get_exps_without_pkl(setup_no_clean):
 
 
 def test_shell(setup):
+    # only needed for local test
+    if not logger.root.startswith("http"):
+        import os
+        os.makedirs(logger.root + "/" + logger.prefix, exist_ok=True)
+
     stdout, stderr, code = logger.shell("ls")
     assert code == 0, "return code should be 0"
 
