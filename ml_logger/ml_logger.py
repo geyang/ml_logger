@@ -144,12 +144,18 @@ class Memoize:
         key = (*args, *kwargs.keys(), *kwargs.values())
         if key not in self.memo:
             self.memo[key] = self.f(*args, **kwargs)
-            l.save_pkl(self.memo, self.c_path)
+
+            # todo: use directory for cache key/value pairs
+            os.makedirs(os.path.dirname(self.c_path), exist_ok=True)
+            with open(self.c_path, "wb") as file:
+                pickle.dump(self.memo, file)
+
         return self.memo[key]
 
     def __del__(self):
+        # remove reference to the function
         self.memo = None
-        print("meme collecteed")
+
 
 # @contextmanager
 # def _LocalContext(logger, new_prefix=None):
