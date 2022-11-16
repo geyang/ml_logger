@@ -126,6 +126,31 @@ def _PrefixContext(logger, new_prefix=None, metrics=None, sep="/"):
         logger.metrics_prefix = old_metrics_prefix
 
 
+class Memoize:
+    def __init__(self, f, c_path: str):
+        self.f = f
+        self.c_path = c_path
+        self.memo = None
+
+    def __call__(self, *args, **kwargs):
+        import pickle
+        if self.memo is None:
+            try:
+                with open(self.c_path, "rb") as file:
+                    self.memo = pickle.load(file) or {}
+            except FileNotFoundError:
+                self.memo = {}
+
+        key = (*args, *kwargs.keys(), *kwargs.values())
+        if key not in self.memo:
+            self.memo[key] = self.f(*args, **kwargs)
+            l.save_pkl(self.memo, self.c_path)
+        return self.memo[key]
+
+    def __del__(self):
+        self.memo = None
+        print("meme collecteed")
+
 # @contextmanager
 # def _LocalContext(logger, new_prefix=None):
 #     old_client = logger.client
@@ -219,19 +244,9 @@ class ML_Logger:
         prefix = pJoin(self.root, self.prefix, *(ctx or []))
         hash = md5(prefix.encode("utf-8")).hexdigest()
 
-        c_path = f"{hash}.{f.__module__}.{f.__name__}.pkl"
-        l = ML_Logger(cache_dir, root=os.getcwd())
-        cache = l.load_pkl(c_path)
-        memo = cache[0] if cache else {}
-
-        def wrapper(*args, **kwargs):
-            key = (*args, *kwargs.keys(), *kwargs.values())
-            if key not in memo:
-                memo[key] = f(*args, **kwargs)
-                l.save_pkl(memo, c_path)
-            return memo[key]
-
-        return wrapper
+        c_prefix = f"{hash}.{f.__module__}.{f.__name__}.pkl"
+        c_path = os.path.join(cache_dir, c_prefix)
+        return Memoize(f, c_path)
 
     def release(self, f):
         """release the cache corresponding to function f"""
