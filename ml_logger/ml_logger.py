@@ -37,6 +37,7 @@ ML_DASH_URL = "http://app.dash.ml/{prefix}"
 # ML_Logger defaults
 ROOT = os.environ.get("ML_LOGGER_ROOT", CWD) or CWD
 S3_ROOT = os.environ.get("ML_LOGGER_S3_ROOT", None)
+S3_ENDPOINT = os.environ.get("ML_LOGGER_S3_ENDPOINT", None)
 LOGGER_USER = os.environ.get("ML_LOGGER_USER", USER)
 ACCESS_TOKEN = os.environ.get("ML_LOGGER_ACCESS_TOKEN", None)
 
@@ -939,7 +940,7 @@ class ML_Logger:
         query_prefix = '/'.join(query_prefix)
         truncate = len(work_prefix) + 1 if work_prefix else 0
 
-        s3_client = boto3.client('s3')
+        s3_client = boto3.client('s3', endpoint_url=S3_ENDPOINT)
         # list_objects_v2 supports pagination. -- Ge
         response = s3_client.list_objects(Bucket=bucket, Prefix=s3_prefix,
                                           MaxKeys=max_keys, **KWargs)
@@ -1416,8 +1417,8 @@ class ML_Logger:
     @staticmethod
     def remove_s3(bucket, *keys):
         import boto3
-        client = boto3.client('s3')
-        return client.delete_object(Bucket=bucket, Key=pJoin(*keys))
+        s3_client = boto3.client('s3', endpoint_url=S3_ENDPOINT)
+        return s3_client.delete_object(Bucket=bucket, Key=pJoin(*keys))
 
     @staticmethod
     def remove_gs(*keys, path=None):
@@ -1487,7 +1488,7 @@ class ML_Logger:
 
         # todo: consider adding exception handling -- good or bad?
         # Upload the file
-        s3_client = boto3.client('s3')
+        s3_client = boto3.client('s3', endpoint_url=S3_ENDPOINT)
         # from botocore.exceptions import ClientError
         # try:
         response = s3_client.upload_file(source_path, bucket, object_name)
@@ -1506,8 +1507,8 @@ class ML_Logger:
         bucket, *object_name = path.split('/')
         object_name = '/'.join(object_name)
 
-        s3 = boto3.client('s3')
-        return s3.download_file(bucket, object_name, to)
+        s3_client = boto3.client('s3', endpoint_url=S3_ENDPOINT)
+        return s3_client.download_file(bucket, object_name, to)
 
     def save_images(self, stack, key, n_rows=None, n_cols=None, cmap=None, normalize=None,
                     value_range=(0, 1), background=1, dtype=np.uint8):
