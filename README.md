@@ -59,6 +59,8 @@ for i in range(1):
 ...
 ```
 
+## Simple Logging Example
+
 In your project files, do:
 
 ```python
