@@ -143,6 +143,12 @@ Log_directory: http://<your-server-ip>:8080
 Process finished with exit code 0
 ```
 
+### To View the Results
+
+[![ML-Logger Dashboard](figures/app-dash-ml_setup.png)](https://app.dash.ml/)
+
+Note, the `jwt` based access control has not been implemented yet. So you should leave the token field empty.
+
 ### Logging to a Server
 
 **Skip this if you just want to log locally.** When training in parallel, you want to kickstart an logging server (Instrument Server). To do so, run:
