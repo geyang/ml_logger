@@ -180,7 +180,7 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __diff=True,
             if RUN.CUDA_VISIBLE_DEVICES is not None:
                 envs_str = jaynes.Jaynes.runner_config[1]['envs']
 
-                if re.match(r"CUDA_VISIBLE_DEVICES=([A-z0-9\-,]*)", envs_str):
+                if re.search(r"CUDA_VISIBLE_DEVICES=([A-z0-9\-,]*)", envs_str):
                     envs_ext = re.sub(r"CUDA_VISIBLE_DEVICES=([A-z0-9\-,]*)",
                                       f'CUDA_VISIBLE_DEVICES={RUN.CUDA_VISIBLE_DEVICES}',
                                       envs_str)
