@@ -182,6 +182,9 @@ def instr(fn, *ARGS, __file=False, __create_job=True, __count=True, __diff=True,
                 envs_ext = re.sub(r"CUDA_VISIBLE_DEVICES=([A-z0-9\-,]*)",
                                   f'CUDA_VISIBLE_DEVICES={RUN.CUDA_VISIBLE_DEVICES}',
                                   envs_str)
+                if not re.match(r"CUDA_VISIBLE_DEVICES=([A-z0-9\-,]*)", envs_str):
+                    envs_str += f' CUDA_VISIBLE_DEVICES={RUN.CUDA_VISIBLE_DEVICES}'
+
                 # f" CUDA_VISIBLE_DEVICES={RUN.CUDA_VISIBLE_DEVICES}"
                 jaynes.Jaynes.config(jaynes.Jaynes.mode,
                                      launch={'name': launch_name},
