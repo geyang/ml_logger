@@ -36,6 +36,7 @@ if USER is None:
 ML_DASH_URL = "http://app.dash.ml/{prefix}"
 # ML_Logger defaults
 ROOT = os.environ.get("ML_LOGGER_ROOT", CWD) or CWD
+PREFIX = os.environ.get("ML_LOGGER_PREFIX", "{USER}/scratch")
 S3_ROOT = os.environ.get("ML_LOGGER_S3_ROOT", None)
 LOGGER_USER = os.environ.get("ML_LOGGER_USER", USER)
 ACCESS_TOKEN = os.environ.get("ML_LOGGER_ACCESS_TOKEN", None)
@@ -317,8 +318,11 @@ class ML_Logger:
         # todo: add https support
         self.root = interpolate(root) or ROOT
 
-        prefixae = [interpolate(p) for p in (prefix or "", *prefixae) if p is not None]
-        self.prefix = os.path.join(*prefixae) if prefixae else ""
+        prefixae = [interpolate(p) for p in (prefix, *prefixae) if p]
+        if prefixae:
+            self.prefix = os.path.join(*prefixae)
+        else:
+            self.prefix = PREFIX.format(USER=USER, now=self.now())
         self.client = LogClient(root=self.root, user=user, access_token=access_token,
                                 asynchronous=asynchronous, max_workers=max_workers)
 
@@ -389,9 +393,11 @@ class ML_Logger:
 
         # path logic
         if prefix is not None:
-            prefixae = [interpolate(p) for p in (prefix, *prefixae) if p is not None]
-            if prefixae is not None:
+            prefixae = [interpolate(p) for p in (prefix, *prefixae) if p]
+            if prefixae:
                 self.prefix = os.path.join(*prefixae)
+            else:
+                self.prefix = PREFIX.format(USER=USER, now=self.now())
 
         if buffer_size is not None:
             self.print_buffer_size = buffer_size
