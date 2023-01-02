@@ -267,7 +267,7 @@ class ML_Logger:
 
     def __repr__(self):
         return f'ML_Logger(root="{self.root}",' + "\n" + \
-               f'          prefix="{self.prefix}")'
+            f'          prefix="{self.prefix}")'
 
     # noinspection PyInitNewSignature
     # todo: use prefixes as opposed to prefix. (add *prefixae after prefix=None)
@@ -1524,10 +1524,7 @@ class ML_Logger:
         :return: None
         """
         # Check dtype is supported by ml-logger
-        assert (
-            dtype in ALLOWED_TYPES,
-            f"Unsupported dtype: {dtype}. Supported types: {ALLOWED_TYPES}"
-        )
+        assert dtype in ALLOWED_TYPES, f"Unsupported dtype: {dtype}. Supported types: {ALLOWED_TYPES}"
 
         stack = stack if hasattr(stack, 'dtype') else np.stack(stack)
 
@@ -1597,10 +1594,8 @@ class ML_Logger:
             )
 
         # this needs to be updated
-        assert (
-            any(np.issubdtype(stack.dtype, t) for t in ALLOWED_TYPES),
+        assert any(np.issubdtype(stack.dtype, t) for t in ALLOWED_TYPES), \
             f"the image type need to be one of {ALLOWED_TYPES}"
-        )
         n, h, w, *c = stack.shape
         # todo: add color background -- need to decide on which library to use.
         composite = np.full([h * n_rows, w * n_cols, *c], background, dtype=dtype)
