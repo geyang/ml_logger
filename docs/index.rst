@@ -15,12 +15,32 @@ Introducing Ml-Logger
 
 **I do**. This is why I wrote ML-Logger and a ML-Dash, two open-source distributed logging and visualization library for you, and your University collaborators who want to work on the same code!
 
-To get started:
+To get started: ml-logger uses :code:`pycurl` for fast file upload. The easiest way to install :code:`pycurl`, is to use conda. First run: :code:`conda install pycurl`. Then, install ml-logger using pip: :code:`pip install ml-logger`.
 
 .. code:: bash
 
-    pip install ml-logger ml-dash
+    conda install pycurl
+    pip install ml-logger ml-dash pandas
     python -m ml_dash.app
+
+Now you can start logging your experiments! Here is a simple example:
+
+.. code:: python
+
+    from ml_logger import logger
+    import numpy as np
+
+    logger.log_params(train={"learning_rate": 0.001})
+    logger.job_started()
+
+    print(logger)
+    print(logger.get_dash_url())
+
+    for i in range(20):
+        logger.log(step=i, loss=np.random.random() * np.exp(- 0.2 * i))
+        logger.flush()
+
+    logger.job_completed()
 
 ::
 
