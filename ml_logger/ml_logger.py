@@ -36,7 +36,7 @@ if USER is None:
 ML_DASH_URL = "http://app.dash.ml/{prefix}"
 # ML_Logger defaults
 ROOT = os.environ.get("ML_LOGGER_ROOT", CWD) or CWD
-PREFIX = os.environ.get("ML_LOGGER_PREFIX", "{USER}/scratch")
+PREFIX = os.environ.get("ML_LOGGER_PREFIX", "{USER}/scratch/{now:%Y/%m-%d/%H%M%S}")
 S3_ROOT = os.environ.get("ML_LOGGER_S3_ROOT", None)
 LOGGER_USER = os.environ.get("ML_LOGGER_USER", USER)
 ACCESS_TOKEN = os.environ.get("ML_LOGGER_ACCESS_TOKEN", None)
@@ -322,7 +322,7 @@ class ML_Logger:
         if prefixae:
             self.prefix = os.path.join(*prefixae)
         else:
-            self.prefix = PREFIX.format(USER=USER, now=self.now())
+            self.prefix = PREFIX.format(USER=USER, now=datetime.now())
         self.client = LogClient(root=self.root, user=user, access_token=access_token,
                                 asynchronous=asynchronous, max_workers=max_workers)
 
@@ -397,7 +397,7 @@ class ML_Logger:
             if prefixae:
                 self.prefix = os.path.join(*prefixae)
             else:
-                self.prefix = PREFIX.format(USER=USER, now=self.now())
+                self.prefix = PREFIX.format(USER=USER, now=datatime.now())
 
         if buffer_size is not None:
             self.print_buffer_size = buffer_size
