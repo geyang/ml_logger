@@ -318,16 +318,19 @@ class ML_Logger:
         # todo: add https support
         self.root = interpolate(root) or ROOT
 
-        prefixae = [interpolate(p) for p in (prefix, *prefixae) if p]
-        if prefixae:
-            self.prefix = os.path.join(*prefixae)
-        else:
-            self.prefix = PREFIX.format(USER=USER, now=datetime.now())
         self.client = LogClient(root=self.root, user=user, access_token=access_token,
                                 asynchronous=asynchronous, max_workers=max_workers)
 
+        prefixae = [interpolate(p) for p in (prefix, *prefixae) if p]
+        if prefixae:
+            self.prefix = os.path.join(*prefixae)
+        elif self.client.local_server is None:
+            self.prefix = PREFIX.format(USER=USER, now=datetime.now())
+        else:
+            self.prefix = "."
+
     def configure(self,
-                  prefix=None,
+                  prefix=PREFIX,
                   *prefixae,
                   root: str = None,
                   user=None,
@@ -392,12 +395,9 @@ class ML_Logger:
         """
 
         # path logic
-        if prefix is not None:
-            prefixae = [interpolate(p) for p in (prefix, *prefixae) if p]
-            if prefixae:
-                self.prefix = os.path.join(*prefixae)
-            else:
-                self.prefix = PREFIX.format(USER=USER, now=datatime.now())
+        prefixae = [interpolate(p) for p in (prefix, *prefixae) if p]
+        if prefixae:
+            self.prefix = os.path.join(*prefixae).format(USER=USER, now=datatime.now())
 
         if buffer_size is not None:
             self.print_buffer_size = buffer_size
