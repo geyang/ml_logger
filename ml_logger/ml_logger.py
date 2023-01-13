@@ -397,7 +397,7 @@ class ML_Logger:
         # path logic
         prefixae = [interpolate(p) for p in (prefix, *prefixae) if p]
         if prefixae:
-            self.prefix = os.path.join(*prefixae).format(USER=USER, now=datatime.now())
+            self.prefix = os.path.join(*prefixae).format(USER=USER, now=datetime.now())
 
         if buffer_size is not None:
             self.print_buffer_size = buffer_size
