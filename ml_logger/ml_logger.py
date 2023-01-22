@@ -2690,6 +2690,7 @@ class ML_Logger:
                 raise e
 
     def clone(self):
+        from copy import deepcopy
         return deepcopy(self)
 
 logger = ML_Logger()
