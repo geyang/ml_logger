@@ -2689,5 +2689,7 @@ class ML_Logger:
             if reraise:
                 raise e
 
+    def clone(self):
+        return deepcopy(self)
 
 logger = ML_Logger()
