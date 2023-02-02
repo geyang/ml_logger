@@ -1301,9 +1301,7 @@ class ML_Logger:
         self.flush_metrics(cache, file)
         self.flush_print_buffer()
 
-    uploaded_files = {}
-
-    def upload_file(self, file_path: str = None, target_path: str = "files/", once=True) -> None:
+    def upload_file(self, file_path: str = None, target_path: str = "files/") -> None:
         """
         uploads a file (through a binary byte string) to a target_folder. Default
         target is "files"
@@ -1313,8 +1311,6 @@ class ML_Logger:
             if end of `/`, uses the original file name.
         :return: None
         """
-        if file_path in self.uploaded_files and once:
-            return
         self.uploaded_files[file_path] = target_path
 
         from pathlib import Path
@@ -2062,9 +2058,8 @@ class ML_Logger:
         path = pJoin(self.prefix, *keys, path)
         return self.client.stream_download(path)
 
-    def download_file(self, *keys, path=None, to, relative=False):
-
-        path = pJoin(*keys, path)
+    def download_file(self, *path, to, relative=False):
+        path = pJoin(*path)
 
         buf = self.load_file(path)
 
