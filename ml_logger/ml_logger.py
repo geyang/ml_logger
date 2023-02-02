@@ -1311,8 +1311,6 @@ class ML_Logger:
             if end of `/`, uses the original file name.
         :return: None
         """
-        self.uploaded_files[file_path] = target_path
-
         from pathlib import Path
         bytes = Path(file_path).read_bytes()
         if isinstance(target_path, Path):
