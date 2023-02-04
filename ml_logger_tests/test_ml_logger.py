@@ -190,6 +190,14 @@ def test_json_abs(setup):
     assert a == b, "a and b should be the same"
 
 
+def test_jsonl(setup):
+    logger.log_jsonl(dict(a=10), "data/d.jsonl")
+    logger.log_jsonl(dict(a=12), "data/d.jsonl")
+
+    result = logger.load_jsonl("data/d.jsonl")
+    print(result)
+
+
 def test_yaml(setup):
     a = dict(a=0)
     logger.save_yaml(a, "data/d.yaml")
