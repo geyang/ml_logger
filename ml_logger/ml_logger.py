@@ -2340,13 +2340,13 @@ class ML_Logger:
         if flush or file or len(self.print_buffer) > self.print_buffer_size:
             self.flush_print_buffer(file=file, **kwargs)
 
-    def log_jsonl(self, data, key: str):
+    def log_jsonl(self, data, key: str, **kwargs):
         import json
 
         data = data or {}
         serialized = json.dumps(data)
 
-        self.log_line(serialized, file=key, flush=True)
+        self.log_line(serialized, file=key, **kwargs)
 
     def print(self, *args, sep=' ', end='\n', flush=True, file=None, color=None, dedent=False, **kwargs):
         text = sep.join([str(a) for a in args])
