@@ -34,7 +34,7 @@ class RUN(PrefixProto):
     username = LOGGER_USER
     project = "scratch"  # default project name
 
-    script_root = Proto(os.getcwd(), env="HOME")
+    script_root = Proto(os.getcwd(), help="the root directory of the script. Defautl to current work directory.")
     script_path = None
 
     now = logger.now()
