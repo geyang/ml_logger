@@ -59,7 +59,7 @@ class RUN(PrefixProto):
     readme = None
 
     debug = Flag(default="pydevd" in sys.modules, help="set to True automatically for pyCharm")
-    CUDA_VISIBLE_DEVICES = None
+    CUDA_VISIBLE_DEVICES: str = None
 
     # noinspection PyMissingConstructor
     @classmethod
