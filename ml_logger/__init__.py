@@ -13,7 +13,7 @@ from .ml_logger import USER, ROOT, logger, LOGGER_USER, ML_Logger, pJoin
 from .structs import ALLOWED_TYPES
 
 
-class RUN(PrefixProto):
+class RUN(PrefixProto, cli_parse=False):
     """The main point of this config object is to provide a way for config functions
     to directly specify the job prefix.
 
