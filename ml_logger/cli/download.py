@@ -6,39 +6,42 @@ from tqdm import tqdm
 
 
 class DownloadArgs(ParamsProto):
-    """Download Datasets from logging server."""
+    """ Download Datasets from logging server.
 
-    prefix: str = Proto(help="prefix on ML-Logger")
+    Usage:
+        ml-download --prefix /instant-feature/datasets/slam/ei_v3/processed --source images_8 --target datasets/cli_debug/ei_v3/processed/images_8
+
+    """
+    path: str = Proto(help="prefix on ML-Logger")
     output = Proto(env=".", help="cache directory")
 
-    query = Proto(
-        "**",
-        help="""
-            Query pattern for the experiment directories. 
-            You need to include the ** signs to search for 
-            child directories
-            """,
-    )
+    query = Proto("*", help="Query pattern for the experiment directories. "
+                            "You need to include the ** signs to search for"
+                            " child directories")
     list = Flag("List all of the folders if set.")
 
-    source = Proto(
-        help="""
-            source folder, parent of the image folder. We do
-            not list experiments when this is set.
-            """,
-    )
-    image_folder: str = Proto("source", help="The name of the image folder under each experiment")
+    prefix = Proto(help="source folder, parent of the image folder. "
+                        "We do not list experiments when this is set.")
+    source: str = Proto("source", help="The name of the image folder under each experiment")
     overwrite = Flag("overwrite existing folders in the cache directory")
 
+
+# todo: add download experiment function
+# def list---experiments(prefix, query):
+#     from ml_logger import logger
+#
+#     with logger.Prefix(prefix):
+#         exps = logger.glob(query)
+#         print(exps)
+#         if len(exps.axes[0]) == 0:
+#             return []
+#         return [p.replace("/parameters.pkl", "") for p in exps["prefix"]]
 
 def list(prefix, query):
     from ml_logger import logger
 
     with logger.Prefix(prefix):
-        exps = logger.get_exps(query)
-        if len(exps.axes[0]) == 0:
-            return []
-        return [p.replace("/parameters.pkl", "") for p in exps["prefix"]]
+        return logger.glob(query)
 
 
 def download(source: str, target: str, image_folder: str = "source", overwrite=False):
@@ -72,35 +75,42 @@ def download(source: str, target: str, image_folder: str = "source", overwrite=F
 
 
 def entrypoint():
-    if DownloadArgs.source is not None:
-        print("Downloading folder", DownloadArgs.source)
+    if DownloadArgs.prefix is not None:
+        print("Downloading folder", DownloadArgs.prefix)
         t = download(
-            f"{DownloadArgs.source}",
+            f"{DownloadArgs.prefix}",
             f"{DownloadArgs.output}",
-            image_folder=DownloadArgs.image_folder,
+            image_folder=DownloadArgs.source,
             overwrite=DownloadArgs.overwrite,
         )
         if t:
             print("Downloading complete.")
         return
 
-    folders = list(DownloadArgs.prefix, DownloadArgs.query)
+    folders = list(DownloadArgs.path, DownloadArgs.query)
 
     if DownloadArgs.list:
-        print(*folders, sep="\n")
+        if folders:
+            print(*folders, sep="\n")
+        else:
+            from ml_logger import logger
+            # print(f"No folders found for prefix='{DownloadArgs.prefix}' and query='{DownloadArgs.query}' @ {logger.root}")
+            print(f"No folders found at '{DownloadArgs.path}' for query='{DownloadArgs.query}'")
+            print(logger)
         return
+
     pbar = tqdm(folders)
     for folder in pbar:
         pbar.set_description(f"Downloading {folder}")
         download(
-            f"{DownloadArgs.prefix}/{folder}",
+            f"{DownloadArgs.path}/{folder}",
             f"{DownloadArgs.output}/{folder}",
-            image_folder=DownloadArgs.image_folder,
+            image_folder=DownloadArgs.source,
             overwrite=DownloadArgs.overwrite,
         )
 
 
 if __name__ == "__main__":
-    DownloadArgs.prefix = os.path.expandvars("/instant-feature/datasets/panda/open_ended/caterpillar")
+    DownloadArgs.path = os.path.expandvars("/instant-feature/datasets/panda/open_ended/caterpillar")
     DownloadArgs.output = os.path.expandvars("$DATASETS/caterpillar/01-29")
     entrypoint()

@@ -53,11 +53,11 @@ dependencies = [
 
 [project.scripts]
 # Note, add entrypoint name to scripts/completions/install.py to include CLI completion
-ml-download = "ml_scripts.download:entrypoint"
-ml-upload= "ml_scripts.upload:entrypoint"
+ml-download = "ml_logger.cli.download:entrypoint"
+ml-upload= "ml_logger.cli.upload:entrypoint"
 
 [tool.setuptools.packages.find]
-include = ["ml_logger"]
+include = ["ml_logger", "ml_logger.cli"]
 
 [tool.setuptools.package-data]
 "*" = []
@@ -68,7 +68,7 @@ line-length = 140
 
 [tool.poetry]
 name = "ml-logger"
-version = "0.9.8"
+version = "0.10.0"
 description = ""
 authors = ["Ge Yang <geyang@mit.edu>"]
 keywords = ["ml_logger", "visualization", "logging", "debug", "debugging"]
@@ -87,8 +87,8 @@ include = [
 
 [tool.poetry.scripts]
 # Note, add entrypoint name to scripts/completions/install.py to include CLI completion
-ml-download = "ml_scripts.download:entrypoint"
-ml-upload= "ml_scripts.upload:entrypoint"
+ml-download = "ml_logger.cli.download:entrypoint"
+ml-upload= "ml_logger.cli.upload:entrypoint"
 
 [tool.poetry.dependencies]
 python = ">=3.8.0"
