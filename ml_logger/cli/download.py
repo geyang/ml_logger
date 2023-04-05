@@ -1,6 +1,8 @@
+from fnmatch import fnmatch
 import os
 from pathlib import Path
 
+import requests
 from params_proto import Flag, ParamsProto, Proto
 from tqdm import tqdm
 
@@ -25,6 +27,7 @@ class DownloadArgs(ParamsProto):
     target = Proto(env=".", help="cache directory")
     list = Flag("List all of the folders if set.")
 
+    exclude = Proto(".git*", help="Exclude files matching this pattern when uploading")
     overwrite = Flag("overwrite existing folders in the cache directory")
 
 
@@ -54,7 +57,7 @@ def download(prefix: str, source: str, target: str = ".", overwrite=False):
             with logger.Sync():
                 logger.make_archive(f"{source}", "tar", f"{source}")
                 logger.download_dir(f"{source}.tar", f"{target}")
-        except:
+        except requests.exceptions.JSONDecodeError:
             logger.download_file(f"{source}", to=f"{target}")
 
         # improves speed by 20% by switching to async remove.
@@ -66,12 +69,18 @@ def download(prefix: str, source: str, target: str = ".", overwrite=False):
 def entrypoint():
     from ml_logger import logger
 
+    exclude_patterns = DownloadArgs.exclude.split(';')
+
     with logger.Prefix(DownloadArgs.prefix):
 
         folders = logger.glob(DownloadArgs.source)
 
     if DownloadArgs.list:
         if folders:
+            # show me the code for match the child string against a list of exclude patterns, step by step
+            if exclude_patterns:
+                folders = [f for f in folders if not any([fnmatch(f, e) for e in exclude_patterns])]
+
             print(*folders, sep="\n")
         else:
             from ml_logger import logger
