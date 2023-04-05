@@ -19,7 +19,7 @@ class UploadArgs(ParamsProto):
     workdir = Proto(".", help="cache directory")
     source = Proto("*", help="""Query pattern for the files to be tarred.""")
     archival = Flag("Use archive to upload the files")
-    excludes = Proto("*.git", help="Exclude files matching this pattern when uploading")
+    excludes = Proto(".git*", help="Exclude files matching this pattern when uploading")
 
     overwrite = Flag("overwrite existing folders in the cache directory")
 
