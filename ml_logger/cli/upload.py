@@ -1,4 +1,6 @@
 from contextlib import ExitStack, contextmanager
+from fnmatch import fnmatch
+from glob import glob
 
 from params_proto import ParamsProto, Proto, Flag
 
@@ -43,11 +45,7 @@ def WorkDir(path):
         os.chdir(origin)
 
 
-def list(source, query):
-    """list the current directory into a tree"""
-    from glob import glob
-    with WorkDir(source):
-        return glob(query, recursive=True)
+# def list(source, query):
 
 
 def upload(source, target, overwrite=False):
@@ -66,9 +64,16 @@ def upload(source, target, overwrite=False):
 
 def entrypoint():
     from ml_logger import logger
-    from pathlib import Path
 
-    folders = list(UploadArgs.workdir, UploadArgs.source)
+    """list the current directory into a tree"""
+
+    with WorkDir(UploadArgs.workdir):
+        folders = glob(UploadArgs.source, recursive=True)
+
+    exclude_patterns = UploadArgs.exclude.split(';')
+    if exclude_patterns:
+        # show me the code for match the child string against a list of exclude patterns, step by step
+        folders = [f for f in folders if not any([fnmatch(f, e) for e in exclude_patterns])]
 
     if UploadArgs.list:
         print(UploadArgs.workdir + ":", *folders, sep="\n")
@@ -104,7 +109,7 @@ def entrypoint():
                                "Set the --overwrite flag to overwrite it.")
                     continue
 
-            logger.upload_dir(local_name, tar_filename, excludes=UploadArgs.exclude.split(';') or tuple(), archive="tar")
+            logger.upload_dir(local_name, tar_filename, excludes=exclude_patterns, archive="tar")
 
             if local_name in (logger.glob(local_name) or []):
                 if UploadArgs.overwrite:
