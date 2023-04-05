@@ -19,6 +19,7 @@ class UploadArgs(ParamsProto):
     workdir = Proto(".", help="cache directory")
     source = Proto("*", help="""Query pattern for the files to be tarred.""")
     archival = Flag("Use archive to upload the files")
+    excludes = Proto("*.git", help="Exclude files matching this pattern when uploading")
 
     overwrite = Flag("overwrite existing folders in the cache directory")
 
@@ -104,7 +105,7 @@ def entrypoint():
                                "Set the --overwrite flag to overwrite it.")
                     continue
 
-            logger.upload_dir(local_name, tar_filename, excludes=tuple(), archive="tar")
+            logger.upload_dir(local_name, tar_filename, excludes=UploadArgs.excludes.split(';') or tuple(), archive="tar")
 
             if local_name in (logger.glob(local_name) or []):
                 if UploadArgs.overwrite:
