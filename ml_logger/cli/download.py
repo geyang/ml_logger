@@ -11,6 +11,13 @@ class DownloadArgs(ParamsProto):
     """ Download Datasets from logging server.
 
     Usage:
+
+        to download
+
+        $ ml-download --prefix /instant-feature/datasets/rooms --source="*/processed/*" --target=rooms --exclude='*colmap'
+
+        to list
+
         $ ml-download --list --prefix /instant-feature/datasets/rooms/whiteboard_v1 --source="processed/*"
         >
             processed/images_4
