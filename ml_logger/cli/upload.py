@@ -11,7 +11,6 @@ class UploadArgs(ParamsProto):
         ml-upload --target /fast_nerf/fast_nerf/panda_exp/2022  # uploads to this folder
         ml-upload --target /$USER/sratch/tmp --overwrite  # overwrite existing files
         ml-upload --target /$USER/scratch/tmp --archive  # upload the files as a tar file
-
     """
     list = Flag("List all of the folders if set.")
 
