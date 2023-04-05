@@ -88,9 +88,14 @@ def entrypoint():
             desc = f"Uploading the {local_name} to {logger.get_dash_url()}/{local_name}"
             pbar.write(desc)
 
+            import os
+            if os.path.isfile(local_name):
+                logger.upload_file(local_name, local_name)
+                continue
+
             tar_filename = local_name + ".tar"
 
-            if tar_filename in logger.glob(tar_filename):
+            if tar_filename in (logger.glob(tar_filename) or []):
                 if UploadArgs.overwrite:
                     pbar.write(f"overwriting {tar_filename} on the server")
                     logger.remove(tar_filename)
@@ -101,7 +106,7 @@ def entrypoint():
 
             logger.upload_dir(local_name, tar_filename, excludes=tuple(), archive="tar")
 
-            if local_name in logger.glob(local_name):
+            if local_name in (logger.glob(local_name) or []):
                 if UploadArgs.overwrite:
                     pbar.write(f"overwriting {local_name} on the server")
                     logger.remove(local_name)
