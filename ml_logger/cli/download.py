@@ -102,7 +102,7 @@ def entrypoint():
         else:
             target = os.getcwd()
 
-        target = os.path.join(DownloadArgs.target, child)
+        target = os.path.join(target, child)
         pbar.write(f"Downloading {child} to {target}")
         local_path = download(
             DownloadArgs.prefix,
