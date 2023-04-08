@@ -1388,7 +1388,7 @@ class ML_Logger:
         #         # use sync context to make sure it finishes.
         #         self.make_archive(source_path, unpack=unpack)
 
-        to = pathlib.Path(to).absolute()
+        to = os.path.abspath(to)
 
         if unpack:
             with tempfile.TemporaryDirectory() as temp_dir:

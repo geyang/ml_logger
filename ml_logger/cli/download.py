@@ -97,7 +97,10 @@ def entrypoint():
 
     pbar = tqdm(folders)
     for child in pbar:
-        target = f"{DownloadArgs.target}/{child}"
+        if target is None or target == ".":
+            target = f"{DownloadArgs.target}"
+        else:
+            target = f"{DownloadArgs.target}/{child}"
         pbar.write(f"Downloading {child} to {target}")
         local_path = download(
             DownloadArgs.prefix,
