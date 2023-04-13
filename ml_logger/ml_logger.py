@@ -2065,6 +2065,10 @@ class ML_Logger:
             to = pJoin(to, path)
         elif to.endswith('/'):
             to += os.path.basename(path)
+
+        # use absolute path to make sure the parent directory exists.
+        to = os.path.abspath(to)
+
         os.makedirs(os.path.dirname(to), exist_ok=True)
         with open(to, "wb") as f:
             f.write(buf.getbuffer())
@@ -2268,10 +2272,10 @@ class ML_Logger:
         csv_str = self.client.read_text(pJoin(self.prefix, *keys))
         return pd.read_csv(StringIO(csv_str))
 
-    def load_yaml(self, *keys):
+    def load_yaml(self, *keys, Loader=None):
         import yaml
         text = self.client.read_text(pJoin(self.prefix, *keys))
-        return yaml.load(text)
+        return yaml.load(text, Loader=Loader or yaml.SafeLoader)
 
     def load_h5(self, *keys):
         return self.client.read_h5(pJoin(self.prefix, *keys))

@@ -156,6 +156,8 @@ class LogClient:
     #         json = ShellEntry(command, options)._asdict()
     #         self.session.post(self.shell_url, json=json)
 
+    # todo: add temp file support, so that other programs can have a
+    #  local file name. Many c++ libraries can not read IO objects.
     def stream_download(self, path):
         buf = BytesIO()
         if self.local_server:
