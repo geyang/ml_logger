@@ -38,6 +38,13 @@ pip install ml-logger
 > yes | pip install graphql-server-core==1.1.1
 > ```
 
+Add the following to your `~/.zshrc`
+
+```bash
+export ML_LOGGER_ROOT=<your-logging-server-address>
+export ML_LOGGER_USER=<your-handle> # make sure it is the same on the cluster.
+```
+
 Now you can rock!
 
 ```python
