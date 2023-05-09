@@ -345,7 +345,10 @@ class LogClient:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
             json = MakeVideoEntry(files=files, key=key, wd=wd, order=order, options=options)._asdict()
             res = self.session.post(self.make_video_url, json=json).result()
-            return res.json()['result']
+            try:
+                return res.json()['result']
+            except:
+                return res.text()
 
     def make_archive(self, base_name, format="tar", root_dir=None, base_dir=None, **options):
         if self.local_server:
@@ -357,7 +360,10 @@ class LogClient:
             json = ArchiveEntry(base_name=base_name, root_dir=root_dir, base_dir=base_dir,
                                 format=format, options=options)._asdict()
             res = self.session.post(self.tar_url, json=json).result()
-            return res.json()['result']
+            try:
+                return res.json()['result']
+            except:
+                return res.text()
 
     def shell(self, command, wd, **options):
         if self.local_server:
@@ -366,4 +372,7 @@ class LogClient:
             # todo: make the json serialization more robust. Not priority b/c this' client-side.
             json = ShellEntry(command=command, wd=wd, options=options)._asdict()
             res = self.session.post(self.shell_url, json=json).result()
-            return res.json()['result']
+            try:
+                return res.json()['result']
+            except:
+                return res.text()
