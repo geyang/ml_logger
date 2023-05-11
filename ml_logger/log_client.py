@@ -348,7 +348,7 @@ class LogClient:
             try:
                 return res.json()['result']
             except:
-                return res.text()
+                return res.text
 
     def make_archive(self, base_name, format="tar", root_dir=None, base_dir=None, **options):
         if self.local_server:
@@ -363,7 +363,7 @@ class LogClient:
             try:
                 return res.json()['result']
             except:
-                return res.text()
+                return res.text
 
     def shell(self, command, wd, **options):
         if self.local_server:
@@ -375,4 +375,4 @@ class LogClient:
             try:
                 return res.json()['result']
             except:
-                return res.text()
+                return res.text
