@@ -1,5 +1,6 @@
 import io
 import pickle
+from collections import deque
 from random import randint
 
 
@@ -50,6 +51,7 @@ def load_from_pickle_file(file, **__):
         except EOFError:
             break
 
+
 def load_from_torch_file(file, **kwargs):
     import torch
     while True:
@@ -70,7 +72,20 @@ def load_from_jsonl_file(file: io.StringIO, **__):
             yield json.loads(l)
 
 
+_regularizer_cache = deque(maxlen=3)
+
+
 def regularize_for_json(obj):
+    if obj in _regularizer_cache:
+        return {"error": "max recursion limit"}
+
+    results = _regularize_for_json(obj)
+    _regularizer_cache.append(obj)
+
+    return results
+
+
+def _regularize_for_json(obj):
     from typing import Sequence
     from types import FunctionType
     import numpy as np
