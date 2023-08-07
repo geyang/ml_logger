@@ -1651,10 +1651,10 @@ class ML_Logger:
         with tempfile.NamedTemporaryFile(suffix=f'.{format}') as ntp:
             from skimage import img_as_ubyte
             try:
-                imageio.v3.imsave(ntp.name, img_as_ubyte(frame_stack), fps=fps, **imageio_kwargs)
+                imageio.v3.imwrite(ntp.name, img_as_ubyte(frame_stack), fps=fps, **imageio_kwargs)
             except imageio.core.NeedDownloadError:
                 imageio.plugins.ffmpeg.download()
-                imageio.v3.imsave(ntp.name, img_as_ubyte(frame_stack), fps=fps, **imageio_kwargs)
+                imageio.v3.imwrite(ntp.name, img_as_ubyte(frame_stack), fps=fps, **imageio_kwargs)
             ntp.seek(0)
             self.client.log_buffer(key=filename, buf=ntp.read(), overwrite=True)
 
