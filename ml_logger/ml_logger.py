@@ -1652,11 +1652,11 @@ class ML_Logger:
             from skimage import img_as_ubyte
             try:
                 imageio.v2.mimsave(ntp.name, img_as_ubyte(frame_stack), format=format,
-                                   fps=fps, **imageio_kwargs)
+                                   duration=1000 * 1 / fps, **imageio_kwargs)
             except imageio.core.NeedDownloadError:
                 imageio.plugins.ffmpeg.download()
                 imageio.v2.mimsave(ntp.name, img_as_ubyte(frame_stack), format=format,
-                                   fps=fps, **imageio_kwargs)
+                                   duration=1000 * 1 / fps, **imageio_kwargs)
             ntp.seek(0)
             self.client.log_buffer(key=filename, buf=ntp.read(), overwrite=True)
 
