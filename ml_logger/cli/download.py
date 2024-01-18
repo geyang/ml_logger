@@ -7,7 +7,7 @@ from params_proto import Flag, ParamsProto, Proto
 from tqdm import tqdm
 
 
-class DownloadArgs(ParamsProto):
+class DownloadArgs(ParamsProto, cli=True):
     """ Download Datasets from logging server.
 
     Usage:
@@ -64,8 +64,9 @@ def download(prefix: str, source: str, target: str = ".", overwrite=False):
             with logger.Sync():
                 logger.make_archive(f"{source}", "tar", f"{source}")
                 logger.download_dir(f"{source}.tar", f"{target}")
-        except requests.exceptions.JSONDecodeError:
-            logger.download_file(f"{source}", to=f"{target}")
+        except FileNotFoundError or requests.exceptions.JSONDecodeError:
+            with logger.Sync():
+                logger.download_file(f"{source}", to=f"{target}")
 
         # improves speed by 20% by switching to async remove.
         logger.remove(f"{source}.tar")

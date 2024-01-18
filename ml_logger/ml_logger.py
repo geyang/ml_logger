@@ -624,20 +624,25 @@ class ML_Logger:
         return results[keys[0]] if len(keys) == 1 else [results[k] for k in keys]
 
     @contextmanager
-    def time(self, key="default", interval=1):
+    def time(self, key="default", interval=1, fmt="{delta:0.3E}s"):
         key, original = f"time.{key}", key
         self.split(key)
         yield
         delta = self.split(key)
         self.store(delta=delta, cache=key)
         if self.every(interval, key=key):
-            logger.print(f"timing <{original}>:", end=" ")
+            stdout_str = f"timing <{original}>: "
             data = self.summary_caches[key]['delta']
-            if interval > 1:
-                logger.print(f"{data.mean():0.3E}s", color="green", end=" ")
-                logger.print(f"±{data.std():0.1E}")
+
+            if collable(fmt):
+                stdout_str += fmt(data.mean())
             else:
-                logger.print(f"{data.mean():0.3E}s", color="green")
+                stdout_str += fmt.format(delta=data.mean())
+
+            if interval > 1:
+                stdout_str += f"±{data.std():0.1E}"
+
+            logger.print(stdout_str, flush=True)
 
     @staticmethod
     def now(fmt=None):
@@ -1383,11 +1388,6 @@ class ML_Logger:
             service = None
             source_path = pathlib.Path(source_path)
 
-        # if self.glob("**/*", wd=source_path):
-        #     with self.Sync():
-        #         # use sync context to make sure it finishes.
-        #         self.make_archive(source_path, unpack=unpack)
-
         to = os.path.abspath(to)
 
         if unpack:
@@ -2058,6 +2058,9 @@ class ML_Logger:
 
     def download_file(self, *path, to, relative=False):
         path = pJoin(*path)
+
+        if path not in self.glob("**/*"):
+            raise FileNotFoundError(f"{path} is not found in the logging server.")
 
         buf = self.load_file(path)
 
