@@ -1306,6 +1306,20 @@ class ML_Logger:
         self.flush_metrics(cache, file)
         self.flush_print_buffer()
 
+    def upload_buffer(self, buffer, key):
+        """UPload a buffer array to the target path (key).
+
+        Note: the file path (key) has to have the correct extension.
+
+        The extension and the file encoding are not handled by ML-Logger.
+
+        Args:
+            buffer ([type]): binary buffer of the content of the file.
+            key ([type]): the intended path for the file to be written to.
+        """
+        full_path = pJoin(self.prefix, key)
+        self.client.log_buffer(key=full_path, buf=buffer, overwrite=True)
+
     def upload_file(self, file_path: str = None, target_path: str = "files/") -> None:
         """
         uploads a file (through a binary byte string) to a target_folder. Default

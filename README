@@ -44,6 +44,13 @@ To **install** ``ml_logger``, do:
       yes | pip install graphql-relay==0.4.5
       yes | pip install graphql-server-core==1.1.1
 
+Add the following to your ``~/.zshrc``
+
+.. code-block:: bash
+
+   export ML_LOGGER_ROOT=<your-logging-server-address>
+   export ML_LOGGER_USER=<your-handle> # make sure it is the same on the cluster.
+
 Now you can rock!
 
 .. code-block:: python
