@@ -634,7 +634,7 @@ class ML_Logger:
             stdout_str = f"timing <{original}>: "
             data = self.summary_caches[key]['delta']
 
-            if collable(fmt):
+            if callable(fmt):
                 stdout_str += fmt(data.mean())
             else:
                 stdout_str += fmt.format(delta=data.mean())
