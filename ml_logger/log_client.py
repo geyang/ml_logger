@@ -325,8 +325,10 @@ class LogClient:
         # does not support appending yet
         self._log(key, data, dtype="yaml")
 
+    # this should be deprecated, sending images this way is not ideal.
     # sends out images
     def send_image(self, key, data):
+        raise DeprecationWarning("send_image is deprecated. use log_buffer instead.")
         assert data.dtype in ALLOWED_TYPES, "image data must be one of {}".format(ALLOWED_TYPES)
         self._log(key, data, dtype="image", options=LogOptions(overwrite=True))
 

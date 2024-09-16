@@ -8,6 +8,7 @@ from io import BytesIO
 from math import ceil
 from numbers import Number
 from random import random
+from tempfile import NamedTemporaryFile
 from time import perf_counter, sleep
 from typing import Any, Union
 
@@ -1621,8 +1622,15 @@ class ML_Logger:
                 # todo: remove last index
                 composite[i * h: i * h + h, j * w: j * w + w] = stack[k]
 
-        self.client.send_image(key=pJoin(self.prefix, key), data=composite)
-        return key
+        img_path = pJoin(self.prefix, key)
+        filename = key.split('/')[-1]
+        with NamedTemporaryFile(delete=True, suffix=filename) as tfile:
+            from PIL import Image
+            Image.fromarray(composite).save(tfile.name)
+            self.upload_file(tfile.name, key)
+
+        # self.client.send_image(, data=composite)
+        return img_path
 
     def save_image(self, image, key: str, cmap=None, normalize=None, dtype=np.uint8):
         """Log a single image.
