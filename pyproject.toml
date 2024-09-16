@@ -68,7 +68,7 @@ line-length = 140
 
 [tool.poetry]
 name = "ml-logger"
-version = "0.10.23"
+version = "0.10.24"
 description = ""
 authors = ["Ge Yang <geyang@mit.edu>"]
 keywords = ["ml_logger", "visualization", "logging", "debug", "debugging"]
@@ -111,8 +111,9 @@ requests = "*"
 requests-futures = "*"
 requests-toolbelt = "*"
 "ruamel.yaml" = "*"
-sanic = "*"
-sanic-cors = "*"
+sanic = "20.9.0"
+sanic-routing = "22.3.0"
+sanic-cors = "0.10.0.post3"
 scipy = "*"
 scikit-image = "*"
 scikit-video = "*"
