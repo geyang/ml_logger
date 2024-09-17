@@ -183,15 +183,15 @@ class LogClient:
             # buf.seek(0)
             # return buf
 
-    def save_buffer(self, buffer, key):
+    def save_buffer(self, buff, key):
         # proxy = os.environ.get('HTTP_PROXY')
         # c.setopt(c.PROXY, proxy)
         # logger.print('proxy:', proxy)
-        if isinstance(buffer, BytesIO):
+        if isinstance(buff, BytesIO):
             from requests_toolbelt import MultipartEncoder
             encoder = MultipartEncoder({'file': (key, buf), 'canary': true})
             self.session.post(self.url, data=encoder, headers={'Content-Type': encoder.content_type})
-        elif isinstance(buffer, StringIO):
+        elif isinstance(buff, StringIO):
             from pycurl import Curl
             c = Curl()
             c.setopt(c.URL, self.url)
@@ -199,7 +199,7 @@ class LogClient:
             c.setopt(c.HTTPPOST, [
                 ('file', (
                     c.FORM_BUFFER, source_path,
-                    c.FORM_BUFFERPTR, buffer.read(),
+                    c.FORM_BUFFERPTR, buff.read(),
                     c.FORM_CONTENTTYPE, 'plain/text',
                 )),
             ])
