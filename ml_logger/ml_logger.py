@@ -1628,8 +1628,10 @@ class ML_Logger:
             from PIL import Image
             Image.fromarray(composite).save(tfile.name)
 
-            tfile.seek(0)
-            self.client.save_buffer(buff=tfile.read(), key=filename)
+            # tfile.seek(0)
+            # self.client.save_buffer(buff=tfile.read(), key=img_path)
+            self.client.save_file(source_path=tfile.name, key=img_path)
+            # print(">>>>", tfile.name)
 
             # self.upload_file(tfile.name, key)
 

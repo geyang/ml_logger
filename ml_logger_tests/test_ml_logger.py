@@ -207,6 +207,12 @@ def test_yaml(setup):
 
 def test_image(setup):
     import scipy.misc
+    from ml_logger import logger
+
+    logger.configure('ge_debug/debug/main_test_script', root="http://luma01.csail.mit.edu:4000")
+    logger.job_started()
+
+    print(logger)
 
     face_rgba = scipy.misc.face()
 
