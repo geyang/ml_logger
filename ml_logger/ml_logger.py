@@ -1627,7 +1627,11 @@ class ML_Logger:
         with NamedTemporaryFile(delete=True, suffix=filename) as tfile:
             from PIL import Image
             Image.fromarray(composite).save(tfile.name)
-            self.upload_file(tfile.name, key)
+
+            tfile.seek(0)
+            self.client.save_buffer(buff=tfile.read(), key=filename)
+
+            # self.upload_file(tfile.name, key)
 
         # self.client.send_image(, data=composite)
         return img_path
